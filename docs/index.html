@@ -1,0 +1,293 @@
+<style>
+  .dv_cmd {
+     color: blue;
+  }
+  .dv_subinfo {
+     color: green;
+     padding-left: 40px;
+  }
+  .dv_subinfo._list {
+     color: blue;
+  }
+  .dv_subinfo_extra {
+     color: brown;
+  }
+</style>
+<div class="dv_accordion">
+<h3>MicroCore</h3>
+<div>
+MicroCore can be used as a library for various purposes:
+<p>- development server for frontend</p>
+<p>- core for typical cloud enterprise microservices</p>
+<p>- core for typical enterprise backend services</p>
+
+</div>
+<h3 id="task_listen">Task: start a server listening at a specific port</h3>
+<div>
+   <p>For this task, you should provide the port (1-65535) number and optionally the local IP</p>
+   <p>For example, for port #80, you should specify in the config:</p>
+   <p class="dv_subinfo">"listen": ":80"</p>
+   <p>This is already provided in the default config</p>
+   <p>Specifying IP is not necessary in the majority of cases, but if you wish to specify, for example, 127.0.0.2, you can write in the config as follows:</p>
+   <p class="dv_subinfo">"listen": "127.0.0.2:80"</p>
+   <p>If you specify IP, you will have to use only this IP for local development. If you do not specify IP, this port will be valid for all local hosts (local hosts are all hosts whose IP starts with 127 (127.X.X.X))</p>
+   <p>If the listener is running, it can find data in local file system (so server as a local server), give control to processors, process templates or forward requests to external servers</p>
+</div>
+<h3>Task: set host names for local servers</h3>
+<div>
+  <p>This task is solved in any system in file /etc/hosts (linux) or {windows}/System32/drivers/etc/hosts</p>
+  <p>MicroCore can automatically add/remove your host names in these files</p>
+  <p>If you specify <span class="dv_cmd">hosts</span> in the config, they will be added when you start <span class="dv_cmd">microcore</span> and 
+  will be removed if you run <span class="dv_cmd">microcore finish</span></p>
+  <p>The format of <span class="dv_cmd">hosts</span> is as follows in the example</p>
+  <p class="dv_subinfo">
+      "hosts": [{"ip":"127.0.0.1","urls":"mysite.com www.mysite.com"},{"ip":"127.0.0.3","urls":"test.com www.test.com"}]<br/>
+      <span class="dv_subinfo_extra">If ip is 127.0.0.1, it can be omitted. So, the simplest way to add one host name is as follows:</span></br>
+      "hosts": [{"urls":"mysite.com"}]
+  </p> 
+  <p>If you run this task, Windows will question you to provide the administrative rights</p>
+  <p>The urls can be separated by either spaces, or commas or semicolons, and prefixes starting with http:// or https:// or so on are removed
+      automatically by MicroCore, also slashes in the host names with the rest are removed automatically.</p>
+</div>
+<h3>Task: set DNS server list for your computer</h3>
+<div>
+  <p>This task is solved in windows in the registry (HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001(2)\services\Tcpip\Parameters ServerList)
+  <p>MicroCore can automatically change your DNS server list in the registry</p>
+  <p>If you in the list <span class="dv_cmd">hosts</span> (see above) add <span class="dv_cmd">{"kind":"DNS","urls":"YOUR DNS SERVER LIST"}</span> 
+      they DNS server list on your computer will be changed when you start MicroCore</p> 
+  <p>The example for combined 2 tasks is as follows in the example</p>
+  <p class="dv_subinfo">
+      "hosts": [{"ip":"127.0.0.1","urls":"mysite.com www.mysite.com"},{"kind":"DNS","urls":"svc.cluster.local,my.company.net"}]
+  </p> 
+  <p>If you run this task, Windows will question you to provide the administrative rights</p>
+  <p>The urls can be separated by either spaces, or commas or semicolons, and prefixes starting with http:// or https:// or so on are removed
+      automatically by MicroCore, also slashes in the host names with the rest are removed automatically.</p>
+</div>
+<h3>Task: log more info</h3>
+<div>
+   <p>By default, only errors are recorded in the log, but you can tell to log everything, including all server requests and replies with all headers in special files</p>
+   <p>At first choose the logging level from the list as follows: </p>
+   <p class="dv_subinfo _list">
+          none <span class="dv_subinfo_extra">(only startup information is logged, the log files do not grow at all)</span><br/>
+          error <span class="dv_subinfo_extra">(only errors are logged, this is the default logging level)</span><br/>
+          warning <span class="dv_subinfo_extra">(only errors and warnings are logged)</span><br/>
+          info <span class="dv_subinfo_extra">(errors, warnings and additional non-verbous info, for server module, it includes the bodies of all requests and responses)</span><br/>
+          details <span class="dv_subinfo_extra">(errors, warnings and any verbous info, for server module, it includes the bodies and headers of all requests and responses)</span><br/>
+          debug <span class="dv_subinfo_extra">(all info as in details plus specific debug info)</span><br/>
+          internal <span class="dv_subinfo_extra">(all debug, but for internal use)</span><br/>
+   </p>  
+   <p>In addition to debugging level, you should specify areas (one or many) for which you want to receive the information, as follows: <p>
+   <p class="dv_subinfo _list">
+          config <span class="dv_subinfo_extra">(issues related to the configuration)</span><br/>
+          json <span class="dv_subinfo_extra">(issues related to the json processing )</span><br/>
+          hosts <span class="dv_subinfo_extra">(issues related to the processing of hosts)</span><br/>
+          server <span class="dv_subinfo_extra">(issues related to the forwarded server requests and responses)</span><br/>
+          modules <span class="dv_subinfo_extra">(custom api extensions of this server written in golang)</span><br/>
+          processors <span class="dv_subinfo_extra">(custom processors of specific file types)</span><br/>
+          providers <span class="dv_subinfo_extra">(custom extensions of info for templates)</span><br/>
+   </p>
+   <p>When you decide what level and what areas you want to log, you must place them to the config as in the example below: </p>
+   <p class="dv_subinfo">
+       "logLevel": "details", <br/>
+       "logModules": "processors server file-server"
+   </p>
+   <p>The items in the list of modules can be separated by either spaces or commas or semicolons </p>
+</div>
+<h3>Task: serve local files and/or forwarding requests to another server.</h3>
+<div>
+   <p>First, you must configure <a href="#task_listen">the task to listen<a> </p>
+   <p>You have 2 entries in the config: <span class="dv_cmd">server</span> to be used for any hosts and <span class="dv_cmd">hostServers</span> to be used 
+      for specific hosts specified in the request. <span class="dv_cmd">hostServers</span> is an array of objects, 
+        each of which has the same format as the <span class="dv_cmd">server</span>.</p>
+   <p>If you wish to configure this server disregarding the host names in the requests, then set <span class="dv_cmd">server</span></p>
+   <p>If you wish to run this server as a simple static server, you can specify a field <span class="dv_cmd">baseServer</span> inside the <span class="dv_cmd">server</span>, providing either relative or absolute paths. To specify relative path, you can use . (one dot) to refer to the current directory and
+      .. (two dots) to refer to the parent directory. In the example below we use one dot (.) to have the current folder as the root folder for the static server</p>
+   <p class="dv_subinfo">
+       "listen": ":80", <br/>
+       "server": {"baseFolder": "."}
+   </p>
+   <p>To forward a request to another server, you should specify <span class="dv_cmd">extraServer</span> (you can specify either <span class="dv_cmd">baseFolder</span> or <span class="dv_cmd">extraServer</span> or <span class="dv_cmd">processors</span> or any their combination). </p>
+   <p class="dv_subinfo">
+       "listen": ":80", <br/>
+       "server": {"baseFolder": "/home/Danyil/public","extraServer": "http://localhost:3000"}, <br/>
+   </p>
+   <p>In the example above the search at first will be made in the local folder /home/Danyil/public, but if not found, it will be forwarded to the server 
+      http://localhost:3000 </p>
+   <p>If you wish to configure this server with regard to the host names in the requests (in this case you can specify many root folders: one for each host name),
+     you should use the <span class="dv_cmd">hostServers=[{},{},{},...]</span></p>
+   <p>Inside each {} as well as inside <span class="dv_cmd">server</span> you can specify the fields as follows:</p> 
+   <p class="dv_subinfo _list">
+          hosts <span class="dv_subinfo_extra">(a list of host names comma(or space or semicolon)-separated for which this block is related. This field is ignored if it is in server, not in hostServers</span><br/>
+          baseFolder <span class="dv_subinfo_extra">(a root folder to serve local files: should be empty if not used)</span><br/>
+          rewrites <span class="dv_subinfo_extra">(primary rewrite rules for url: <a href="#task_rewrite">see rewrite rules</a>)</span><br/>
+          extraServer <span class="dv_subinfo_extra">(server name to forward  the request (starting with http:// or https://), should be empty if not used)</span><br/>
+          extraServerSettings <span class="dv_subinfo_extra">(special settings for the extra Server <a href="#task_extra_server_settings">see configure extra server settings</a> )</span><br/>
+          serverRewrites <span class="dv_subinfo_extra">(secondary rewrite rules for url applied before sending to the extra server <a href="#task_rewrite">see rewrite rules</a>)</span><br/>
+          proxyName <span class="dv_subinfo_extra">(the name on behalf of which server forwards requests to the server specified in extraServer. This name will be used as the Referer and Origin parameters in request headers)</span><br/>
+          accessControlAllowOrigin <span class="dv_subinfo_extra">(the origin to be allowed in requests from the browser (combined with extraServer origins if extraServer is used), for example: * - for all)</span><br/>
+          accessControlAllowMethod <span class="dv_subinfo_extra">(for OPTIONS requests: the methods to be allowed in request from the browser (combined with extraServer methods if extraServer is used), for example: GET,POST,DELETE,PUT</span><br/>
+          accessControlAllowHeaders <span class="dv_subinfo_extra">(for OPTIONS requests: the headers to be allowed in request from the browser (combined with extraServer headers if extraServer is used), for example: Authorization</span><br/>
+          accessControlExposeHeaders <span class="dv_subinfo_extra">(the methods to be allowed in reply to the browser (combined with extraServer headers if extraServer is used), for example: Request-Id</span><br/>
+          accessControlMaxAge <span class="dv_subinfo_extra">(for OPTIONS requests:the maximum time in seconds for accessControl info to be kept in the browser (overwrites extraServer MaxAge if non empty), for example: 3600 - 1 hour</span><br/>
+          accessControlAllowCredentials <span class="dv_subinfo_extra">(=true or false. Indicates whether or not the response to the request can be exposed when the credentials flag is true)</span><br/>
+          <a href="#task_processors">processors</a> <span class="dv_subinfo_extra">(custom processors, described later in this document)</span><br/>
+          <a href="providers.html">providers</a> <span class="dv_subinfo_extra">(=the custom written providers )</span><br/>
+          cacheControl <span class="dv_subinfo_extra">(Cache-Control header for this host, example 1: no-cache, no-store, must-revalidate (completely no cache)
+                      example 2: public, max-age=31536000 (maximum cache)</span><br/>
+          directoryIndex <span class="dv_subinfo_extra">(list of file names which are chosen by default, example 1: index.htm, index.html
+                      example 2: $.html, index.html, index.htm)</span><br/>
+          headersStatic <span class="dv_subinfo_extra">Additional headers for static part of the server (not for OPTIONS method) {"key1":"value1","key2":"value2",...}</span><br/>
+          headersExtraStatic <span class="dv_subinfo_extra">Additional headers for the extra server (not for OPTIONS method) {"key1":"value1","key2":"value2",...}</span><br/>
+          headersStaticOptions <span class="dv_subinfo_extra">Additional headers for static part of the server (for OPTIONS method only) {"key1":"value1","key2":"value2",...}</span><br/>
+          headersExtraStaticOptions <span class="dv_subinfo_extra">Additional headers for the extra server (for OPTIONS method only) {"key1":"value1","key2":"value2",...}</span><br/>
+          <a href="template.html">templates</a> <span class="dv_subinfo_extra">Templates provide the opportunity to connect the static content 
+                with the environment variables and custom variables with their custom implementation in golang</span>
+   </p>  
+   <p class="dv_subinfo">
+       "listen": ":80", <br/>
+       "hostServers": [{"hosts":"www.example.com www.example1.com","baseFolder":"C:/Users/Danyil/MicroCore/accounts","extraServer":"http://localhost:8080"},
+                       {"hosts":"api.example.com","extraServer":"http://api.mycompany.com","proxyName": "www.mycompany.com","accessControlAllowOrigin":"www.example.com www.example1.com"}], <br/>
+       "server": {"baseFolder": "."}
+   </p>
+   <p> 
+       In the exampe above, if a requested host is either www.example.com or www.example1.com, at first the search will be in the C:/Users/Danyil/MicroCore/accounts as a root folder,
+      but if not found, it will be forwarded to http://localhost:8080. <br/>
+      If a requested host is api.example.com, the requests will be forwarded to http://api.mycompany.com, and in the requests the Origin and Reference will be replaced as if the
+      requests are made from www.mycompany.com and the browser will also receive the information, that hosts names www.example.com www.example1.com are valid origins for cross-domain requests.<br/>
+      If the host is not in the above (www.example.com www.example1.com api.example.com), they will be served as static server requests to the current folder (disregarding the host).
+   </p>
+   <p>You can write your own modules, processors and providers in golang and compile them together.
+   </p>
+   <p>
+       Modules can be run at specific urls. There are some ready modules: crud, license
+    </p> 
+    <p> Processors can be run for files with specific file name extensions
+      There are some ready processors:  gotemplate, dvtemplate, hidefile
+   </p>
+   <p>
+       Providers can provide specific information for templates.
+       There are some ready providers: geolocation, which can provide information about
+       the country, country code, continent, ip of the current user    
+   </p>    
+</div>
+<h3 id="task_rewrite">Task: rewrite urls </h3>
+<div>
+   <p>You can specify rewrites in <span class="dv_cmd">rewrites</span> or <span class="dv_cmd">serverRewrites</span> in within <span class="dv_cmd">server</span> or within 
+       <span class="dv_cmd">hostServers</span></p>
+   <p> Rewrites has the format as follows: <span class="dv_cmd">"rewrites":[{"url":"url to be replaced","src":"replacing source"},{"url":"url to be replaced","src":"replacing source"},...]</span></p>
+   <p class="dv_subinfo _list">
+          from <span class="dv_subinfo_extra">(it can be either exact url or url with the asterisk(*) at the end. The asterisk at the end means that the rest of this request is replaced too</span><br/>
+          to <span class="dv_subinfo_extra">(a new url, the source replacing the url)</span><br/>
+          conditions <span class="dv_subinfo_extra">(optional, the expression which is required to be true for this rewrite)</span><br/>
+          options <span class="dv_subinfo_extra">(options (optionally), for example 301,302,404 return the status immediately)</span><br/>
+   </p>
+   <p>Example</p>  
+   <p class="dv_subinfo">
+       "listen": ":80", <br/>
+       "hostServers": [{"hosts":"www.example.com","serverRewrites":[{"from":"/login*","to":"/"}],"baseFolder":"C:/Users/Danyil/MicroCore/accounts","extraServer":"http://localhost:8080"}], <br/>
+       "server": {"baseFolder": ".", "rewrites": [{"from":"/login*","to":"/"},{"from":"/accounts/*","to":"/"}]}
+   </p>
+</div>
+<h3 id="task_processors">Task: configure custom processors </h3>
+<div>
+  <p>
+   Inside the server or hostServers you can specify custom processors. There are some 
+   custom processors already included in this package, but you can also write your own custom
+   processors in the go language. 
+  </p>
+  <p>For example</p>
+  <p class="dv_subinfo">
+      "server": { ...
+         "processors": [
+               {}
+         ]
+      }
+  </p>
+</div>
+<h3 id="task_extra_server_settings">Task: configure special settings for the extra server</h3>
+<div>
+  <p>You can configure special settings for the <span class="dv_cmd">extraServer</span> by providing the <span class="dv_cmd">extraServerSettings</span> field in the <span class="dv_cmd">server</span> or <span class="dv_cmd">hostServers</span></p>
+   <p class="dv_subinfo _list">
+     maxIdleConnections <span class="dv_subinfo_extra">(integer number (not quoted), maxIdleConnections controls the maximum number of idle (keep-alive) connections across all hosts. Zero (default) means no limit.)</span><br/>
+     idleConnectionTimeout <span class="dv_subinfo_extra">(number of seconds (not quoted), is the maximum amount of time in seconds an idle (keep-alive) connection will remain idle before closing
+                   itself. Zero (default) means no limit.)</span><br/>
+     disableCompression <span class="dv_subinfo_extra">(true or false (default) (not quoted), DisableCompression, if true, prevents the server from
+                 requesting compression with an "Accept-Encoding: gzip"
+                 request header when the Request contains no existing
+                 Accept-Encoding value. If the server requests gzip on
+                 its own and gets a gzipped response, it's transparently
+                 decoded. </span><br/>
+     disableKeepAlives <span class="dv_subinfo_extra">(true or false (default)(not quoted), disableKeepAlives, if true, prevents re-use of TCP connections
+                    between different HTTP requests.</span><br/>
+     maxIdleConnectionsPerHost <span class="dv_subinfo_extra">(MaxIdleConnsPerHost, if non-zero, controls the maximum idle
+                    (keep-alive) connections to keep per-host. The default is 2.)</span><br/>
+     responseHeaderTimeout <span class="dv_subinfo_extra">(integer number of seconds (not quoted), responseHeaderTimeout, if non-zero, specifies the amount of
+                   time in seconds to wait for a server's response headers after fully
+                   writing the request (including its body, if any). This
+                   time does not include the time to read the response body. )</span><br/>
+     expectContinueTimeout <span class="dv_subinfo_extra">(integer number of seconds (not quoted), expectContinueTimeout, if non-zero, specifies the amount of
+                    time to wait for a server's first response headers after fully
+                    writing the request headers if the request has an
+                    "Expect: 100-continue" header. Zero means no timeout and
+                    causes the body to be sent immediately, without
+                    waiting for the server to approve.
+                    This time does not include the time to send the request header.)</span><br/>
+     hostHeader <span class="dv_subinfo_extra">for external server, it is the Host header. If it is "-",  the present header is kept, if it is "", the header is taken from the server's url</span><br/>
+   </p>
+   <p>Example</p>  
+   <p class="dv_subinfo">
+       "listen": ":80", <br/>
+       "hostServers": [{"hosts":"www.example.com","extraServer":"http://localhost:8080","extraServerSettings":{"responseHeaderTimeout":60}}], <br/>
+       "server": {"extraServer":"http://localhost:3000","extraServerSettings":{"disableCompression":true,"disableKeepAlives":true}}
+   </p>
+
+</div>
+
+<h3 id="folder_management">Folder management</h3>
+<div>
+<p>
+MicroCore uses variables from the system environment as well as your custom variables stored in MicroCore.properties.
+Variables can be used in any configuration files (MicroCore.conf) as well as in templates.
+In addition, MicroCore uses the configuration file MicroCore.conf.
+</p>
+<p>
+At first, system environment variables are loaded and then file MicroCore.properties is looked for.
+The search for this file is made in the current directory first. If not found and you set MICRO_CORE_PATH variable in your environment,
+with the name of the path, the search for this file is made in that directory. If not found, the search is made in 
+your namespace directory. If you specify MICRO_CORE_CURRENT_NAMESPACE, the directory name will be 
+{user-folder}/MicroCore/{namespace}. If you do not provide MicroCore.properties file, only environment variables are used.
+</p>
+<p>
+MicroCore.properties file is optional. Its structure is as follows:
+</p>
+<pre>
+#   comment
+key1=value1
+key2=value2
+   ...
+</pre>
+<p>
+Character \ is used as an escape character, so to place \, you should use \\. If you wish to specify = in the key, you should use \=.
+If a line starts with #, it is considered as a comment. If a not comment line does not have = or if the key is empty, it is 
+considered as an error. You can also you <a href="documents.html"># directives(#include #if #else #endif #define...)</a> in your MicroCore.properties file.
+</p>
+<p>
+If you specify MICRO_CORE_CURRENT_NAMESPACE in your MicroCore.properties file, it will override your namespace name for the other 
+use of the namespace.
+</p>
+<p>
+Your configuration file MicroCore.conf is also optional, but if you do not provide it, the functionality will be very basic: just
+a static server will run on the current folder and listening on port 80. So, to use the full strength of MicroCore, it is desirable
+to create a config, the structure of this config is described above in this document. At first, the search for MicroCore.conf is made
+in the current folder. If not found, in the folder {user-folder}/MicroCore/{namespace}. If you specify to create logs for the work
+of MicroCore, they will be placed in {user-folder}/MicroCore/{namespace}/LOGS folder.
+</p>
+<p>If you are not sure whether your config MicroCore.conf is correct after the application of all variables and # directives,
+you can specify DEBUG_CONFIG_SAVE_FILENAME variable and the resulted config will be written to this file name, if it is a valid file name.
+</p>
+<p>
+ If you would like to see global variables at the log, specify logging level at least info, and logging area should include "config".
+</p>
+</div>
+
+</div>

@@ -1,0 +1,60 @@
+<h1>URL definitions</h1>
+<div>
+When urls are described, you can just specify the whole url as it is,
+<p>for example</p>
+<p>/api/v1/users</p>
+You can also specify special characters: &lt;, !, *, ?, ** and regular expressions
+</div>
+<div>
+Character ! is considered only when it stands at the beginning and
+it means negation, that is, inversion of  the result
+<p>For example:</p>
+<p>!/api/v2/**</p>
+It means all urls except those starting with "/api/v2/"
+</div>
+<div>
+    Character &lt; is used only in the beginning and it means
+    case sensitive match
+    &lt;/api/v1 will result in match for any /api/v1 /API/v1 /API/V1
+</div>
+<div>
+Characters *, ? are considered as wild cards.
+<p>? stands for any single character except the slash</p>
+<p>* stands for zero or any number of characters except the slash</p>
+<p>** stands for zero or any number of characters (even including the slash)</p>
+    <p>That is, /a*i/v1 can mean /api/v1, /appli/v1 but does not mean /a/i/v1.</p>
+<p>** stands for zero or any number of characters including slashes.
+It means that /a**i/v1 can mean /ai/v1, /api/v1, /a/d/b/i/v1
+</p>
+</div>
+<div>
+<p>
+    Regular expressions can be either in back quotes (`regular expression`)
+    or within ^ and  $ (^expression$). In case of back quotes, the back quotes themselves
+    are excluded from the match. In case of ^ $, they are considered as a part of the
+    regular expression. If you do not close a back quote, a warning will
+    be issued, but it will be considered that the final back quote stands at the end. If you do not close ^, it
+    will be considered that the ending $ stands at the end, and a warning will be issued.
+</p>
+<p>
+    Example of valid urls:
+    <strong>/api/v`[1234]`/users</strong> <br/>
+    stands for /api/v1/users  /api/v2/users /api/v3/users /api/v4/users
+    <br/>
+    The url above is the same as `/api/v[1234]/users`, but the first version is preferred, because
+    the last regular expression will be verified against all urls, but the first one only for those starting with '/api/v'.
+</p>
+<p>
+   You can also use {name} insertions, which acts in the same way as ?* but can be used to get named variables
+    from the url. For example, /api/v1/users/{id}
+</p>
+<p>
+    You can also use {{{expressions}}} to include expressions to be calculated at the start of the server
+    on the basis of environment variables or {{expressions}} to be calculated at the time of the request.
+</p>
+<p>
+    You can use any combinations of the above features without any limitations. At the same time, if you
+    minimize the number of regular expressions and place a fixed part at the end and at the beginning,
+    it will be much faster to process your url matches.
+</p>
+</div>

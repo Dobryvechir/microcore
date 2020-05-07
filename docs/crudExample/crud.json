@@ -1,0 +1,14 @@
+{
+    "entities": [
+          {
+             "url": "account",
+              "idName": "id",
+              "idType": "int",
+              "options": "",
+              "idPrefix": ""
+          },
+          {
+             "url": "user"
+          }
+    ]
+}

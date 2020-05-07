@@ -1,0 +1,75 @@
+1. INTRODUCTION
+It is possible to pre-execute some queries or upload data from .csv files (in specific formats)
+in advance at the time when microcore restarts. 
+If you want to do so, a special folder must be created anywhere in the system available for microcore,
+we will call this folder a root preexecution folder.
+The folder must contain subfolders by the name of connection. 
+Inside those folders there must be either folders V1, V2, V3, ... where the number means the version
+or folders common..., which are executed all the time at the start of microcore.
+Queries are executed only once. So, if you wish to execute new query, you should create a new folder V<number>.
+Inside those queries can be subfolders and queries inside them are executed in the alphabetic order of
+the file names. 
+If the file name contains .postgre.sql or .oracle.sql, or any other .[alphabetical lower-case word].sql,
+queries are executed only for specific sql. 
+The last executed version is stored in the database.
+
+2. PREEXECUTION MANAGEMENT THRU VARIABLES
+The following variables are used to manage the pre-execution:
+To store the last version, a special table is created, which is determined by the variable as follows:
+DB_LOCAL_STORAGE_TABLE=R_STORAGE_LOCAL(id varchar primary,name varchar)
+
+To list all connections where the pre-execution must take place, you need to specify the 
+variable DB_CONNNECTION_INIT as follows, for example:
+DB_CONNECTIONS_INIT=TM, PM
+If the above variable is empty, pre-execution does not take place at all (it is not an error).
+But if this variable is set
+The following variable specify the root preexecution folder mentioned in the introduction above. 
+DB_ROOT_PREEXECUTION_FOLDER=<folder name>
+Each connection must be described as follows (it is not only for prexecution, but also for the work
+with database in general - you can read in detail in ./connections.html:
+DB_CONNECTION_TM=oracle,<init string>
+DB_CONNECTION_PM=postgre,<init string>
+
+3. VERSIONS USED TO PREVENT REPEATED EXECUTIONS
+Inside the root preexecution folder must be subfolders called the same as connection names.
+And inside those folder must be folders with names V<version>, for example, V1, V2, V3,...
+or folders started with prefix "common". Scripts in folders started with prefix "common" are executed
+always. 
+For the convenience version can consist of up to 4 parts separated by dot (.), dash(-) or some
+other allowed separator. 
+For example, you can organize the following folders, which will be executed in the order as follows:
+V0.0.0.1
+V0.0.1
+V0.0.2
+V1
+V1.0
+V1.1
+V2.2
+V2.2.3
+
+The first version can be full zero. (V0 or V0.0 or V0.0.0 or V0.0.0.0 are never executed).
+There is also one limitation:
+Each number must be within the range of 0 to  65535
+So, the maximum allowed version is V65535.65535.65535.65535
+The first letter V can be in either upper or lower case (V or v).
+Separators can be any strings which are not digits and allowed in file name.
+For example, 
+  v---1---0---Folder-where-the-initial-sqls-are-stored
+is a valid folder name with version 1.0
+
+4. LOGGING
+
+You can log the preexecution as follows:
+There is a special variable, which determines the logging level
+DVLOG_PREEXECUTION_LEVEL=...
+By default, it has none level.
+The following levels are used:
+none - no messages are logged. At the same time, the error is returned out of the preexecution module and 
+        can be logged there. This is the default behaviour.
+error - only error messages are shown in log. 
+warning - in addition, folders with versions are logged
+info - in addition, each file name executed is logged, every file passed or omitted is logged
+details - in addition, each sql in .sql file is logged and table names in .csv files
+debug - in addition, each sql due to .csv is logged
+trace - in addition, every detail is logged
+

@@ -1,0 +1,16 @@
+The microcore can work with many databases simultaneously.
+You must describe the connection to each database.
+Each connection to a specific database must have a unique name.
+For example, TM, PM, ... .
+When any sql is executed, the corresponding connection name is specified.
+There is a pool of connections for each specific connection.
+Each connection must be described as follows:
+DB_CONNECTION_<connection name>=<database name>,<init string>
+For example:
+DB_CONNECTION_TM=oracle,<init string>
+DB_CONNECTION_PM=postgre,postgres://postgres@localhost/u32?sslmode=disable
+DB_CONNECTION_MY=mysql,user:password@/dbname
+As for init string, you can consult the specific golang sql driver.
+You must connect the driver by yourself in the main go module you use.
+In microcore/src/main you can learn how to connect postgress and oracle drivers.
+

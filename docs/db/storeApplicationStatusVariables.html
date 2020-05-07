@@ -1,0 +1,6 @@
+There is a special table created for each database connection to store 
+some string values by keys. Dvserver uses this for its own purpose, but your application
+can also use it.
+In particular, the following variables are stored by microcore itself:
+DB_PREEXECUTE_VERSION_TM = the last stored version when preexecution is made.
+If you wish to preexecute from the beginning, you can remove this variable.

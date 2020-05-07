@@ -1,0 +1,34 @@
+﻿<!DOCTYPE html>
+<html ng-app="integral">
+<script src="/js/angular.js"></script>
+<script>
+  var app = angular.module("integral",[]);
+</script>
+<script src="/js/geolocationFactory.js" charset="utf-8"></script>
+<script src="/js/integralMinDirective.js"  charset="utf-8"></script>
+<script src="/js/integralMathDirective.js"></script>
+
+<style>
+   .infa span {
+      color:green;
+   } 
+</style>
+<body>
+<integral-math>
+  <p class="infa">Account number: <span>{{geolocation.cities.length}}</span> Total: <span>{{geolocation.pidsumok()}}</span></p>
+
+  <div ng-repeat="misto in geolocation.cities track by $index" style="width:200px;height:30px;background-color:yellow;border-radius:15px;margin:10px;padding:15px 15px 10px;display:inline-block">
+      <span style="color:blue"><input placeholder="Name" type="text" ng-model="misto.name" style="width:100px" /></span>
+      <span style="color:green"><input placeholder="Amount" type="text" ng-model="misto.amount" style="width:60px" /></span>
+      <span style="color:red;cursor:pointer" ng-click="geolocation.deleteCity($index)">X</span>
+      <span style="color:green;cursor:pointer" ng-click="geolocation.updateCity($index)">SAVE</span>
+  </div>
+</integral-math>
+<integral-min>
+  <div>
+     <button ng-click="knopka.addCities()">Add new account</button>
+  </div>
+  <div> {{knopka.message}} </div>
+</integral-min>
+</body>
+</html>

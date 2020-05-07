@@ -1,0 +1,1 @@
+dvadmin.exe regadd_2 HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\Tcpip\Parameters~SZ~SearchList  dat1.com,dat2.com

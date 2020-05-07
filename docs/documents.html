@@ -1,0 +1,24 @@
+<h2>Directives</h2>
+<h3>Overview</h3>
+<div>
+<p>Every config and template can have the following directives, which are the same as in C++ language.</p>
+<p>#if, #else, #elif #endif, #ifdef, #ifndef (also #elifdef, #elifndef) conditional operators</p>
+<p>all #if, #ifdef, #ifndef can go together with all #elif, #elifdef, #elifndef, #else</p> 
+<p>#define #undef                                define a new variable or undefine</p>
+<p>#error                                        generate error</p>
+<p>#include "filename" or #include &lt;filename&gt; or #include filename  includes other files</p>
+<p>{{{expression}}} the expression is immediately inserted in the text upon loading, based on the
+current availabe variables.</p>  
+<p>Comments can be started with # at the beginning of line </p>
+</div>
+<h3>include directive</h3>
+<div>
+<p>#include includes another file into the config or template as if it was directly inserted into the text</p>
+<p>If the file name starts with ./ or ../, then the search is made first relative to the present source file. </p>
+<p>If the path is absolute (starts with X:\ or X:/ or /), the search is made only in those absolute paths.</p>
+<p>The filename can be placed inside double quotes or within &lt; &gt; brackets.</p>
+<p>If the filename is placed in double quotes and the path is relative and not starting with ./ or ../, the search is made in the beginning from the current directory of the main config, then in internal directories, then in the current folder.</p>
+<p>If the filename is placed in &lt; &gt; brackets and the path is relative and not starting with ./ or ../, the search is made only in internal directories and current folder.</p>
+<p>In both cases, if the file is not found, the error is generated.</p>
+<p>If the filename is not placed in any quote or brackets, the search is made as if it were in double quotes, but if the file has not been found, it is ignored.</p>
+</div>

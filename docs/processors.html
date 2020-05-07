@@ -1,0 +1,79 @@
+<style>
+  .dv_cmd {
+     color: blue;
+  }
+  .dv_subinfo {
+     color: green;
+     padding-left: 40px;
+  }
+  .dv_subinfo._list {
+     color: blue;
+  }
+  .dv_subinfo_extra {
+     color: brown;
+  }
+  div p span {
+     color: green;
+  }
+</style>
+<div class="dv_accordion">
+<h3>Templates</h3>
+<div>
+ <p>
+   Processors provide the opportunity to change the processings for 
+   specific urls with their custom implementation in golang.
+  </p>
+  <p> 
+   It is possible to activate processors on each individual server.
+   Inside the <span>server</span> or <span>hostServers</span> you can specify the <span>templates</span>
+   and provide the following description:
+   "processors" :[{
+       "name" : "name of the registered processor",
+       "urls" : "urls as described below",
+       "params": ["param 1","param 2",...]
+   }, ...]
+ </p>
+ <p>   <span>urls</span> is a list of urls
+         urls can be separated with spaces or semicolon
+ </p>
+ <p>   Each url can be represented as a specific url: "/api/v1/users"
+       or contain wild characters: "/api/**/index?.*"
+ </p>
+ <p> ? means any single character. For example,"/api/v??" can be used
+    for "/api/v01", "/api/vaa", ...
+ </p>
+ <p> * means any (zero or many) characters and can be used inside each
+      url part once (if you use many, the others
+    will be considered just as ?).
+ </p>
+ <p> ** can be used only once for a whole url, meaning that it can
+    cover many url parts. If you specify some **, only the first one
+    will be used as **, the other ** will be considered just as *?.
+ </p>
+ <p> for a url part, you can also specify regex in `` brackets or
+    starting with ^. For example, "/api/`v[0-9]+`" stands for "/api/v1",
+    "/api/v2","/api/v10", ... 
+  </p>
+ <p>    <span>params</span> are specific for each processor
+ </p>
+ <p> There are some ready processors: "hidefile" and "template".
+   For example, to hide some files from access, you can write as follows:
+   "processors": [
+       {
+          "name": "hidefile",
+          "urls": "*.properties; /private/"
+       } 
+   ]
+   This option will hide files having extension "properties" or 
+   inside the folder "private".
+ </p>
+ <p>
+  "!" at the beginning defines the exclusion.
+  It is also possible to exclude some urls from defined previously.
+  "*.properties; !/private/ ; *.txt" - in this example all *.properties
+  are chosen except for the private folder, and all *.txt files
+  without any exceptions. 
+ </p>  
+</div>
+
+</div>

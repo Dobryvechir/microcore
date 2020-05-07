@@ -1,0 +1,91 @@
+<style>
+  .dv_cmd {
+     color: blue;
+  }
+  .dv_subinfo {
+     color: green;
+     padding-left: 40px;
+  }
+  .dv_subinfo._list {
+     color: blue;
+  }
+  .dv_subinfo_extra {
+     color: brown;
+  }
+  div p span {
+     color: green;
+  }
+</style>
+<div class="dv_accordion">
+<h3>geolocation provider</h3>
+<div>
+  <p>
+     One of the providers is geolocation, which determines
+     the country for the current user and provides it in variables.
+  </p>
+  <p> At the root config level you must specify the global properties
+     of the geolocation provider, as follows:
+      "providers": {
+           "geolocation" : {
+               "dictionaryPath": "the path (relative or absolute)",
+           } 
+      }
+  <p> 
+   It is possible to activate geolocation providers on each individual server.
+   Inside the <span>server</span> or <span>hostServers</span> you can specify the <span>providers</span>
+   and provide the following description:
+   "providers" : [{
+       "name" : "geolocation",
+       "urls" : "optional urls as described below"
+   }]
+ </p>
+ <p>   <span>urls</span> is a list of urls
+         urls can be separated with spaces or semicolon.
+         If urls are not specified, all urls will be valid.
+ </p>
+ <p>   Each url can be represented as a specific url: "/api/v1/users"
+       or contain wild characters: "/api/**/index?.*"
+ </p>
+ <p> ? means any single character. For example,"/api/v??" can be used
+    for "/api/v01", "/api/vaa", ...
+ </p>
+ <p> * means any (zero or many) characters and can be used inside each
+      url part once (if you use many, the others
+    will be considered just as ?).
+ </p>
+ <p> ** can be used only once for a whole url, meaning that it can
+    cover many url parts. If you specify some **, only the first one
+    will be used as **, the other ** will be considered just as *?.
+ </p>
+ <p> for a url part, you can also specify regex in `` brackets or
+    starting with ^. For example, "/api/`v[0-9]+`" stands for "/api/v1",
+    "/api/v2","/api/v10", ... 
+  </p>
+ <p>    <span>params</span> are specific for each processor
+ </p>
+ <p>
+  "!" at the beginning defines the exclusion.
+  It is also possible to exclude some urls from defined previously.
+  "*.properties; !/private/ ; *.txt" - in this example all *.properties
+  are chosen except for the private folder, and all *.txt files
+  without any exceptions. 
+ </p>  
+ <p>
+ USER_COUNTRY_CODE
+ USER_COUNTRY_NAME
+ USER_CONTINENT_NAME
+AF	Africa
+AN	Antarctica
+AS	Asia
+EU	Europe
+NA	North America
+CA      Central America
+OC	Oceania
+SA	South America 
+USER_COUNTRY_LOCALE
+USER_COUNTRY_LOCALES
+USER_IP
+ </p>
+</div>
+
+</div>

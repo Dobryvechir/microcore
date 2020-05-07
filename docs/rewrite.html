@@ -1,0 +1,29 @@
+
+1. Make abstract interface to url conversion (for rewrite in mind) in dvurl
+- If anything from regexp is inserted $1, $2 and so on is used to insert
+previous values
+- regexp can be used in the url part
+- * can be used in the url part
+- foresee the return part, to include expression substitutions with precompiled
+structure with 2 brackets
+2. Remake rewrite to use dvurl package, condition and options
+-. Add condition (which may be specified for rewrite), make it possible
+   to specify any condition, including regular expressions
+-. Make possibility to throw 301, 302,404 redirect in rewrite
+- in conditions and options variables able can be declared on the config level
+and which at the immediate execution level
+- Check that 302 redirect is send to the frontend, and is not done
+automatically
+3. instead of proxyName set extraServerHeaders:[{key:"",value:"",condition:""}]
+and inside them variables can be used
+ - check that redirection works properly
+
+4. Implement universal content-delivery that it can be adjusted to any
+such conditions as frontend/backend proxy
+- universal security
+- universal access to dbaas
+- universal cache
+- universal structure to CRUD with specific parameters
+- universal config description for content-delivery
+5. Praise the Lord!
+  

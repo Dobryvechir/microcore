@@ -1,0 +1,28 @@
+At the root config level, it is possible to initialize 2 paths:
+"modules": {
+  "crud": {
+    "configPath": "path to the folder where config resides"
+    "dataPath": "path to the folder where data resides"
+  }
+}
+If they are not initialized, they default to ~/microcore/CRUD
+
+For each server where crud module should be used, specify "modules" as follows 
+
+"modules" : [
+    {
+          "name": "crud",
+          "url": "base url for this crud or empty",
+          "params": ["crud configuration file name"]
+    }
+
+]
+
+Then create this crud configuration file as in the example below:
+{
+    "entities": [
+          {
+               
+          }
+    ]
+}  

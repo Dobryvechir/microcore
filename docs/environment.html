@@ -1,0 +1,46 @@
+<style>
+p {
+  color: blue;
+}
+span {
+    color: yellow;
+}
+p > span:first-child {
+   color: green
+}
+</style>
+<h2>Environment variables</h2>
+<div>
+<p>Prefix <span>MICROCORE_</span> can be changed by command line parameter -DMICROCORE=newValue
+</p>
+<p>Any environment variable can be set either as usual environment variable as follows:</p>
+<p><span>SET MICROCORE_PATH=/dvv/var</span></p>
+<p><span>SET MICROCORE_DVNET_LOG=true</span></p>
+<p>or in the command line as follows (which has priority over environment):</p>
+<p><span>microcore  &nbsp; -DMICROCORE_PATH=/dvv/var &nbsp; -DMICROCORE_DVNET_LOG=true</span></p>
+<p>or in microcore.properties file, which has the highest priority. In microcore.properties you can check #ifndef, #ifdef before setting any variable</p>
+</div>
+<h3>dvparser</h3>
+<div>
+<p><span><span>MICROCORE_</span>PATH</span> a path where microcore.properties is sought if not found in the current directory</p>
+</div>
+<h3>dvnet</h3>
+<div>
+<p><span><span>MICROCORE_</span>DVNET_LOG</span> if set to "true", it logs all net request parameters</p>
+<p><span></span></p>
+<p><span></span></p>
+<p><span></span></p>
+</div>
+<h3>dvcrypt</h3>
+<div>
+<p><span><span>MICROCORE_</span>DVCRYPT_ENCODING_PATTERN</span> 32-character word of Latin letters and digits used in additional non-secure encoding/decoding</p> 
+<p><span><span>MICROCORE_</span>DVCRYPT_KEY_FOLDER</span> a path to the folder where public/private keys are stored, by default "/etc/secrets"</p>
+<p><span></span></p>
+<p><span></span></p>
+<p><span></span></p>
+
+</div>
+<p><span></span></p>
+<p><span></span></p>
+<p><span></span></p>
+<p><span></span></p>
