@@ -31,7 +31,7 @@ func FindInGeneralPaths(name string) string {
 	}
 	for _, v := range GeneralFilePaths {
 		filename := v + "/" + name
-		if _, err := os.Stat(filename); err == nil {
+		if info, err := os.Stat(filename); err == nil && !info.IsDir() {
 			return filename
 		}
 	}

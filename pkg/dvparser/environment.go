@@ -5,6 +5,7 @@ Copyright 2020-2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gm
 package dvparser
 
 import (
+	"log"
 	"os"
 	"strings"
 )
@@ -64,9 +65,8 @@ func ReadPropertiesInEnvironment(name string) map[string]string {
 		}
 	}
 	if name == "" {
-		panic("properties file must be either *.properties in current folder or specified in environment variable " + MicroCorePrexix + MicroCorePathSuffix)
-	}
-	if _, err := os.Stat(name); err != nil {
+		log.Printf("No properties file: neither %s nor %s\n", MicroCorePropertiesInCurrentFolderFileName, MicroCorePrexix + MicroCorePathSuffix)
+	} else if _, err := os.Stat(name); err != nil {
 		panic("Properties file " + name + " not found")
 	}
 	return ReadPropertiesOrPanic(name)
