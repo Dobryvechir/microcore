@@ -1,20 +1,19 @@
-/***********************************************************************
-MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+// Package dvconfig manages configuration for http server
+// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 package dvconfig
 
 import (
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvmeta"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvprocessors"
 	"github.com/Dobryvechir/microcore/pkg/dvproviders"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 func prepareComRewriteMap(rewrites []DvRewrite) dvmeta.RewriteMap {
@@ -128,6 +127,7 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvmeta.MicroCoreInfo {
 	return dvServerInfo
 }
 
+// ProcessBaseFolder sets up the http server using information for all requested servers
 func ProcessBaseFolder(server *DvHostServer, hostServers []DvHostServer) {
 	if server != nil || len(hostServers) > 0 {
 		defaultServerInfo := prepareMicroCoreInfo(server)

@@ -12,6 +12,8 @@ import (
 
 var MicroCorePrexix = "MICROCORE_"
 var MicroCorePathSuffix = "PATH"
+
+// MicroCorePropertiesInCurrentFolderFileName is a main property file name, which can be customized
 var MicroCorePropertiesInCurrentFolderFileName = "MicroCore.properties"
 var globalCommandLine []string
 var globalPremap = makePremapOfEnvironment()
@@ -65,7 +67,7 @@ func ReadPropertiesInEnvironment(name string) map[string]string {
 		}
 	}
 	if name == "" {
-		log.Printf("No properties file: neither %s nor %s\n", MicroCorePropertiesInCurrentFolderFileName, MicroCorePrexix + MicroCorePathSuffix)
+		log.Printf("No properties file: neither %s nor %s\n", MicroCorePropertiesInCurrentFolderFileName, MicroCorePrexix+MicroCorePathSuffix)
 	} else if _, err := os.Stat(name); err != nil {
 		panic("Properties file " + name + " not found")
 	}
@@ -77,14 +79,27 @@ func SetMicroCorePrefix(prefix string) {
 		panic("MICROCORE prefix cannot be empty")
 	}
 	c := prefix[0]
-	if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
-		panic("MICROCORE prefix must start with a Latin letter")
+	if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_') {
+		panic("MICROCORE prefix must start with a Latin letter or underscore")
 	}
-	c = prefix[len(prefix)-1]
+	n := len(prefix)
+	for i := 0; i < n; i++ {
+		c := prefix[i]
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_' || c >= '0' && c <= '9') {
+			panic("MICROCORE prefix contain only Latin letters, underscore and digits")
+		}
+	}
+	c = prefix[n-1]
 	if c != '_' {
 		prefix += "_"
 	}
 	MicroCorePrexix = prefix
+}
+
+// SetPrefixesByApplicationName must be called at start of the application to customize prefixes and property file names
+func SetPrefixesByApplicationName(name string) {
+	MicroCorePropertiesInCurrentFolderFileName = name + ".properties"
+	SetMicroCorePrefix(strings.ToUpper(name))
 }
 
 func GetCommandLine() []string {

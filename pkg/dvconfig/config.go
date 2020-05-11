@@ -1,12 +1,15 @@
-/***********************************************************************
-MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+// Package dvconfig provides configuration management for the http server
+// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 package dvconfig
 
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
+
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvjsmaster"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
@@ -16,21 +19,27 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvprocessors"
 	"github.com/Dobryvechir/microcore/pkg/dvproviders"
-	"io/ioutil"
-	"log"
-	"os"
-	"strings"
 )
 
+// LogConfig specifies whether message from package dvconfig must be logged
 var LogConfig bool
+
+// GlobalProperties stores initial properties from environment and properties files
 var GlobalProperties map[string]string
 
-const MICRO_CORE_CONFIG = "MicroCore.conf"
-const MICRO_CORE_PROPERTIES = "MicroCore.properties"
-const MICRO_CORE_PATH = "MICRO_CORE_PATH"
-const MICRO_CORE_NAMESPACE = "MICRO_CORE_CURRENT_NAMESPACE"
-const DV_CONFIG_DEBUG_WRITE = "DEBUG_CONFIG_SAVE_FILENAME"
+// MicroCoreConfig is the config file name for http server, which can be customized by application
+var MicroCoreConfig = "MicroCore.conf"
 
+// MicroCorePath is an environment variable name to specify a folder where config and other info is stored
+var MicroCorePath = "MICRO_CORE_PATH"
+
+// MicroCoreNameSpace is an environment variable name to specify the namespace, which is used for creation a folder inside the global work folder
+var MicroCoreNameSpace = "MICRO_CORE_CURRENT_NAMESPACE"
+
+// debugWriteName is an environment variable specifying where to store config file in case of failure to parse it for debug purposes
+const debugWriteName = "DEBUG_CONFIG_SAVE_FILENAME"
+
+// DvRewrite describes the url rewriting parameters
 type DvRewrite struct {
 	From      string `json:"from"`
 	To        string `json:"to"`
@@ -38,6 +47,7 @@ type DvRewrite struct {
 	Options   string `json:"options"`
 }
 
+// DvHostServer collects all parameters for a specific host server
 type DvHostServer struct {
 	Hosts                         string                         `json:"hosts"`
 	BaseFolder                    string                         `json:"baseFolder"`
@@ -66,6 +76,7 @@ type DvHostServer struct {
 	HostHeader                    string                         `json:"hostHeader"`
 }
 
+// DvConfig is a full structure of the config for http server
 type DvConfig struct {
 	Namespace      string                       `json:"namespace"`
 	Listen         string                       `json:"listen"`
@@ -83,13 +94,24 @@ type DvConfig struct {
 	Providers      map[string]map[string]string `json:"providers"`
 }
 
+// CurrentDir is a current folder where the application started
 var CurrentDir string
 
+// SetApplicationName allows to customize all config names, property file names and variable prefixes
+func SetApplicationName(name string) {
+	dvparser.SetPrefixesByApplicationName(name)
+	upName := strings.ToUpper(name)
+	MicroCoreConfig = name + ".conf"
+	MicroCorePath = upName + "_PATH"
+	MicroCoreNameSpace = upName + "_CURRENT_NAMESPACE"
+}
+
+// SaveConfig saves the already-read config for the test purposes
 func SaveConfig(place string, cf *DvConfig) {
 	if place == "" || place == "." {
-		place = CurrentDir + "/" + MICRO_CORE_CONFIG
+		place = CurrentDir + "/" + MicroCoreConfig
 	} else if place == "#" {
-		place = dvlog.GetTaskFolder() + "/" + MICRO_CORE_CONFIG
+		place = dvlog.GetTaskFolder() + "/" + MicroCoreConfig
 	} else {
 		fmt.Printf("To configure, you can specify only . or #, not " + place)
 		return
@@ -107,6 +129,7 @@ func SaveConfig(place string, cf *DvConfig) {
 	}
 }
 
+// ResetNamespaceFolder is used to change the current namespace
 func ResetNamespaceFolder() {
 	namespaceFolder := dvlog.GetPrincipalFolder(false) + "/" + dvlog.CurrentNamespace
 	if _, err4 := os.Stat(namespaceFolder); err4 == nil {
@@ -121,11 +144,11 @@ func ResetNamespaceFolder() {
 }
 
 func setFilePaths() error {
-	if namespace, isOk := dvparser.GlobalProperties[MICRO_CORE_NAMESPACE]; isOk {
+	if namespace, isOk := dvparser.GlobalProperties[MicroCoreNameSpace]; isOk {
 		dvlog.SetCurrentNamespace(namespace)
 	}
 	ResetNamespaceFolder()
-	if path, ok := dvparser.GlobalProperties[MICRO_CORE_PATH]; ok {
+	if path, ok := dvparser.GlobalProperties[MicroCorePath]; ok {
 		if _, err := os.Stat(path); err == nil {
 			if dvparser.GeneralMicroCoreFolderIndex < 0 {
 				dvparser.GeneralMicroCoreFolderIndex = len(dvparser.GeneralFilePaths)
@@ -145,6 +168,7 @@ func readGlobalProperties(currentDir string, propertiesName string) {
 	}
 }
 
+// FindAndReadConfigs finds the config by config name and properties file starting with the current folder
 func FindAndReadConfigs(configName string, propertiesName string) string {
 	var err error
 	CurrentDir, err = os.Getwd()
@@ -157,8 +181,9 @@ func FindAndReadConfigs(configName string, propertiesName string) string {
 	return dvparser.FindInGeneralPaths(configName)
 }
 
+// ReadConfig reads the config and properties by default names for http server
 func ReadConfig() *DvConfig {
-	filename := FindAndReadConfigs(MICRO_CORE_CONFIG, MICRO_CORE_PROPERTIES)
+	filename := FindAndReadConfigs(MicroCoreConfig, dvparser.MicroCorePropertiesInCurrentFolderFileName)
 	cf := &DvConfig{}
 	if filename == "" {
 		cf.Namespace = dvlog.CurrentNamespace
@@ -168,7 +193,7 @@ func ReadConfig() *DvConfig {
 		data, err := dvparser.SmartReadTemplate(filename, 3, byte(' '))
 		if err == nil {
 			dvlog.CleanEOL(data)
-			if saveConfig, okSave := dvparser.GlobalProperties[DV_CONFIG_DEBUG_WRITE]; okSave {
+			if saveConfig, okSave := dvparser.GlobalProperties[debugWriteName]; okSave {
 				err2 := ioutil.WriteFile(saveConfig, data, 0644)
 				if err2 != nil {
 					log.Print("Cannot write resulted config to " + saveConfig + ": " + err2.Error())

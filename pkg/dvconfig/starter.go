@@ -7,6 +7,11 @@ package dvconfig
 
 import (
 	"encoding/json"
+	"log"
+	"net/http"
+	"strings"
+	"sync"
+
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvmeta"
@@ -15,12 +20,9 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvprocessors"
 	"github.com/Dobryvechir/microcore/pkg/dvproviders"
-	"log"
-	"net/http"
-	"strings"
-	"sync"
 )
 
+// ServerStart starts http server, the config and properties are read from the current folder or by other options
 func ServerStart() {
 	cf := ReadConfig()
 	args := dvparser.GetCommandLine()
@@ -58,6 +60,7 @@ func ServerStart() {
 	}
 }
 
+// ProvideServerCommand registers the http server as server for command execution purposes
 func ProvideServerCommand() {
 	dvoc.AddProcessFunction("server", dvoc.ProcessFunction{
 		Init:  processServerInit,
@@ -91,6 +94,7 @@ func processServerRun(data []interface{}) bool {
 	return true
 }
 
+// ServerStartByConfig starts http server by the config provided as parameters
 func ServerStartByConfig(cf *DvConfig) {
 	postConfigInit(cf)
 	serverStartByConfigDirect(cf)
