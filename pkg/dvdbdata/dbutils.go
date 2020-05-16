@@ -7,18 +7,11 @@ package dvdbdata
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"errors"
 	"log"
 	"strings"
-)
-
-const (
-	propertyDefaultKind            = "DB_KIND_"
-	propertyDefaultDb              = "DB_CONNECTIONS_DEFAULT"
-	propertyTableDefinitionName    = "DB_LOCAL_STORAGE_TABLE"
-	propertyTableDefinitionDefault = "R_STORAGE_LOCAL(id varchar(255) primary,name varchar(4000))"
 )
 
 var readPropertySql, readPropertySqlEnd string
@@ -38,10 +31,10 @@ func GetConnectionType(connName string) int {
 	}
 	switch sqlName {
 	case "oracle":
-		r = SQL_ORACLE_LIKE
+		r = SqlOracleLike
 		break
 	case "postgres":
-		r = SQL_POSTGRES_LIKE
+		r = SqlPostgresLike
 	}
 	return r
 }
@@ -260,12 +253,12 @@ func ReadItemsInBatches(db *sql.DB, start string, finish string, ids []string, c
 	var err error
 	for n > 0 {
 		m := n
-		if m > COMMON_MAX_BATCH {
-			m = COMMON_MAX_BATCH
+		if m > CommonMaxBatch {
+			m = CommonMaxBatch
 		}
 		n -= m
-		sql := start + strings.Join(ids[i:i+m], ",") + finish
-		pool, err = AddItemsToPool(db, sql, cols, pool)
+		sqlQuery := start + strings.Join(ids[i:i+m], ",") + finish
+		pool, err = AddItemsToPool(db, sqlQuery, cols, pool)
 		if err != nil {
 			return nil, err
 		}

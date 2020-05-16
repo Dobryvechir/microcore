@@ -9,28 +9,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/Dobryvechir/microcore/pkg/dvcsv"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
+	"strconv"
 	"strings"
 )
-
-const (
-	SQL_ORACLE_LIKE      = 1
-	SQL_POSTGRES_LIKE    = 2
-	COMMON_MAX_BATCH     = 1000
-	COMPLEX_ID_SEPARATOR = "_._"
-)
-
-type TableMetaData struct {
-	Id           string   `json:"id"`
-	Name         string   `json:"name"`
-	Dependencies []int    `json:"dependencies"`
-	IdColumns    []int    `json:"idColumn"`
-	MajorColumn  int      `json:"majorColumn"`
-	Types        []string `json:"types"`
-	Columns      []string `json:"columns"`
-}
 
 func OrderObjectsByHierarchy(objects [][]string, leftObjects map[string]bool,
 	idCol int, depCols []int) ([][][]string, error) {
@@ -84,12 +70,32 @@ func OrderObjectsByHierarchy(objects [][]string, leftObjects map[string]bool,
 	return res, nil
 }
 
-func appendSlashed(b []byte, v []byte) []byte {
+func appendSlashed(b []byte, v []byte, options int) []byte {
+	if (options & SqlPostgresLike) != 0 {
+		return appendSlashedPostgresLike(b, v)
+	}
+	return appendSlashedOracleLike(b, v)
+}
+
+func appendSlashedPostgresLike(b []byte, v []byte) []byte {
 	n := len(v)
 	for i := 0; i < n; i++ {
 		d := v[i]
 		if d == '\'' {
-			b = append(b, '\\', '\'')
+			b = append(b, '\'', '\'')
+		} else {
+			b = append(b, d)
+		}
+	}
+	return b
+}
+
+func appendSlashedOracleLike(b []byte, v []byte) []byte {
+	n := len(v)
+	for i := 0; i < n; i++ {
+		d := v[i]
+		if d == '\'' || d == '\\' {
+			b = append(b, '\\', d)
 		} else {
 			b = append(b, d)
 		}
@@ -106,19 +112,65 @@ func GetComplexIdForItem(row []string, ids []int) string {
 		k := ids[i]
 		if k < n {
 			s += pref + row[k]
-			pref = COMPLEX_ID_SEPARATOR
+			pref = ComplexIdSeparator
 		}
 	}
 	return s
 }
 
+func PlaceStringToSqlQuery(v string, tp string, b []byte, options int) ([]byte, error) {
+	switch tp {
+	case TypeDate:
+		{
+			if len(v) == 0 {
+				b = append(b, NullStringAsBytes...)
+			} else {
+				b = append(b, '\'')
+				b = appendSlashed(b, []byte(v), options)
+				b = append(b, '\'')
+			}
+		}
+	case TypeBool:
+		{
+			if len(v) == 0 {
+				b = append(b, NullStringAsBytes...)
+			} else if dvparser.IsDigitOnly(v) && len(v) == 1 {
+				b = append(b, '\'')
+				b = append(b, []byte(v)...)
+				b = append(b, '\'')
+			} else {
+				return b, fmt.Errorf("not a one-digit number %s of type %s", v, tp)
+			}
+		}
+	case TypeInt, TypeInt64:
+		{
+			if len(v) == 0 {
+				b = append(b, NullStringAsBytes...)
+			} else if dvparser.IsDigitOnly(v) {
+				b = append(b, '\'')
+				b = append(b, []byte(v)...)
+				b = append(b, '\'')
+			} else {
+				return b, fmt.Errorf("not a number %s of type %s", v, tp)
+			}
+		}
+	default:
+		{
+			b = append(b, '\'')
+			b = appendSlashed(b, []byte(v), options)
+			b = append(b, '\'')
+		}
+	}
+	return b, nil
+}
+
 func SavePortionOfItems(items [][]string, sqlTable string, conn *sql.DB, left map[string]bool,
-	columnIds []int, options int, types []string) error {
-	oracleLike := (options & SQL_ORACLE_LIKE) != 0
-	postgresLike := (options & SQL_POSTGRES_LIKE) != 0
+	columnIds []int, options int, types []string) (err error) {
+	oracleLike := (options & SqlOracleLike) != 0
+	postgresLike := (options & SqlPostgresLike) != 0
 	maxBatch := 1
 	if oracleLike {
-		maxBatch = COMMON_MAX_BATCH
+		maxBatch = CommonMaxBatch
 	} else if postgresLike {
 		maxBatch = 5000
 	}
@@ -139,6 +191,9 @@ func SavePortionOfItems(items [][]string, sqlTable string, conn *sql.DB, left ma
 	cn = cn * cols * 80
 	b := make([]byte, 0, cn)
 	count := 0
+	if logPreExecuteLevel >= dvlog.LogTrace {
+		log.Printf("\nInserting %s(%d): %d by %d\n", sqlTable, cols, n, cn)
+	}
 	for j := 0; j < n; j++ {
 		s := items[j]
 		id := GetComplexIdForItem(s, columnIds)
@@ -158,20 +213,28 @@ func SavePortionOfItems(items [][]string, sqlTable string, conn *sql.DB, left ma
 			b = append(b, '(')
 		}
 		count++
+		currCols := len(s)
 		for i := 0; i < cols; i++ {
 			if i != 0 {
 				b = append(b, ',')
 			}
-			v := s[i]
+			var v string
+			if i < currCols {
+				v = s[i]
+			} else {
+				v = ""
+			}
 			if v == "null" {
-				b = append(b, []byte("null")...)
+				b = append(b, NullStringAsBytes...)
 			} else {
 				tp := types[i]
-				if tp == "Date" {
+				b, err = PlaceStringToSqlQuery(v, tp, b, options)
+				if err != nil {
+					return
 				}
-				b = append(b, '\'')
-				b = appendSlashed(b, []byte(v))
-				b = append(b, '\'')
+				if logPreExecuteLevel >= dvlog.LogTrace {
+					log.Printf("[%d:%s=%s]", i, tp, v)
+				}
 			}
 		}
 		if oracleLike {
@@ -301,10 +364,17 @@ func GetExistingItems(meta *TableMetaData, ids [][]string, db *sql.DB) ([]string
 	sqlEnd := ")"
 	col := 0
 	idCol := meta.Columns[meta.MajorColumn]
+	if meta.QuoteColumns {
+		idCol = "\"" + idCol + "\""
+	}
 	if n == 1 {
 		sqlStart = "SELECT " + idCol + " FROM " + meta.Name + " WHERE " + idCol + " in ("
 	} else {
-		sqlStart = "SELECT " + GetColumnListFromMetaByIndices(meta, idIndices) + " FROM " + meta.Name + " WHERE " + idCol + " in ("
+		name := GetColumnListFromMetaByIndices(meta, idIndices)
+		if meta.QuoteColumns {
+			name = "\"" + name + "\""
+		}
+		sqlStart = "SELECT " + name + " FROM " + meta.Name + " WHERE " + idCol + " in ("
 		col = FindIntInIntArray(meta.MajorColumn, idIndices)
 	}
 	singleIds := GetSingleValuesFromString(ids, col)
@@ -318,7 +388,7 @@ func GetExistingItems(meta *TableMetaData, ids [][]string, db *sql.DB) ([]string
 		}
 		return nil, err
 	}
-	return makeSingleValueArray(items, COMPLEX_ID_SEPARATOR), nil
+	return makeSingleValueArray(items, ComplexIdSeparator), nil
 }
 
 func ConvertListToBooleanMap(ids []string) map[string]bool {
@@ -330,8 +400,25 @@ func ConvertListToBooleanMap(ids []string) map[string]bool {
 	return m
 }
 
+func GetMetaInfo(meta *TableMetaData) string {
+	n := len(meta.Columns)
+	s := meta.Name + "(" + meta.Id + ":" + strconv.Itoa(n) + ")["
+	if len(meta.Types) != n {
+		k := len(meta.Types)
+		s += " Error - different lengths of column names (" + strconv.Itoa(n) + " and types (" + strconv.Itoa(k) + ")"
+		if n > k {
+			n = k
+		}
+	}
+	for i := 0; i < n; i++ {
+		s += "(" + strconv.Itoa(i) + "-" + meta.Columns[i] + ":" + meta.Types[i] + ")"
+	}
+	s += "]"
+	return s
+}
+
 func PreExecuteCsvFile(conn *sql.DB, name string, options int) error {
-	data, err := ReadCsvFromFile(name)
+	data, err := dvcsv.ReadCsvFromFile(name)
 	if err != nil {
 		if logPreExecuteLevel >= dvlog.LogError {
 			log.Printf("Failed to parse csv file %s : %v", name, err)
@@ -346,9 +433,6 @@ func PreExecuteCsvFile(conn *sql.DB, name string, options int) error {
 	for _, table := range tables {
 		items := data[table]
 		n := len(items)
-		if logPreExecuteLevel >= dvlog.LogDetail {
-			log.Printf("Into table %s %n items will be saved\n", table, n)
-		}
 		if n > 0 {
 			meta, err := ReadTableMetaData(table, props)
 			if err != nil {
@@ -360,6 +444,12 @@ func PreExecuteCsvFile(conn *sql.DB, name string, options int) error {
 			ids := GetIdsFromItems(meta, items)
 			leftList, err := GetExistingItems(meta, ids, conn)
 			left := ConvertListToBooleanMap(leftList)
+			if logPreExecuteLevel >= dvlog.LogDetail {
+				log.Printf("Into table %s %d items will be saved\n", table, n)
+				if logPreExecuteLevel >= dvlog.LogTrace {
+					log.Printf("ids: %v, leftList: %v", ids, leftList)
+				}
+			}
 			if err != nil {
 				if logPreExecuteLevel >= dvlog.LogError {
 					log.Printf("For table %s failed to find existing items: %v\n", table, err)
@@ -368,7 +458,7 @@ func PreExecuteCsvFile(conn *sql.DB, name string, options int) error {
 			}
 			if len(meta.Dependencies) == 0 || len(meta.IdColumns) != 1 {
 				if logPreExecuteLevel >= dvlog.LogDetail {
-					log.Printf("Single blocks of %s are saved", table)
+					log.Printf("Single blocks saved: %s", GetMetaInfo(meta))
 				}
 				err = SavePortionOfItems(items, meta.Name, conn, left, meta.IdColumns, options, meta.Types)
 				if err != nil {
@@ -387,7 +477,7 @@ func PreExecuteCsvFile(conn *sql.DB, name string, options int) error {
 				}
 				n = len(groups)
 				if logPreExecuteLevel >= dvlog.LogDetail {
-					log.Printf("%n blocks of %s are saved", n, table)
+					log.Printf("%n blocks saved", n, GetMetaInfo(meta))
 				}
 				for i := 0; i < n; i++ {
 					err = SavePortionOfItems(groups[i], meta.Name, conn, left, meta.IdColumns, options, meta.Types)
@@ -400,6 +490,8 @@ func PreExecuteCsvFile(conn *sql.DB, name string, options int) error {
 				}
 			}
 			// TODO add updates for the left
+		} else if logPreExecuteLevel >= dvlog.LogDetail {
+			log.Printf("(No items for %s)", table)
 		}
 	}
 	return nil

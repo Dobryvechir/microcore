@@ -1,7 +1,5 @@
-/***********************************************************************
-MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+// package dvdbdata provides functions for sql query
+// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
 package dvdbdata
 
@@ -141,7 +139,7 @@ func SqlRun(data []interface{}) bool {
 						for i := 0; i < n; i++ {
 							cols[i] = &r[i]
 						}
-						rs.Scan(cols...)
+						err = rs.Scan(cols...)
 						if kind == SQL_KIND_ROW {
 							m := make(map[string]string, n)
 							for i := 0; i < n; i++ {
@@ -177,7 +175,7 @@ func SqlRun(data []interface{}) bool {
 						for i := 0; i < n; i++ {
 							cols[i] = &r[i]
 						}
-						rs.Scan(cols...)
+						err = rs.Scan(cols...)
 						if kind == SQL_KIND_ROW {
 							m := make(map[string]string, n)
 							for i := 0; i < n; i++ {
@@ -196,7 +194,9 @@ func SqlRun(data []interface{}) bool {
 				}
 			}
 		}
-		rs.Close()
+		if rs != nil {
+			rs.Close()
+		}
 	}
 	if err != nil {
 		if sqlAction.Error != "" {

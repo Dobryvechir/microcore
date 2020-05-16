@@ -8,10 +8,10 @@ package dvdbdata
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -19,8 +19,6 @@ import (
 	"sort"
 	"strings"
 )
-
-var logPreExecuteLevel = dvlog.LogFatal
 
 func SplitSqlSequences(data []byte) []string {
 	n := bytes.Count(data, []byte(";")) + 1
@@ -157,10 +155,10 @@ func ExecuteSqlFromFolder(db *sql.DB, root string, sqlName string) error {
 	csvOptions := 0
 	switch sqlName {
 	case "oracle":
-		csvOptions |= SQL_ORACLE_LIKE
+		csvOptions |= SqlOracleLike
 		break
 	case "postgres":
-		csvOptions |= SQL_POSTGRES_LIKE
+		csvOptions |= SqlPostgresLike
 		break
 	}
 	if logPreExecuteLevel >= dvlog.LogInfo {
@@ -228,7 +226,7 @@ func PreExecuteForNewerVersions(props map[string]string, db *sql.DB, folder stri
 						log.Printf("File %s added for processing", nm)
 					}
 				} else if logPreExecuteLevel > dvlog.LogInfo {
-					log.Printf("Folder %s omitted because its version %s is not older %s", file.Name(), dvparser.GetCanonicalVersion(versionNmb), version)
+					log.Printf("Folder %s omitted because its version %s is not older than %s", file.Name(), dvparser.GetCanonicalVersion(versionNmb), version)
 				}
 			} else if strings.HasPrefix(strings.ToLower(nm), "common") {
 				commonSql = append(commonSql, nm)
@@ -328,6 +326,9 @@ func PreExecute(properties map[string]string) error {
 
 func preExecuteStart(eventName string, data []interface{}) error {
 	logPreExecuteLevel = dvlog.GetLogLevelByDefinition(dvparser.GlobalProperties["DVLOG_PREEXECUTION_LEVEL"], logPreExecuteLevel)
+	if logPreExecuteLevel >= dvlog.LogTrace {
+		log.Printf("Event %s with data %v fired", eventName, data)
+	}
 	return PreExecute(dvparser.GlobalProperties)
 }
 
