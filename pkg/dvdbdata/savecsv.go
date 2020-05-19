@@ -6,7 +6,6 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvdbdata
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -164,7 +163,7 @@ func PlaceStringToSqlQuery(v string, tp string, b []byte, options int) ([]byte, 
 	return b, nil
 }
 
-func SavePortionOfItems(items [][]string, sqlTable string, conn *sql.DB, left map[string]bool,
+func SavePortionOfItems(items [][]string, sqlTable string, conn *DBConnection, left map[string]bool,
 	columnIds []int, options int, types []string) (err error) {
 	oracleLike := (options & SqlOracleLike) != 0
 	postgresLike := (options & SqlPostgresLike) != 0
@@ -297,6 +296,10 @@ func ReadTableMetaData(table string, props map[string]string) (*TableMetaData, e
 	return meta, nil
 }
 
+func ReadTableMetaDataFromGlobal(tableId string) (*TableMetaData, error) {
+	return ReadTableMetaData(tableId, dvparser.GlobalProperties)
+}
+
 func GetIdsFromItems(meta *TableMetaData, items [][]string) [][]string {
 	idIndices := meta.IdColumns
 	n := len(items)
@@ -354,7 +357,7 @@ func makeSingleValueArray(items [][]string, separ string) []string {
 	return r
 }
 
-func GetExistingItems(meta *TableMetaData, ids [][]string, db *sql.DB) ([]string, error) {
+func GetExistingItems(meta *TableMetaData, ids [][]string, db *DBConnection) ([]string, error) {
 	if ids == nil || meta.MajorColumn < 0 {
 		return nil, nil
 	}
@@ -417,7 +420,7 @@ func GetMetaInfo(meta *TableMetaData) string {
 	return s
 }
 
-func PreExecuteCsvFile(conn *sql.DB, name string, options int) error {
+func PreExecuteCsvFile(conn *DBConnection, name string, options int) error {
 	data, err := dvcsv.ReadCsvFromFile(name)
 	if err != nil {
 		if logPreExecuteLevel >= dvlog.LogError {

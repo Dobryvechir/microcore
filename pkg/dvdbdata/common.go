@@ -3,7 +3,10 @@
 
 package dvdbdata
 
-import "github.com/Dobryvechir/microcore/pkg/dvlog"
+import (
+	"database/sql"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
+)
 
 const (
 	propertyDefaultKind            = "DB_KIND_"
@@ -35,8 +38,21 @@ type TableMetaData struct {
 	MajorColumn  int      `json:"majorColumn"`
 	Types        []string `json:"types"`
 	Columns      []string `json:"columns"`
+	References   []string `json:"references"`
 	QuoteColumns bool     `json:"quoteColumns"`
 }
+
+type DBConnection struct {
+	Db       *sql.DB
+	KindMask int
+	Kind     string
+	Name     string
+}
+
+const (
+	IdsPlaceholderStart  = "${"
+	IdsPlaceholderFinish = "IDS}"
+)
 
 var logPreExecuteLevel = dvlog.LogFatal
 var NullStringAsBytes = []byte("NULL")

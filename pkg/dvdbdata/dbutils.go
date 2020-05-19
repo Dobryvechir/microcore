@@ -6,10 +6,8 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvdbdata
 
 import (
-	"database/sql"
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
 	"strings"
 )
@@ -18,59 +16,6 @@ var readPropertySql, readPropertySqlEnd string
 var createPropertySql []string = nil
 var updatePropertySql []string = nil
 
-func GetDefaultDbConnection() string {
-	return dvparser.GlobalProperties[propertyDefaultDb]
-}
-
-func GetConnectionType(connName string) int {
-	r := 0
-	sqlName := dvparser.GlobalProperties[connName]
-	p := strings.Index(sqlName, ",")
-	if p > 0 {
-		sqlName = strings.TrimSpace(sqlName[:p])
-	}
-	switch sqlName {
-	case "oracle":
-		r = SqlOracleLike
-		break
-	case "postgres":
-		r = SqlPostgresLike
-	}
-	return r
-}
-
-func GetDBConnectionDirect(props map[string]string, connName string) (*sql.DB, string, error) {
-	param := "DB_CONNECTION_" + connName
-	connParams := props[param]
-	if connParams == "" {
-		return nil, "", errors.New(param + " expected as the definition for connection " + connName)
-	}
-	sqlName := ""
-	conn := ""
-	p := strings.Index(connParams, ",")
-	if p > 0 {
-		sqlName = strings.TrimSpace(connParams[:p])
-		conn = strings.TrimSpace(connParams[p+1:])
-	}
-	if sqlName == "" || conn == "" {
-		return nil, "", errors.New(param + " must be <sql name>,<connection string>")
-	}
-	db, err := sql.Open(sqlName, conn)
-	if err != nil {
-		return nil, "", errors.New(err.Error() + " for " + connName + "(" + connParams + ")")
-	}
-	props[propertyDefaultKind+connName] = sqlName
-	return db, sqlName, nil
-}
-
-func GetDBConnection(props map[string]string, connName string) (*sql.DB, string, error) {
-	// todo make cache
-	return GetDBConnectionDirect(props, connName)
-}
-
-func GetDB(connName string) (*sql.DB, string, error) {
-	return GetDBConnection(dvparser.GlobalProperties, connName)
-}
 
 func GetTableNameColumnsFromDefinition(def string) (table string, columns []string, colDef []string, err error) {
 	first := strings.Index(def, "(")
@@ -108,7 +53,7 @@ func GetPropertyGlobalDefinition(props map[string]string) string {
 	return r
 }
 
-func CreateTableByDefinition(db *sql.DB, def string) error {
+func CreateTableByDefinition(db *DBConnection, def string) error {
 	table, columns, colDefs, err := GetTableNameColumnsFromDefinition(def)
 	if err != nil {
 		return err
@@ -150,7 +95,7 @@ func CreateTableByDefinition(db *sql.DB, def string) error {
 	return errors.New(err.Error() + " or (" + err1.Error() + ")")
 }
 
-func ReadGlobalDBProperty(props map[string]string, db *sql.DB, name string, defValue string) (string, error) {
+func ReadGlobalDBProperty(props map[string]string, db *DBConnection, name string, defValue string) (string, error) {
 	if readPropertySql == "" {
 		table, columns, _, err := GetTableNameColumnsFromDefinition(GetPropertyGlobalDefinition(props))
 		if err != nil {
@@ -186,7 +131,7 @@ func ReadGlobalDBProperty(props map[string]string, db *sql.DB, name string, defV
 	return defValue, nil
 }
 
-func WriteGlobalDBProperty(props map[string]string, db *sql.DB, name string, value string) error {
+func WriteGlobalDBProperty(props map[string]string, db *DBConnection, name string, value string) error {
 	if createPropertySql == nil {
 		table, columns, _, err := GetTableNameColumnsFromDefinition(GetPropertyGlobalDefinition(props))
 		if err != nil {
@@ -216,7 +161,7 @@ func WriteGlobalDBProperty(props map[string]string, db *sql.DB, name string, val
 	return err
 }
 
-func AddItemsToPool(db *sql.DB, sql string, cols int, pool [][]string) ([][]string, error) {
+func AddItemsToPool(db *DBConnection, sql string, cols int, pool [][]string) ([][]string, error) {
 	if logPreExecuteLevel >= dvlog.LogTrace {
 		log.Printf("Add sql rows to pool: %s (%d columns)", sql, cols)
 	}
@@ -246,7 +191,7 @@ func AddItemsToPool(db *sql.DB, sql string, cols int, pool [][]string) ([][]stri
 	return pool, nil
 }
 
-func ReadItemsInBatches(db *sql.DB, start string, finish string, ids []string, cols int) ([][]string, error) {
+func ReadItemsInBatches(db *DBConnection, start string, finish string, ids []string, cols int) ([][]string, error) {
 	pool := make([][]string, 0, 1024)
 	n := len(ids)
 	i := 0
