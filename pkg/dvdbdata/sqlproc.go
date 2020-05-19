@@ -8,31 +8,30 @@ import (
 	"encoding/json"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvmeta"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"strings"
 )
 
 const (
-	SQL_KIND_UPDATE     = 0
-	SQL_KIND_SINGLE     = 1
-	SQL_KIND_ROW        = 2
-	SQL_KIND_TABLE      = 3
-	SQL_KIND_LIST       = 4
-	SQL_KIND_ROW_TEXT   = 5
-	SQL_KIND_TABLE_TEXT = 6
+	SqlKindUpdate    = 0
+	SqlKindSingle    = 1
+	SqlKindRow       = 2
+	SqlKindTable     = 3
+	SqlKindList      = 4
+	SqlKindRowText   = 5
+	SqlKindTableText = 6
 )
 
 type SqlAction struct {
-	Db           string   `json:"db"`
-	Query        string   `json:"query"`
-	QueryOracle  string   `json:"queryOracle"`
-	QueryPostgre string   `json:"queryPostgre"`
-	Result       string   `json:"result"`
-	Kind         string   `json:"kind"`
-	Columns      []string `json:"columns"`
-	Empty        int      `json:"empty"`
-	Error        string   `json:"error"`
-	KindNo       int
+	Db            string   `json:"db"`
+	Query         string   `json:"query"`
+	QueryOracle   string   `json:"queryOracle"`
+	QueryPostgres string   `json:"queryPostgres"`
+	Result        string   `json:"result"`
+	Kind          string   `json:"kind"`
+	Columns       []string `json:"columns"`
+	Empty         int      `json:"empty"`
+	Error         string   `json:"error"`
+	KindNo        int
 }
 
 func SqlInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
@@ -47,25 +46,25 @@ func SqlInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
 	kind := strings.TrimSpace(strings.ToUpper(sqlAction.Kind))
 	switch kind {
 	case "", "UPDATE":
-		sqlAction.KindNo = SQL_KIND_UPDATE
+		sqlAction.KindNo = SqlKindUpdate
 		break
 	case "SINGLE":
-		sqlAction.KindNo = SQL_KIND_SINGLE
+		sqlAction.KindNo = SqlKindSingle
 		break
 	case "ROW":
-		sqlAction.KindNo = SQL_KIND_ROW
+		sqlAction.KindNo = SqlKindRow
 		break
 	case "TABLE":
-		sqlAction.KindNo = SQL_KIND_TABLE
+		sqlAction.KindNo = SqlKindTable
 		break
 	case "LIST":
-		sqlAction.KindNo = SQL_KIND_LIST
+		sqlAction.KindNo = SqlKindList
 		break
 	case "ROW_TEXT":
-		sqlAction.KindNo = SQL_KIND_ROW_TEXT
+		sqlAction.KindNo = SqlKindRowText
 		break
 	case "TEXT":
-		sqlAction.KindNo = SQL_KIND_TABLE_TEXT
+		sqlAction.KindNo = SqlKindTableText
 		break
 	default:
 		dvlog.PrintfError("Unknown kind: %s", kind)
@@ -77,37 +76,37 @@ func SqlInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
 func SqlRun(data []interface{}) bool {
 	sqlAction := data[0].(*SqlAction)
 	ctx := data[1].(*dvmeta.RequestContext)
-	db, sqlName, err := GetDBConnection(dvparser.GlobalProperties, sqlAction.Db)
+	db, err := GetDBConnection(sqlAction.Db)
 	if err != nil {
 		dvlog.PrintfError("Connection to %s failed %v", sqlAction.Db, err)
 		return false
 	}
 	query := sqlAction.Query
-	switch strings.ToUpper(sqlName) {
-	case "ORACLE":
+	switch db.KindMask {
+	case SqlOracleLike:
 		if sqlAction.QueryOracle != "" {
 			query = sqlAction.QueryOracle
 		}
-	case "POSTGRE":
-		if sqlAction.QueryPostgre != "" {
-			query = sqlAction.QueryPostgre
+	case SqlPostgresLike:
+		if sqlAction.QueryPostgres != "" {
+			query = sqlAction.QueryPostgres
 		}
 	}
 	var res interface{} = nil
 	kind := sqlAction.KindNo
-	if kind == SQL_KIND_UPDATE {
+	if kind == SqlKindUpdate {
 		res, err = db.Exec(query)
 	} else {
 		var rs *sql.Rows
 		rs, err = db.Query(query)
 		if err == nil {
 			switch kind {
-			case SQL_KIND_SINGLE:
+			case SqlKindSingle:
 				if rs.Next() {
 					err = rs.Scan(&res)
 				}
 				break
-			case SQL_KIND_LIST:
+			case SqlKindList:
 				{
 					data := make([]string, 0, 1024)
 					for rs.Next() {
@@ -121,7 +120,7 @@ func SqlRun(data []interface{}) bool {
 					res = data
 				}
 				break
-			case SQL_KIND_ROW, SQL_KIND_ROW_TEXT:
+			case SqlKindRow, SqlKindRowText:
 				{
 					var dataCol map[string]string = nil
 					var dataText []string = nil
@@ -140,7 +139,7 @@ func SqlRun(data []interface{}) bool {
 							cols[i] = &r[i]
 						}
 						err = rs.Scan(cols...)
-						if kind == SQL_KIND_ROW {
+						if kind == SqlKindRow {
 							m := make(map[string]string, n)
 							for i := 0; i < n; i++ {
 								m[columns[i]] = r[i]
@@ -150,14 +149,14 @@ func SqlRun(data []interface{}) bool {
 							dataText = r
 						}
 					}
-					if kind == SQL_KIND_ROW {
+					if kind == SqlKindRow {
 						res = dataCol
 					} else {
 						res = dataText
 					}
 				}
 				break
-			case SQL_KIND_TABLE, SQL_KIND_TABLE_TEXT:
+			case SqlKindTable, SqlKindTableText:
 				{
 					var dataCol []map[string]string = nil
 					var dataText [][]string = nil
@@ -176,7 +175,7 @@ func SqlRun(data []interface{}) bool {
 							cols[i] = &r[i]
 						}
 						err = rs.Scan(cols...)
-						if kind == SQL_KIND_ROW {
+						if kind == SqlKindRow {
 							m := make(map[string]string, n)
 							for i := 0; i < n; i++ {
 								m[columns[i]] = r[i]
@@ -186,7 +185,7 @@ func SqlRun(data []interface{}) bool {
 							dataText = append(dataText, r)
 						}
 					}
-					if kind == SQL_KIND_ROW {
+					if kind == SqlKindRow {
 						res = dataCol
 					} else {
 						res = dataText

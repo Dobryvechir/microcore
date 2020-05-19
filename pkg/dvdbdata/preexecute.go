@@ -7,7 +7,6 @@ package dvdbdata
 
 import (
 	"bytes"
-	"database/sql"
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
@@ -65,7 +64,7 @@ func SplitSqlSequences(data []byte) []string {
 	return res
 }
 
-func ExecuteSqlData(db *sql.DB, data []byte) error {
+func ExecuteSqlData(db *DBConnection, data []byte) error {
 	queries := SplitSqlSequences(data)
 	n := len(queries)
 	if logPreExecuteLevel >= dvlog.LogDetail {
@@ -87,7 +86,7 @@ func ExecuteSqlData(db *sql.DB, data []byte) error {
 	return nil
 }
 
-func ExecuteSqlFromFile(db *sql.DB, fileName string) error {
+func ExecuteSqlFromFile(db *DBConnection, fileName string) error {
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		if logPreExecuteLevel >= dvlog.LogError {
@@ -108,9 +107,9 @@ func ExecuteSqlFromFile(db *sql.DB, fileName string) error {
 	return nil
 }
 
-func ExecuteSqlFromFolder(db *sql.DB, root string, sqlName string) error {
+func ExecuteSqlFromFolder(db *DBConnection, root string) error {
 	var files []string
-	mask := strings.ToLower(sqlName)
+	mask := strings.ToLower(db.Kind)
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			if logPreExecuteLevel >= dvlog.LogError {
@@ -153,7 +152,7 @@ func ExecuteSqlFromFolder(db *sql.DB, root string, sqlName string) error {
 	}
 	sort.Strings(files)
 	csvOptions := 0
-	switch sqlName {
+	switch db.Kind {
 	case "oracle":
 		csvOptions |= SqlOracleLike
 		break
@@ -184,7 +183,7 @@ func ExecuteSqlFromFolder(db *sql.DB, root string, sqlName string) error {
 	return nil
 }
 
-func PreExecuteForNewerVersions(props map[string]string, db *sql.DB, folder string, sqlName string) error {
+func PreExecuteForNewerVersions(props map[string]string, db *DBConnection, folder string) error {
 	if _, err := os.Stat(folder); err != nil {
 		if logPreExecuteLevel >= dvlog.LogInfo {
 			log.Printf("Preexecution is omitted because folder %s does not exist", folder)
@@ -211,7 +210,7 @@ func PreExecuteForNewerVersions(props map[string]string, db *sql.DB, folder stri
 	}
 	version = dvparser.GetCanonicalVersion(versionIndex)
 	if logPreExecuteLevel >= dvlog.LogInfo {
-		log.Printf("Sql preexecution started in folder %s, sql - %s, version older than %s", folder, sqlName, version)
+		log.Printf("Sql preexecution started in folder %s, sql - %s, version older than %s", folder, db.Kind, version)
 	}
 	commonSql := make([]string, 0, 3)
 	versionSql := make([]string, 0, 3)
@@ -248,9 +247,9 @@ func PreExecuteForNewerVersions(props map[string]string, db *sql.DB, folder stri
 	for _, file := range versionSql {
 		name := folder + "/" + file[16:]
 		if logPreExecuteLevel >= dvlog.LogWarning {
-			log.Printf("Processing %s, sql - %s", name, sqlName)
+			log.Printf("Processing %s, sql - %s", name, db.Kind)
 		}
-		err := ExecuteSqlFromFolder(db, name, sqlName)
+		err := ExecuteSqlFromFolder(db, name)
 		if err != nil {
 			return err
 		}
@@ -258,9 +257,9 @@ func PreExecuteForNewerVersions(props map[string]string, db *sql.DB, folder stri
 	for _, file := range commonSql {
 		name := folder + "/" + file
 		if logPreExecuteLevel >= dvlog.LogWarning {
-			log.Printf("Processing %s, sql - %s", name, sqlName)
+			log.Printf("Processing %s, sql - %s", name, db.Kind)
 		}
-		err := ExecuteSqlFromFolder(db, name, sqlName)
+		err := ExecuteSqlFromFolder(db, name)
 		if err != nil {
 			return err
 		}
@@ -306,19 +305,23 @@ func PreExecute(properties map[string]string) error {
 		if logPreExecuteLevel >= dvlog.LogInfo {
 			log.Printf("Preexecution started for connection %s", connection)
 		}
-		db, sqlName, err := GetDBConnection(properties, connection)
-		if logPreExecuteLevel >= dvlog.LogTrace {
-			log.Printf("Type of connection %s is %s", connection, sqlName)
-		}
+		db, err := GetDBConnection(connection)
 		if err != nil {
 			if logPreExecuteLevel >= dvlog.LogError {
 				log.Printf("Preexecution is interrupted because of error of opening the connection %s: %v", connection, err)
 			}
 			return err
 		}
-		err = PreExecuteForNewerVersions(properties, db, folder+connection, sqlName)
+		if logPreExecuteLevel >= dvlog.LogTrace {
+			log.Printf("Type of connection %s is %s", connection, db.Kind)
+		}
+		err = PreExecuteForNewerVersions(properties, db, folder+connection)
+		err1 := db.Close(err!=nil)
 		if err != nil {
 			return err
+		}
+		if err1 != nil {
+			return err1
 		}
 	}
 	return nil
