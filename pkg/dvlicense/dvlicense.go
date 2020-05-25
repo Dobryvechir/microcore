@@ -2,11 +2,11 @@ package dvlicense
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 )
 
-func GetLicense(request *dvmeta.RequestContext) bool {
+func GetLicense(request *dvcontext.RequestContext) bool {
 	dvcom.HandleFromString(request, "GetLicense")
 	return true
 }

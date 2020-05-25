@@ -1,0 +1,8 @@
+Make a registration for the event when the 
+variables are read 
+if they has been already read, call the event immediately
+If not ready, wait for the call and then make a callback
+
+Apply the above mentioned functionality for 
+	logPreExecuteLevel = dvlog.GetLogLevelByDefinition(dvparser.GlobalProperties["DVLOG_PREEXECUTION_LEVEL"], logPreExecuteLevel)
+ in dvdbdata

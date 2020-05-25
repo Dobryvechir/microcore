@@ -6,13 +6,12 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvprocessors
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvcom"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvproviders"
 )
 
-func dvtemplateProcessing(request *dvmeta.RequestContext, buffer []byte, options map[byte]string) {
+func dvtemplateProcessing(request *dvcontext.RequestContext, buffer []byte, options map[byte]string) {
 	var err error
 	request.Params = dvparser.CloneGlobalProperties()
 	if options['p'] != "" || options['P'] != "" {
@@ -26,5 +25,5 @@ func dvtemplateProcessing(request *dvmeta.RequestContext, buffer []byte, options
 	}
 	request.Error = err
 	request.Output = buffer
-	dvcom.HandleRequestContext(request)
+	request.HandleCommunication()
 }

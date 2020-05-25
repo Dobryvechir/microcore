@@ -244,6 +244,7 @@ func PreExecuteForNewerVersions(props map[string]string, db *DBConnection, folde
 	if logPreExecuteLevel >= dvlog.LogInfo {
 		log.Printf("Found %d version folders and %d common folders for processing", len(versionSql), len(commonSql))
 	}
+	lastOk := ""
 	for _, file := range versionSql {
 		name := folder + "/" + file[16:]
 		if logPreExecuteLevel >= dvlog.LogWarning {
@@ -251,8 +252,20 @@ func PreExecuteForNewerVersions(props map[string]string, db *DBConnection, folde
 		}
 		err := ExecuteSqlFromFolder(db, name)
 		if err != nil {
+			if lastOk != "" {
+				if logPreExecuteLevel >= dvlog.LogInfo {
+					log.Printf("Highest version last well-stored is %s", dvparser.GetCanonicalVersionFromHexName(lastOk))
+				}
+				err1 := WriteGlobalDBProperty(props, db, key, lastOk)
+				if err1 != nil {
+					if logPreExecuteLevel >= dvlog.LogError {
+						log.Printf("Cannot write highest version: %v", err1)
+					}
+				}
+			}
 			return err
 		}
+		lastOk = file[:16]
 	}
 	for _, file := range commonSql {
 		name := folder + "/" + file
@@ -316,7 +329,7 @@ func PreExecute(properties map[string]string) error {
 			log.Printf("Type of connection %s is %s", connection, db.Kind)
 		}
 		err = PreExecuteForNewerVersions(properties, db, folder+connection)
-		err1 := db.Close(err!=nil)
+		err1 := db.Close(err != nil)
 		if err != nil {
 			return err
 		}

@@ -7,7 +7,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"io/ioutil"
 	"strings"
 )
 
@@ -22,19 +23,19 @@ const (
 )
 
 type SqlAction struct {
-	Db            string   `json:"db"`
-	Query         string   `json:"query"`
-	QueryOracle   string   `json:"queryOracle"`
-	QueryPostgres string   `json:"queryPostgres"`
-	Result        string   `json:"result"`
-	Kind          string   `json:"kind"`
-	Columns       []string `json:"columns"`
-	Empty         int      `json:"empty"`
-	Error         string   `json:"error"`
-	KindNo        int
+	Db             string   `json:"db"`
+	Query          string   `json:"query"`
+	QueryOracle    string   `json:"queryOracle"`
+	QueryPostgres  string   `json:"queryPostgres"`
+	Result         string   `json:"result"`
+	Kind           string   `json:"kind"`
+	Columns        []string `json:"columns"`
+	EmptyErrorCode int      `json:"emptyErrCode"`
+	Error          string   `json:"error"`
+	KindNo         int
 }
 
-func SqlInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
+func SqlInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	p := strings.Index(command, ":")
 	command = strings.TrimSpace(command[p+1:])
 	sqlAction := &SqlAction{}
@@ -75,7 +76,7 @@ func SqlInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
 
 func SqlRun(data []interface{}) bool {
 	sqlAction := data[0].(*SqlAction)
-	ctx := data[1].(*dvmeta.RequestContext)
+	ctx := data[1].(*dvcontext.RequestContext)
 	db, err := GetDBConnection(sqlAction.Db)
 	if err != nil {
 		dvlog.PrintfError("Connection to %s failed %v", sqlAction.Db, err)
@@ -92,10 +93,19 @@ func SqlRun(data []interface{}) bool {
 			query = sqlAction.QueryPostgres
 		}
 	}
+	if strings.HasPrefix(query, "file:") {
+		dat, err := ioutil.ReadFile(query[5:])
+		if err != nil {
+			dvlog.Printf("Cannot read sql file %s: %v", query[5:], err)
+			return false
+		}
+		query = string(dat)
+	}
 	var res interface{} = nil
 	kind := sqlAction.KindNo
 	if kind == SqlKindUpdate {
-		res, err = db.Exec(query)
+		err = ExecuteSqlData(db, []byte(query))
+		res = ""
 	} else {
 		var rs *sql.Rows
 		rs, err = db.Query(query)
@@ -206,11 +216,11 @@ func SqlRun(data []interface{}) bool {
 			return false
 		}
 	}
-	if res == nil && sqlAction.Empty != 0 {
+	if res == nil && sqlAction.EmptyErrorCode != 0 {
 		if ctx == nil {
-			dvlog.PrintfError("Empty result of %s %d", query, sqlAction.Empty)
+			dvlog.PrintfError("Empty result of %s %d", query, sqlAction.EmptyErrorCode)
 		} else {
-			ctx.SetHttpErrorCode(sqlAction.Empty, "")
+			ctx.SetHttpErrorCode(sqlAction.EmptyErrorCode, "")
 		}
 		return false
 	}

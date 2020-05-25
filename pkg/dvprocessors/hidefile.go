@@ -1,12 +1,11 @@
 package dvprocessors
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvcom"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 )
 
-func hideFileHandler(request *dvmeta.RequestContext) bool {
-	dvcom.HandleError(request, "404 File Not Found")
+func hideFileHandler(request *dvcontext.RequestContext) bool {
+	request.HandleFileNotFound()
 	return true
 }
 

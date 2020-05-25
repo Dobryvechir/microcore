@@ -14,7 +14,7 @@ import (
 
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvoc"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
@@ -69,7 +69,7 @@ func ProvideServerCommand() {
 	})
 }
 
-func processServerInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
+func processServerInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	command = strings.TrimSpace(command[strings.Index(command, ":")+1:])
 	if command == "" || command[0] != '{' || command[len(command)-1] != '}' {
 		log.Printf("Invalid execution server command, config expected {}")

@@ -1,7 +1,7 @@
 package dvurl
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
 	"regexp"
@@ -12,8 +12,8 @@ const (
 	MaxCharsForStar = 1000000000
 )
 
-func cutOffFixedParts(data string) (*dvmeta.MaskInfo, string) {
-	res := &dvmeta.MaskInfo{Middle: make([]*dvmeta.MaskInfoPart, 0, 3)}
+func cutOffFixedParts(data string) (*dvcontext.MaskInfo, string) {
+	res := &dvcontext.MaskInfo{Middle: make([]*dvcontext.MaskInfoPart, 0, 3)}
 	n := len(data)
 	i := 0
 	for i = 0; i < n; i++ {
@@ -89,7 +89,7 @@ func cutOffFixedParts(data string) (*dvmeta.MaskInfo, string) {
 	return res, data
 }
 
-func ConvertSingleMask(data string) (res *dvmeta.MaskInfo) {
+func ConvertSingleMask(data string) (res *dvcontext.MaskInfo) {
 	res, data = cutOffFixedParts(data)
 	n := len(data)
 	for i := 0; i < n; {
@@ -99,7 +99,7 @@ func ConvertSingleMask(data string) (res *dvmeta.MaskInfo) {
 			{
 				min := 0
 				max := 0
-				kind := dvmeta.MaskSlashAware
+				kind := dvcontext.MaskSlashAware
 				for ; i < n; i++ {
 					c = data[i]
 					if c == '?' {
@@ -107,14 +107,14 @@ func ConvertSingleMask(data string) (res *dvmeta.MaskInfo) {
 						max++
 					} else if c == '*' {
 						if i > 0 && data[i-1] == '*' {
-							kind = dvmeta.MaskSlashUnaware
+							kind = dvcontext.MaskSlashUnaware
 						}
 						max = MaxCharsForStar
 					} else {
 						break
 					}
 				}
-				res.Middle = append(res.Middle, &dvmeta.MaskInfoPart{Min: min, Max: max, Kind: kind})
+				res.Middle = append(res.Middle, &dvcontext.MaskInfoPart{Min: min, Max: max, Kind: kind})
 			}
 		case '`', '^':
 			{
@@ -138,9 +138,9 @@ func ConvertSingleMask(data string) (res *dvmeta.MaskInfo) {
 					regex, err := regexp.Compile(reg)
 					if err != nil {
 						log.Printf("Incorrect regular expression %s : %s\n", reg, err.Error())
-						res.Middle = append(res.Middle, &dvmeta.MaskInfoPart{Kind: dvmeta.MaskWord, Data: "?? Error ??"})
+						res.Middle = append(res.Middle, &dvcontext.MaskInfoPart{Kind: dvcontext.MaskWord, Data: "?? Error ??"})
 					} else {
-						res.Middle = append(res.Middle, &dvmeta.MaskInfoPart{Kind: dvmeta.MaskRegExp, Regex: regex, Min: 0, Max: MaxCharsForStar})
+						res.Middle = append(res.Middle, &dvcontext.MaskInfoPart{Kind: dvcontext.MaskRegExp, Regex: regex, Min: 0, Max: MaxCharsForStar})
 					}
 				}
 				i = pos + 1
@@ -148,10 +148,10 @@ func ConvertSingleMask(data string) (res *dvmeta.MaskInfo) {
 		case '{':
 			{
 				i++
-				kind := dvmeta.MaskSlashAware
+				kind := dvcontext.MaskSlashAware
 				endBlock := "}"
 				if data[i] == '{' {
-					kind = dvmeta.MaskCondition
+					kind = dvcontext.MaskCondition
 					endBlock = "}}"
 					i++
 				}
@@ -162,7 +162,7 @@ func ConvertSingleMask(data string) (res *dvmeta.MaskInfo) {
 				}
 				pos += i
 				word := data[i:pos]
-				res.Middle = append(res.Middle, &dvmeta.MaskInfoPart{Min: 1,
+				res.Middle = append(res.Middle, &dvcontext.MaskInfoPart{Min: 1,
 					Max:       MaxCharsForStar,
 					Kind:      kind,
 					Data:      word,
@@ -179,18 +179,18 @@ func ConvertSingleMask(data string) (res *dvmeta.MaskInfo) {
 						break
 					}
 				}
-				res.Middle = append(res.Middle, &dvmeta.MaskInfoPart{Kind: dvmeta.MaskWord, Data: data[pos:i]})
+				res.Middle = append(res.Middle, &dvcontext.MaskInfoPart{Kind: dvcontext.MaskWord, Data: data[pos:i]})
 			}
 		}
 	}
 	return
 }
 
-func ScanNamedIds(maskInfo *dvmeta.MaskInfo) (res []string) {
+func ScanNamedIds(maskInfo *dvcontext.MaskInfo) (res []string) {
 	res = make([]string, 0, 2)
 	if maskInfo != nil && maskInfo.Middle != nil {
 		for _, v := range maskInfo.Middle {
-			if v.Kind == dvmeta.MaskSlashAware && v.Data != "" {
+			if v.Kind == dvcontext.MaskSlashAware && v.Data != "" {
 				res = append(res, v.Data)
 			}
 		}
@@ -198,10 +198,10 @@ func ScanNamedIds(maskInfo *dvmeta.MaskInfo) (res []string) {
 	return
 }
 
-func PreparseMaskExpressions(data string) (masks []*dvmeta.MaskInfo) {
+func PreparseMaskExpressions(data string) (masks []*dvcontext.MaskInfo) {
 	parts := dvparser.ConvertToNonEmptyList(data)
 	n := len(parts)
-	masks = make([]*dvmeta.MaskInfo, n)
+	masks = make([]*dvcontext.MaskInfo, n)
 	for i := 0; i < n; i++ {
 		masks[i] = ConvertSingleMask(parts[i])
 	}

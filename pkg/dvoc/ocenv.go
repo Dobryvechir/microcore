@@ -6,7 +6,7 @@ package dvoc
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"strings"
 	"time"
@@ -125,7 +125,7 @@ func OpenShiftReset(list string) bool {
 	return res
 }
 
-func processEnvSettingInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
+func processEnvSettingInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	if !strings.HasPrefix(command, "env:") {
 		dvlog.PrintfError("command %s must start with env:", command)
 		return nil, false

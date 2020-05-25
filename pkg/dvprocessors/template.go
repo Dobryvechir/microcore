@@ -7,7 +7,7 @@ package dvprocessors
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"os"
 	"strings"
 )
@@ -19,7 +19,7 @@ const (
 	comment_HTML
 )
 
-func templateFileHandler(request *dvmeta.RequestContext) bool {
+func templateFileHandler(request *dvcontext.RequestContext) bool {
 	f, err := os.Open(request.FileName)
 	if err != nil {
 		return false
@@ -73,7 +73,8 @@ func templateFileHandler(request *dvmeta.RequestContext) bool {
 	}
 	stat, err3 := f.Stat()
 	if err3 != nil {
-		dvcom.HandleError(request, "500 "+err3.Error())
+		request.Error = err3
+		request.HandleInternalServerError()
 		return true
 	}
 	length := int(stat.Size())
@@ -84,7 +85,8 @@ func templateFileHandler(request *dvmeta.RequestContext) bool {
 	if n < length {
 		k, err4 := f.Read(buffer[n:])
 		if err4 != nil {
-			dvcom.HandleError(request, "500 "+err4.Error())
+			request.Error = err4
+			request.HandleInternalServerError()
 			return true
 		}
 		n += k

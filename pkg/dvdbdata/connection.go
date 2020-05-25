@@ -25,7 +25,7 @@ type connectionPool struct {
 	mux    sync.Mutex
 }
 
-var graph = &connectionGraph{}
+var graph = &connectionGraph{perDB:make(map[string]*connectionPool)}
 
 func GetDBConnectionDirect(props map[string]string, connName string) (*sql.DB, string, error) {
 	param := "DB_CONNECTION_" + connName
@@ -79,6 +79,12 @@ func GetConnectionKindMask(kind string) int {
 func GetDBConnection(connName string) (r *DBConnection, err error) {
 	var db *sql.DB
 	var kind string
+	if connName == "" {
+		connName = GetDefaultDbConnection()
+		if connName == "" {
+			return nil, errors.New("Connection not specified")
+		}
+	}
 	pool := graph.perDB[connName]
 	if pool != nil && pool.amount != 0 {
 		pool.mux.Lock()
@@ -116,7 +122,7 @@ func backToPool(db *DBConnection) {
 			db.Db = nil
 		}
 		pool.mux.Unlock()
-		if db.Db!=nil {
+		if db.Db != nil {
 			db.Db.Close()
 		}
 	} else {
@@ -137,9 +143,9 @@ func (db *DBConnection) Close(forced bool) (err error) {
 }
 
 func (db *DBConnection) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return db.Db.Query(query, args)
+	return db.Db.Query(query, args...)
 }
 
 func (db *DBConnection) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return db.Db.Exec(query, args)
+	return db.Db.Exec(query, args...)
 }

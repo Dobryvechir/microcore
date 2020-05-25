@@ -6,17 +6,17 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvproviders
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 )
 
-type MethodEndPointHandler func(*dvmeta.RequestContext) bool
+type MethodEndPointHandler func(*dvcontext.RequestContext) bool
 type MethodGlobalInitHandler func(map[string]string) error
 type MethodServerInitHandler func(params []string) (map[string]string, error)
 
 type RegistrationConfig struct {
 	Name              string
-	EndPointHandler   dvmeta.ProcessorEndPointHandler
+	EndPointHandler   dvcontext.ProcessorEndPointHandler
 	GlobalInitHandler MethodGlobalInitHandler
 	ServerInitHandler MethodServerInitHandler
 }
@@ -52,7 +52,7 @@ func GetRegisteredConfig(name string, silent bool) *RegistrationConfig {
 	return config
 }
 
-func createProviderBlock(config *RegistrationConfig, provider *ProviderConfig) *dvmeta.ProcessorBlock {
+func createProviderBlock(config *RegistrationConfig, provider *ProviderConfig) *dvcontext.ProcessorBlock {
 	f := config.EndPointHandler
 	if f == nil {
 		panic("EndPointHandler is obligatory field but not specified in provider " + config.Name)
@@ -66,7 +66,7 @@ func createProviderBlock(config *RegistrationConfig, provider *ProviderConfig) *
 		}
 	}
 	urls := dvurl.PreparseMaskExpressions(provider.Urls)
-	return &dvmeta.ProcessorBlock{
+	return &dvcontext.ProcessorBlock{
 		Name:            GetParametersName(config.Name),
 		EndPointHandler: f,
 		Urls:            urls,
@@ -90,11 +90,11 @@ func MakeProviderGlobalInitialization(providerInits map[string]map[string]string
 	}
 }
 
-func MakeProviderBlocks(configs []ProviderConfig) (res []dvmeta.ProcessorBlock) {
+func MakeProviderBlocks(configs []ProviderConfig) (res []dvcontext.ProcessorBlock) {
 	if configs == nil {
 		return nil
 	}
-	res = make([]dvmeta.ProcessorBlock, len(configs))
+	res = make([]dvcontext.ProcessorBlock, len(configs))
 	for i, f := range configs {
 		config := GetRegisteredConfig(f.Name, false)
 		res[i] = *createProviderBlock(config, &f)
@@ -102,7 +102,7 @@ func MakeProviderBlocks(configs []ProviderConfig) (res []dvmeta.ProcessorBlock) 
 	return
 }
 
-func PlaceProviderReferences(request *dvmeta.RequestContext) {
+func PlaceProviderReferences(request *dvcontext.RequestContext) {
 	providers := request.Server.BaseProviderBlocks
 	n := len(providers)
 	urls := request.Urls

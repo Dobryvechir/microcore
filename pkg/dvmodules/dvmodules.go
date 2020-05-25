@@ -6,11 +6,11 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvmodules
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 )
 
-type MethodEndPointHandler func(request *dvmeta.RequestContext) bool
+type MethodEndPointHandler func(request *dvcontext.RequestContext) bool
 type MethodGlobalInitHandler func(map[string]string) error
 type MethodServerInitHandler func(params []string) (map[string]string, error)
 type MethodOwnHandlerGenerator func(url string, params []string, urlPool *dvurl.UrlPool) error
@@ -51,7 +51,7 @@ func GetRegisteredConfig(name string, silent bool) *RegistrationConfig {
 	return config
 }
 
-func MakeModuleHandler(config *RegistrationConfig, params []string) dvmeta.HandlerFunc {
+func MakeModuleHandler(config *RegistrationConfig, params []string) dvcontext.HandlerFunc {
 	f := config.EndPointHandler
 	if f == nil {
 		panic("EndPointHandler is obligatory field but not specified in module " + config.Name)
@@ -67,7 +67,7 @@ func MakeModuleHandler(config *RegistrationConfig, params []string) dvmeta.Handl
 	if data == nil {
 		data = make(map[string]string)
 	}
-	return func(request *dvmeta.RequestContext) bool {
+	return func(request *dvcontext.RequestContext) bool {
 		request.Params = data
 		return f(request)
 	}
@@ -89,7 +89,7 @@ func MakeModuleGlobalInitialization(moduleInits map[string]map[string]string) {
 	}
 }
 
-func RegisterEndPointHandlers(configs []ModuleConfig) dvmeta.HandlerFunc {
+func RegisterEndPointHandlers(configs []ModuleConfig) dvcontext.HandlerFunc {
 	if len(configs) == 0 {
 		return nil
 	}
@@ -112,14 +112,14 @@ func RegisterEndPointHandlers(configs []ModuleConfig) dvmeta.HandlerFunc {
 }
 
 func urlVerifier(context interface{}, resolver *dvurl.UrlResolver, urlData *dvurl.UrlResultInfo) bool {
-	requestContext := context.(*dvmeta.RequestContext)
+	requestContext := context.(*dvcontext.RequestContext)
 	requestContext.UrlInlineParams = urlData.UrlKeys
-	handler := resolver.Handler.(dvmeta.HandlerFunc)
+	handler := resolver.Handler.(dvcontext.HandlerFunc)
 	return handler(requestContext)
 }
 
-func getHandlerFunc(urlPool *dvurl.UrlPool) dvmeta.HandlerFunc {
-	return func(context *dvmeta.RequestContext) bool {
+func getHandlerFunc(urlPool *dvurl.UrlPool) dvcontext.HandlerFunc {
+	return func(context *dvcontext.RequestContext) bool {
 		urls := context.Urls
 		ok, _ := dvurl.UrlSearch(context, urlPool, urls, urlVerifier, context.ExtraAsDvObject)
 		return ok

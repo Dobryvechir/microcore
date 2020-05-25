@@ -6,12 +6,13 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvmodules
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
+	"log"
 	"strings"
 )
 
-type ActionEndPointHandler func(request *dvmeta.RequestContext) bool
+type ActionEndPointHandler func(request *dvcontext.RequestContext) bool
 
 var registeredActionProcessors = make(map[string]ActionEndPointHandler)
 
@@ -26,21 +27,24 @@ func RegisterActionProcessor(name string, proc ActionEndPointHandler, silent boo
 	return true
 }
 
-func FireAction(action *dvmeta.DvAction, request *dvmeta.RequestContext) bool {
+func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) bool {
 	request.Action = action
 	proc, ok := registeredActionProcessors[action.Typ]
 	if !ok {
+		log.Printf("Action %s url %s has incorrect type %s", action.Name, action.Url, action.Typ)
 		return false
 	}
 	return proc(request)
 }
 
-func RegisterEndPointActions(actions []dvmeta.DvAction) dvmeta.HandlerFunc {
-	if len(actions) == 0 {
+func RegisterEndPointActions(actions []dvcontext.DvAction) dvcontext.HandlerFunc {
+	n := len(actions)
+	if n == 0 {
 		return nil
 	}
 	base := make(map[string]*dvurl.UrlPool)
-	for _, action := range actions {
+	for i := 0; i < n; i++ {
+		action := &actions[i]
 		method := strings.ToUpper(strings.TrimSpace(action.Method))
 		if method == "" {
 			method = "GET"
@@ -56,14 +60,14 @@ func RegisterEndPointActions(actions []dvmeta.DvAction) dvmeta.HandlerFunc {
 }
 
 func urlActionVerifier(context interface{}, resolver *dvurl.UrlResolver, urlData *dvurl.UrlResultInfo) bool {
-	requestContext := context.(*dvmeta.RequestContext)
-	requestContext.UrlInlineParams = urlData.UrlKeys
-	action := resolver.Handler.(*dvmeta.DvAction)
+	requestContext := context.(*dvcontext.RequestContext)
+	requestContext.SetUrlInlineParameters(urlData.UrlKeys)
+	action := resolver.Handler.(*dvcontext.DvAction)
 	return FireAction(action, requestContext)
 }
 
-func getActionHandlerFunc(base map[string]*dvurl.UrlPool) dvmeta.HandlerFunc {
-	return func(context *dvmeta.RequestContext) bool {
+func getActionHandlerFunc(base map[string]*dvurl.UrlPool) dvcontext.HandlerFunc {
+	return func(context *dvcontext.RequestContext) bool {
 		method := strings.ToUpper(context.Reader.Method)
 		urlPool := base[method]
 		if urlPool == nil {

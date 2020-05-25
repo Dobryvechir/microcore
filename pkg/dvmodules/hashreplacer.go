@@ -8,7 +8,7 @@ package dvmodules
 import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"io/ioutil"
 	"strings"
 )
@@ -31,7 +31,7 @@ func IsCorrectHash(s string) bool {
 	return true
 }
 
-func hashReplacerEndPointHandler(request *dvmeta.RequestContext) bool {
+func hashReplacerEndPointHandler(request *dvcontext.RequestContext) bool {
 	url := request.Url
 	finish := strings.LastIndex(url, ".")
 	start := strings.LastIndex(url[:finish], ".") + 1

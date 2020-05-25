@@ -7,7 +7,7 @@ package dvoc
 import (
 	"encoding/json"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"io/ioutil"
@@ -41,7 +41,7 @@ func convertToHeader(list []string) (res map[string]string) {
 	return
 }
 
-func processNetInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
+func processNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	params := dvparser.ConvertToNonEmptyList(command)
 	url := params[0]
 	headers := convertToHeader(params[1:])
@@ -69,7 +69,7 @@ type SmartNetConfig struct {
 	Body     string                 `json:"body"`
 }
 
-func SmartNetInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
+func SmartNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
 	if cmd == "" || cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
 		log.Printf("Empty net parameters", command)
@@ -98,14 +98,14 @@ func SmartNetInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bo
 
 func SmartNetRun(data []interface{}) bool {
 	config := data[0].(*SmartNetConfig)
-	var ctx *dvmeta.RequestContext = nil
+	var ctx *dvcontext.RequestContext = nil
 	if data[1] != nil {
-		ctx = data[1].(*dvmeta.RequestContext)
+		ctx = data[1].(*dvcontext.RequestContext)
 	}
 	return SmartNetRunByConfig(config, ctx)
 }
 
-func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvmeta.RequestContext) bool {
+func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) bool {
 	options := dvnet.GetAveragePersistentOptions()
 	headers := make(map[string]string)
 	if config.Headers != "" {
@@ -166,7 +166,7 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvmeta.RequestContext) boo
 	return true
 }
 
-func processOsInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
+func processOsInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
 	if cmd == "" {
 		log.Printf("Empty net parameters", command)
@@ -195,7 +195,7 @@ func processOsRun(data []interface{}) bool {
 	return err == nil
 }
 
-func portForwardInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
+func portForwardInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	p := strings.Index(command, ":")
 	items := dvparser.ConvertToNonEmptyList(command[p+1:])
 	if len(items) != 2 {

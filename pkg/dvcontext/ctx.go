@@ -3,22 +3,26 @@ MicroCore
 Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
-package dvmeta
+package dvcontext
 
 import (
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"log"
-	"strconv"
+)
+
+const (
+	UrlPrefix = "URL_"
 )
 
 func (ctx *RequestContext) SetHttpErrorCode(errorCode int, message string) {
 	if ctx == nil {
 		log.Printf("Error %d: %s", errorCode, message)
 	} else {
-		if message != "" {
-			ctx.Output = []byte(message)
+		ctx.StatusCode = errorCode
+		if message!="" {
+			ctx.Error = errors.New(message)
 		}
-		ctx.Error = errors.New(strconv.Itoa(errorCode) + " " + message)
 	}
 }
 
@@ -28,4 +32,9 @@ func (ctx *RequestContext) SetErrorMessage(message string) {
 
 func (ctx *RequestContext) SetError(err error) {
 	ctx.SetHttpErrorCode(500, err.Error())
+}
+
+func (ctx *RequestContext) SetUrlInlineParameters(params map[string]string) {
+	ctx.UrlInlineParams = params
+	ctx.ExtraAsDvObject.SetPropertiesWithPrefixFromString(UrlPrefix, params, dvevaluation.TransformUpperCase)
 }

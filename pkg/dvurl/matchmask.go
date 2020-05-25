@@ -2,7 +2,7 @@ package dvurl
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"strings"
 )
 
@@ -42,11 +42,11 @@ func (urlResultInfo *UrlResultInfo) HalfClone() *UrlResultInfo {
 	}
 }
 
-func MatchMasksForUrlParts(masks []*dvmeta.MaskInfo, url []string, extraParams *dvevaluation.DvObject) bool {
+func MatchMasksForUrlParts(masks []*dvcontext.MaskInfo, url []string, extraParams *dvevaluation.DvObject) bool {
 	return MatchMasksWithDefault(masks, url, MatchDefaultFalse, extraParams)
 }
 
-func MatchMasksWithDefault(masks []*dvmeta.MaskInfo, url []string, defaultMatch int, extraParams *dvevaluation.DvObject) bool {
+func MatchMasksWithDefault(masks []*dvcontext.MaskInfo, url []string, defaultMatch int, extraParams *dvevaluation.DvObject) bool {
 	urlFull := strings.Join(url, "/")
 	n := len(masks)
 	isCaseInsensitive := (defaultMatch & MatchCaseInsensitive) != 0

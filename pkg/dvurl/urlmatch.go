@@ -2,7 +2,7 @@ package dvurl
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"regexp"
 	"strconv"
@@ -26,7 +26,7 @@ func matchMaskPartForRegularExpression(url string, regex *regexp.Regexp, start i
 	return true, track
 }
 
-func matchMaskMiddleForWildOrRegularExpressions(url string, parts []*dvmeta.MaskInfoPart, start int, isCaseInsensitive bool, track *UrlResultInfo) (bool, *UrlResultInfo) {
+func matchMaskMiddleForWildOrRegularExpressions(url string, parts []*dvcontext.MaskInfoPart, start int, isCaseInsensitive bool, track *UrlResultInfo) (bool, *UrlResultInfo) {
 	n := len(parts)
 	urlLen := len(url)
 	switch n {
@@ -41,9 +41,9 @@ func matchMaskMiddleForWildOrRegularExpressions(url string, parts []*dvmeta.Mask
 			return false, nil
 		}
 		switch parts[0].Kind {
-		case dvmeta.MaskRegExp:
+		case dvcontext.MaskRegExp:
 			return matchMaskPartForRegularExpression(url, parts[0].Regex, start, isCaseInsensitive, track)
-		case dvmeta.MaskSlashAware:
+		case dvcontext.MaskSlashAware:
 			if strings.Index(url, "/") >= 0 {
 				return false, nil
 			}
@@ -59,7 +59,7 @@ func matchMaskMiddleForWildOrRegularExpressions(url string, parts []*dvmeta.Mask
 	for i := 1; i < n; i++ {
 		posMax -= parts[i].Min
 	}
-	if parts[0].Kind == dvmeta.MaskSlashAware {
+	if parts[0].Kind == dvcontext.MaskSlashAware {
 		slashPos := strings.Index(url, "/")
 		if slashPos >= 0 && slashPos < posMax {
 			posMax = slashPos
@@ -68,10 +68,10 @@ func matchMaskMiddleForWildOrRegularExpressions(url string, parts []*dvmeta.Mask
 	for ; pos < posMax; pos++ {
 		trackNew := track.HalfClone()
 		ok := true
-		if parts[0].Kind == dvmeta.MaskRegExp {
+		if parts[0].Kind == dvcontext.MaskRegExp {
 			ok, trackNew = matchMaskPartForRegularExpression(url[:pos], parts[0].Regex, start, isCaseInsensitive, trackNew)
 		} else {
-			if parts[0].Kind == dvmeta.MaskSlashAware && parts[0].Data != "" {
+			if parts[0].Kind == dvcontext.MaskSlashAware && parts[0].Data != "" {
 				trackNew.namedIds[parts[0].Data] = strconv.Itoa(len(track.posInfo) + 1)
 			}
 			trackNew.posInfo = append(trackNew.posInfo, start|(pos<<urlMatchLenOffset))
@@ -86,7 +86,7 @@ func matchMaskMiddleForWildOrRegularExpressions(url string, parts []*dvmeta.Mask
 	return false, nil
 }
 
-func matchMaskMiddle(url string, parts []*dvmeta.MaskInfoPart, start int, isCaseInsensitive bool, track *UrlResultInfo) (bool, *UrlResultInfo) {
+func matchMaskMiddle(url string, parts []*dvcontext.MaskInfoPart, start int, isCaseInsensitive bool, track *UrlResultInfo) (bool, *UrlResultInfo) {
 	n := len(parts)
 	if n == 0 {
 		if url == "" {
@@ -98,7 +98,7 @@ func matchMaskMiddle(url string, parts []*dvmeta.MaskInfoPart, start int, isCase
 	i := 0
 	for ; i < n; i++ {
 		kind := parts[i].Kind
-		if kind == dvmeta.MaskWord || kind == dvmeta.MaskCondition {
+		if kind == dvcontext.MaskWord || kind == dvcontext.MaskCondition {
 			break
 		}
 	}
@@ -106,7 +106,7 @@ func matchMaskMiddle(url string, parts []*dvmeta.MaskInfoPart, start int, isCase
 		return matchMaskMiddleForWildOrRegularExpressions(url, parts, start, isCaseInsensitive, track)
 	}
 	word := parts[i].Data
-	if parts[i].Kind == dvmeta.MaskCondition {
+	if parts[i].Kind == dvcontext.MaskCondition {
 		word = track.Conditions[parts[i].Condition]
 	}
 	if isCaseInsensitive {
@@ -121,7 +121,7 @@ func matchMaskMiddle(url string, parts []*dvmeta.MaskInfoPart, start int, isCase
 		if pos != 0 {
 			return false, nil
 		}
-		if parts[i].Kind == dvmeta.MaskCondition {
+		if parts[i].Kind == dvcontext.MaskCondition {
 			track.posInfo = append(track.posInfo, start|(m<<urlMatchLenOffset))
 		}
 		return matchMaskMiddle(url[m:], parts[1:], start+m, isCaseInsensitive, track)
@@ -129,7 +129,7 @@ func matchMaskMiddle(url string, parts []*dvmeta.MaskInfoPart, start int, isCase
 	for {
 		res, trackNew := matchMaskMiddleForWildOrRegularExpressions(url[:pos], parts[:i], start, isCaseInsensitive, track.HalfClone())
 		if res {
-			if parts[i].Kind == dvmeta.MaskCondition {
+			if parts[i].Kind == dvcontext.MaskCondition {
 				trackNew.posInfo = append(trackNew.posInfo, pos+start|(m<<urlMatchLenOffset))
 			}
 			res, trackNew = matchMaskMiddle(url[start+pos+m:], parts[i+1:], start+pos+m, isCaseInsensitive, trackNew)
@@ -146,7 +146,7 @@ func matchMaskMiddle(url string, parts []*dvmeta.MaskInfoPart, start int, isCase
 	return false, nil
 }
 
-func matchMaskUrl(mask *dvmeta.MaskInfo, url string, isCaseInsensitive bool, extraParams *dvevaluation.DvObject) (bool, *UrlResultInfo) {
+func matchMaskUrl(mask *dvcontext.MaskInfo, url string, isCaseInsensitive bool, extraParams *dvevaluation.DvObject) (bool, *UrlResultInfo) {
 	if isCaseInsensitive {
 		url = strings.ToLower(url)
 	}
@@ -182,7 +182,7 @@ func matchMaskUrl(mask *dvmeta.MaskInfo, url string, isCaseInsensitive bool, ext
 	track := &UrlResultInfo{posInfo: make([]int, 0, 16), namedIds: make(map[string]string)}
 	if u > 0 || middleLength > 0 {
 		for i := 0; i < middleLength; i++ {
-			if mask.Middle[i].Kind == dvmeta.MaskCondition {
+			if mask.Middle[i].Kind == dvcontext.MaskCondition {
 				if track.Conditions == nil {
 					track.Conditions = make(map[string]string)
 				}

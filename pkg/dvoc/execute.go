@@ -8,7 +8,7 @@ import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvdbdata"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"strconv"
@@ -18,7 +18,7 @@ import (
 )
 
 type ProcessFunction struct {
-	Init  func(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool)
+	Init  func(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool)
 	Run   func([]interface{}) bool
 	Async bool
 }
@@ -77,7 +77,7 @@ func getWaitKeys() string {
 	return res
 }
 
-func ExecuteProcessFunction(fn *ProcessFunction, pauseTime int, totalTime int, command string, group *sync.WaitGroup, ctx *dvmeta.RequestContext) bool {
+func ExecuteProcessFunction(fn *ProcessFunction, pauseTime int, totalTime int, command string, group *sync.WaitGroup, ctx *dvcontext.RequestContext) bool {
 	data, ok := fn.Init(command, ctx)
 	if !ok {
 		return false
@@ -124,7 +124,7 @@ func ExecuteSingleCommand(pauseTime int, totalTime int, prefix string, command s
 	return ExecuteProcessFunction(&waiter, pauseTime, totalTime, command, nil, nil)
 }
 
-func ExecuteSequence(prefix string, ctx *dvmeta.RequestContext) bool {
+func ExecuteSequence(prefix string, ctx *dvcontext.RequestContext) bool {
 	var wg sync.WaitGroup
 	var waitCommand string
 	var err error
@@ -257,12 +257,6 @@ var ocExecutorRegistrationConfig = &dvmodules.HookRegistrationConfig{
 	},
 	//GlobalInitHandler: MethodGlobalInitHandler
 	//ServerInitHandler: MethodServerInitHandler
-}
-
-func fireAction(ctx *dvmeta.RequestContext) bool {
-	action := ctx.Action
-	res := ExecuteSequence(action.Name, ctx)
-	return res
 }
 
 func RegisterOC() bool {

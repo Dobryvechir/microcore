@@ -6,7 +6,7 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvprocessors
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 )
 
@@ -15,7 +15,7 @@ type ProcessorServerInitHandler func(params []string) (map[string]string, error)
 
 type RegistrationConfig struct {
 	Name              string
-	EndPointHandler   dvmeta.ProcessorEndPointHandler
+	EndPointHandler   dvcontext.ProcessorEndPointHandler
 	GlobalInitHandler ProcessorGlobalInitHandler
 	ServerInitHandler ProcessorServerInitHandler
 }
@@ -48,12 +48,12 @@ func GetRegisteredConfig(name string, silent bool) *RegistrationConfig {
 	return config
 }
 
-func InitializeProcessors(processorConfigs []ProcessorConfig) (blocks []dvmeta.ProcessorBlock) {
+func InitializeProcessors(processorConfigs []ProcessorConfig) (blocks []dvcontext.ProcessorBlock) {
 	n := len(processorConfigs)
 	if n == 0 {
 		return nil
 	}
-	blocks = make([]dvmeta.ProcessorBlock, n)
+	blocks = make([]dvcontext.ProcessorBlock, n)
 	for i := 0; i < n; i++ {
 		name := processorConfigs[i].Name
 		params := processorConfigs[i].Params
@@ -74,7 +74,7 @@ func InitializeProcessors(processorConfigs []ProcessorConfig) (blocks []dvmeta.P
 		if data == nil {
 			data = make(map[string]string)
 		}
-		blocks[i] = dvmeta.ProcessorBlock{EndPointHandler: f, Urls: urls, Data: data}
+		blocks[i] = dvcontext.ProcessorBlock{EndPointHandler: f, Urls: urls, Data: data}
 	}
 	return
 }

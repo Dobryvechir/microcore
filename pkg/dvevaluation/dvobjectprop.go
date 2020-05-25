@@ -7,6 +7,11 @@ package dvevaluation
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"math"
+	"strings"
+)
+
+const (
+	TransformUpperCase = 1
 )
 
 func DvObjectInternalToString(obj *DvObject) string {
@@ -74,4 +79,20 @@ func (obj *DvObject) SetProperty(name string, value interface{}) {
 		obj.Properties = make(map[string]interface{})
 	}
 	obj.Properties[name] = value
+}
+
+func (obj *DvObject) SetPropertiesWithPrefixFromString(prefix string, values map[string]string, options int) {
+	isUpperCase := (options & TransformUpperCase) != 0
+	if obj == nil || values == nil {
+		return
+	}
+	if obj.Properties == nil {
+		obj.Properties = make(map[string]interface{})
+	}
+	for k, v := range values {
+		if isUpperCase {
+			k = strings.ToUpper(k)
+		}
+		obj.Properties[prefix+k] = v
+	}
 }

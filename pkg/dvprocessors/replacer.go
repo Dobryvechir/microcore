@@ -7,7 +7,7 @@ package dvprocessors
 
 import (
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
 	"regexp"
@@ -18,7 +18,7 @@ func isSimpleKey(k string) bool {
 	return strings.Index(k, "@@@") != 0
 }
 
-func ReplacerHandler(request *dvmeta.RequestContext) bool {
+func ReplacerHandler(request *dvcontext.RequestContext) bool {
 	for k, v := range request.Params {
 		if isSimpleKey(k) {
 			request.Output = MakeSimpleReplacement(request.Output, []byte(k), []byte(v))

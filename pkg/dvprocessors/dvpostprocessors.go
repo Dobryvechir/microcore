@@ -6,7 +6,7 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvprocessors
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 )
 
@@ -32,12 +32,12 @@ func GetRegisteredConfigForPost(name string, silent bool) *RegistrationConfig {
 	return config
 }
 
-func InitializePostProcessors(processorConfigs []ProcessorConfig) (blocks []dvmeta.ProcessorBlock) {
+func InitializePostProcessors(processorConfigs []ProcessorConfig) (blocks []dvcontext.ProcessorBlock) {
 	n := len(processorConfigs)
 	if n == 0 {
 		return nil
 	}
-	blocks = make([]dvmeta.ProcessorBlock, n)
+	blocks = make([]dvcontext.ProcessorBlock, n)
 	for i := 0; i < n; i++ {
 		name := processorConfigs[i].Name
 		params := processorConfigs[i].Params
@@ -58,7 +58,7 @@ func InitializePostProcessors(processorConfigs []ProcessorConfig) (blocks []dvme
 		if data == nil {
 			data = make(map[string]string)
 		}
-		blocks[i] = dvmeta.ProcessorBlock{EndPointHandler: f, Urls: urls, Data: data}
+		blocks[i] = dvcontext.ProcessorBlock{EndPointHandler: f, Urls: urls, Data: data}
 	}
 	return
 }

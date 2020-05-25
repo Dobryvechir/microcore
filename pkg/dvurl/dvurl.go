@@ -7,7 +7,7 @@ package dvurl
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
 	"strings"
@@ -17,7 +17,7 @@ var logLevel = false
 
 type UrlResolver struct {
 	Handler  interface{}
-	maskInfo *dvmeta.MaskInfo
+	maskInfo *dvcontext.MaskInfo
 	rewrite  *RewriteInfo
 }
 

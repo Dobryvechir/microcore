@@ -8,7 +8,7 @@ package dvoc
 import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvtemp"
 	"io/ioutil"
@@ -389,7 +389,7 @@ func executeSyncWriteCommand(files []string, strategies []int) bool {
 	return true
 }
 
-func copyToPodInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
+func copyToPodInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	files, strategies, ok := parseSyncCommand(command)
 	return []interface{}{files, strategies}, ok
 }
@@ -400,7 +400,7 @@ func copyToPodRun(data []interface{}) bool {
 	return executeSyncWriteCommand(files, strategies)
 }
 
-func copyFromPodInit(command string, ctx *dvmeta.RequestContext) ([]interface{}, bool) {
+func copyFromPodInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	files, strategies, ok := parseSyncCommand(command)
 	return []interface{}{files, strategies}, ok
 }

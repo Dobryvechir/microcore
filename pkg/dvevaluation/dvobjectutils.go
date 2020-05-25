@@ -24,7 +24,7 @@ func (obj *DvObject) CalculateStringWithBrackets(b []byte, level int) (string, e
 		if c == '{' {
 			v++
 			if v == level {
-				m -= level
+				m -= level - 1
 				k = len(r)
 				p := level
 				for i++; i < n && b[i] == '{'; i++ {

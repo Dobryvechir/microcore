@@ -9,9 +9,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvcom"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
@@ -226,8 +225,8 @@ func crudDeleteByStrings(crudInfo *DvCrudDetails, ids string) ([]byte, int) {
 	return crudDeleteByArray(crudInfo, idArray)
 }
 
-func MakeCrudHandler(crudInfo *DvCrudDetails) dvmeta.HandlerFunc {
-	return func(request *dvmeta.RequestContext) bool {
+func MakeCrudHandler(crudInfo *DvCrudDetails) dvcontext.HandlerFunc {
+	return func(request *dvcontext.RequestContext) bool {
 		urls := strings.Split(request.Url, "/")
 		urlsLen := len(urls)
 		dataUrl := ""
@@ -275,7 +274,7 @@ func MakeCrudHandler(crudInfo *DvCrudDetails) dvmeta.HandlerFunc {
 		}
 		request.Output = mes
 		request.StatusCode = stat
-		dvcom.HandleRequestContext(request)
+		request.HandleCommunication()
 		return true
 	}
 }

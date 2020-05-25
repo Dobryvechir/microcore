@@ -7,13 +7,13 @@ package dvgeolocation
 
 import (
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvproviders"
 )
 
 var dictionaryPath string
 
-func provideGeolocation(request *dvmeta.RequestContext) bool {
+func provideGeolocation(request *dvcontext.RequestContext) bool {
 	PlaceGeoInfo(request.Reader, request.Params)
 	return true
 }

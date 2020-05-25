@@ -9,15 +9,15 @@ import (
 	"strings"
 
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvprocessors"
 	"github.com/Dobryvechir/microcore/pkg/dvproviders"
 )
 
-func prepareComRewriteMap(rewrites []DvRewrite) dvmeta.RewriteMap {
-	var rewriteResult = make(dvmeta.RewriteMap)
+func prepareComRewriteMap(rewrites []DvRewrite) dvcontext.RewriteMap {
+	var rewriteResult = make(dvcontext.RewriteMap)
 	for _, c := range rewrites {
 		url := c.From
 		if url != "" && url[0] == '/' {
@@ -44,7 +44,7 @@ func prepareMapOfStringArrays(smap map[string]string) map[string][]string {
 	return r
 }
 
-func prepareMicroCoreInfo(server *DvHostServer) *dvmeta.MicroCoreInfo {
+func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 	server.AccessControlMaxAge = strings.TrimSpace(server.AccessControlMaxAge)
 	if server.AccessControlMaxAge != "" {
 		if _, err := strconv.Atoi(server.AccessControlMaxAge); err != nil {
@@ -61,9 +61,9 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvmeta.MicroCoreInfo {
 			server.AccessControlAllowCredentials = ""
 		}
 	}
-	dvServerInfo := &dvmeta.MicroCoreInfo{
-		BaseFolderUrl:             dvcom.GetPurePath(server.BaseFolder),
-		ExtraServerUrl:            dvcom.GetPurePath(server.ExtraServer),
+	dvServerInfo := &dvcontext.MicroCoreInfo{
+		BaseFolderUrl:             dvcontext.GetPurePath(server.BaseFolder),
+		ExtraServerUrl:            dvcontext.GetPurePath(server.ExtraServer),
 		ExtraServerSettings:       server.ExtraServerSettings,
 		ProxyName:                 dvcom.PrepareProxyName(server.ProxyName),
 		BaseRewrite:               prepareComRewriteMap(server.Rewrites),
@@ -72,9 +72,9 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvmeta.MicroCoreInfo {
 		HeadersStaticOptions:      prepareMapOfStringArrays(server.HeadersStaticOptions),
 		HeadersExtraServer:        prepareMapOfStringArrays(server.HeadersExtraServer),
 		HeadersExtraServerOptions: prepareMapOfStringArrays(server.HeadersExtraServerOptions),
-		HeadersSpecial:            make(map[string]dvmeta.MicroCoreHeaderAttribute),
-		HeadersSpecialOptions:     make(map[string]dvmeta.MicroCoreHeaderAttribute),
-		HeadersSpecialStatic:      make(map[string]dvmeta.MicroCoreHeaderAttribute),
+		HeadersSpecial:            make(map[string]dvcontext.MicroCoreHeaderAttribute),
+		HeadersSpecialOptions:     make(map[string]dvcontext.MicroCoreHeaderAttribute),
+		HeadersSpecialStatic:      make(map[string]dvcontext.MicroCoreHeaderAttribute),
 		DirectoryIndex:            dvparser.ConvertToNonEmptyList(server.DirectoryIndex),
 		BaseProcessorBlocks:       dvprocessors.InitializeProcessors(server.Processors),
 		BaseProviderBlocks:        dvproviders.MakeProviderBlocks(server.Providers),
@@ -114,9 +114,9 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvmeta.MicroCoreInfo {
 		dvServerInfo.HeadersSpecialOptions["Access-Control-Allow-Methods"] = accessControlAllowMethods
 	}
 	if accessControlAllowOrigin.Kind >= 0 {
-		accessControlAllowOrigin.Kind = dvcom.HEADERS_SET_ORIGIN
+		accessControlAllowOrigin.Kind = dvcontext.HeadersSetOrigin
 		if _, ok := accessControlAllowOrigin.Imap["*"]; ok {
-			accessControlAllowOrigin.Kind = dvcom.HEADERS_SET_ORIGIN_ALWAYS
+			accessControlAllowOrigin.Kind = dvcontext.HeadersSetOriginAlways
 		}
 		dvServerInfo.HeadersSpecial["Access-Control-Allow-Origin"] = accessControlAllowOrigin
 		dvServerInfo.HeadersSpecialOptions["Access-Control-Allow-Origin"] = accessControlAllowOrigin
@@ -131,7 +131,7 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvmeta.MicroCoreInfo {
 func ProcessBaseFolder(server *DvHostServer, hostServers []DvHostServer) {
 	if server != nil || len(hostServers) > 0 {
 		defaultServerInfo := prepareMicroCoreInfo(server)
-		hostServerInfo := make(map[string]*dvmeta.MicroCoreInfo)
+		hostServerInfo := make(map[string]*dvcontext.MicroCoreInfo)
 		for i, c := range hostServers {
 			hosts := strings.Split(strings.TrimSpace(c.Hosts), " ")
 			if len(hosts) == 0 || hosts[0] == "" {

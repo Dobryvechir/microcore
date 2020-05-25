@@ -6,8 +6,8 @@ package dvcom
 
 import (
 	"bytes"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvmeta"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 	"io/ioutil"
@@ -15,34 +15,23 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
 
-var isRecord = false
-
-var recordNo int
-var recordPath string
 var LogServer bool
 var LogFileServer bool
 var LogHosts bool
 var defaultDirectoryIndex = []string{"$.html", "index.html", "index.htm"}
 var ServiceFolder = "..$$$"
 
-const (
-	HEADERS_ADD_TO_LIST       = iota
-	HEADERS_SET_ORIGIN        = iota
-	HEADERS_SET_ORIGIN_ALWAYS = iota
-)
-
-func SetRequestUrl(request *dvmeta.RequestContext, url string) {
+func SetRequestUrl(request *dvcontext.RequestContext, url string) {
 	request.Url = url
 	request.UrlsLowerCase = dvparser.ConvertURLToList(strings.ToLower(url))
 	request.Urls = dvparser.ConvertURLToList(url)
 }
 
-func CheckProcessorBlocks(blocks []dvmeta.ProcessorBlock, request *dvmeta.RequestContext) bool {
+func CheckProcessorBlocks(blocks []dvcontext.ProcessorBlock, request *dvcontext.RequestContext) bool {
 	n := len(blocks)
 	urls := request.Urls
 	for i := 0; i < n; i++ {
@@ -56,8 +45,8 @@ func CheckProcessorBlocks(blocks []dvmeta.ProcessorBlock, request *dvmeta.Reques
 	return false
 }
 
-func GetRewriteMapItem(url string, full bool, src string) *dvmeta.RewriteMapItem {
-	return &dvmeta.RewriteMapItem{Url: url, UrlLen: len(url), Full: full, Src: src}
+func GetRewriteMapItem(url string, full bool, src string) *dvcontext.RewriteMapItem {
+	return &dvcontext.RewriteMapItem{Url: url, UrlLen: len(url), Full: full, Src: src}
 }
 
 func getMimeByExtension(ext string, defExtension string, defMime string) string {
@@ -92,15 +81,15 @@ func GetContentTypeByFileName(name string) string {
 	return getContentTypeByName(name, "", "text/plain")
 }
 
-func HandleFromFile(request *dvmeta.RequestContext) {
+func HandleFromFile(request *dvcontext.RequestContext) {
 	if request.DataType == "" {
 		request.DataType = GetContentTypeByFileName(request.FileName)
 	}
 	request.Output, request.Error = ioutil.ReadFile(request.FileName)
-	HandleRequestContext(request)
+	request.HandleCommunication()
 }
 
-func HandleFromFileWithProcessorCheck(request *dvmeta.RequestContext) {
+func HandleFromFileWithProcessorCheck(request *dvcontext.RequestContext) {
 	method := request.Reader.Method
 	toLog := LogFileServer && dvlog.CurrentLogLevel >= dvlog.LogInfo && (method != "OPTIONS" || dvlog.CurrentLogLevel >= dvlog.LogDetail)
 	if toLog {
@@ -126,87 +115,12 @@ func HandleFromFileWithProcessorCheck(request *dvmeta.RequestContext) {
 	HandleFromFile(request)
 }
 
-func HandleRequestContext(request *dvmeta.RequestContext) {
-	if request.DataType == "" {
-		request.DataType = "application/json"
-	}
-	postHeaders := make(map[string][]string)
-	postHeaders["Content-Type"] = []string{request.DataType}
-	preHeaders := request.Server.HeadersStatic
-	if request.Reader.Method == "OPTIONS" {
-		preHeaders = request.Server.HeadersStaticOptions
-	}
-	origin := "*"
-	if korig, isok := request.Reader.Header["Origin"]; isok && len(korig) > 0 {
-		origin = korig[0]
-	}
-	provideHeaders(preHeaders, postHeaders, origin, request.Server.HeadersSpecialStatic, request.Writer)
-	if request.StatusCode > 0 {
-		request.Writer.WriteHeader(request.StatusCode)
-	}
-	if request.Error != nil {
-		HandleError(request, request.Error.Error())
-	} else {
-		Send(request.Writer, request.Reader, request.Output)
-	}
-}
-
-func HandleFromString(request *dvmeta.RequestContext, data string) {
+func HandleFromString(request *dvcontext.RequestContext, data string) {
 	request.Output = []byte(data)
-	HandleRequestContext(request)
+	request.HandleCommunication()
 }
 
-func GetPurePath(path string) string {
-	path = strings.TrimSpace(path)
-	if path == "" {
-		return ""
-	}
-	lastSym := path[len(path)-1]
-	if lastSym == '/' || lastSym == '\\' {
-		path = path[:len(path)-1]
-	}
-	return path
-}
-
-func SetRecordMode(path string) {
-	path = GetPurePath(path)
-	if path == "" {
-		return
-	}
-	if _, err := os.Stat(path); err != nil {
-		log.Printf("Record path is not correct %s\n", err.Error())
-		return
-	}
-	isRecord = true
-	recordNo = 0
-	recordPath = path + "/_" + strconv.FormatInt(dvlog.StartTime, 36) + "_"
-	log.Printf("Recording started at %v\n", recordPath)
-}
-
-func HandlerError(w http.ResponseWriter, r *http.Request, message string) {
-	log.Printf("Error %s: %s [%s]", message, r.URL.Path, r.Method)
-	errCode := 0
-	if len(message) >= 3 && message[0] >= '1' && message[0] <= '5' && message[1] >= '0' && message[1] <= '9' && message[2] >= '0' && message[2] <= '9' {
-		errCode, _ = strconv.Atoi(message[:3])
-	}
-	if errCode > 0 {
-		w.WriteHeader(errCode)
-	} else {
-		message = "403 - " + message
-		w.WriteHeader(http.StatusForbidden)
-	}
-	HandlerOk(w, r, message)
-}
-
-func HandleError(request *dvmeta.RequestContext, message string) {
-	HandlerError(request.Writer, request.Reader, message)
-}
-
-func HandlerOk(w http.ResponseWriter, r *http.Request, message string) {
-	Send(w, r, []byte(message))
-}
-
-func HandlerWriteDirect(request *dvmeta.RequestContext) {
+func HandlerWriteDirect(request *dvcontext.RequestContext) {
 	if request.StatusCode <= 0 {
 		request.StatusCode = 200
 	}
@@ -216,107 +130,15 @@ func HandlerWriteDirect(request *dvmeta.RequestContext) {
 	}
 }
 
-func getSystemSafeFileName(name string) string {
-	var a [100]byte
-	len := copy(a[:], name)
-	for i, c := range a {
-		if !(c >= 48 && c < 58 || c >= 65 && c < 91 || c >= 97 && c < 123) {
-			a[i] = 95
-		}
-	}
-	return string(a[:len])
-}
-
-//TODO: not effective, need to be rewritten
-func presentStringArray(dat []string) string {
-	s := "["
-	if dat != nil {
-		for k, v := range dat {
-			if k != 0 {
-				s += "]["
-			}
-			s += v
-		}
-	}
-	return s + "]"
-}
-
-func saveRequest(filename string, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("Error reading body: %v", err)
-		body = []byte("!!!Error reading body!!!!!")
-	}
-	f, er := os.Create(filename)
-	if er != nil {
-		log.Printf("Error creating file:%s %v", filename, er)
-		return
-	}
-	defer f.Close()
-	s := r.Proto + " " + r.URL.Path + "\n"
-	for k, v := range r.Header {
-		s += k + ": " + presentStringArray(v) + "\n"
-	}
-	s += "\n"
-	_, e1 := f.WriteString(s)
-	if e1 != nil {
-		log.Printf("Error writing file:%s %v", filename, e1)
-		return
-	}
-	f.Write(body)
-	f.Sync()
-}
-
-func saveResponse(filename string, w http.ResponseWriter, body []byte) {
-	f, er := os.Create(filename)
-	if er != nil {
-		log.Printf("Error creating file:%s %v", filename, er)
-		return
-	}
-	defer f.Close()
-	s := ""
-	for k, v := range w.Header() {
-		s += k + ": " + presentStringArray(v) + "\n"
-	}
-	s += "\n"
-	_, e1 := f.WriteString(s)
-	if e1 != nil {
-		log.Printf("Error writing file:%s %v", filename, e1)
-		return
-	}
-	f.Write(body)
-	f.Sync()
-
-}
-
-func Send(w http.ResponseWriter, r *http.Request, message []byte) {
-	if w.Header().Get("Content-Type") == "" {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	}
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
-	w.Header().Set("Access-Control-Max-Age", "3600")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, Tenant")
-	if message != nil {
-		w.Write(message)
-	}
-	if isRecord {
-		recordNo++
-		name := recordPath + strconv.Itoa(recordNo) + "_" + getSystemSafeFileName(r.URL.Path) + "_"
-		saveRequest(name+"r.txt", r)
-		saveResponse(name+"s.txt", w, message)
-	}
-}
-
-func tryLocalFileByMethodAndRequest(request *dvmeta.RequestContext, folder string) bool {
+func tryLocalFileByMethodAndRequest(request *dvcontext.RequestContext, folder string) bool {
 	//TODO if OPTIONS return good options (scanning folders for methods allowed),
 	// otherwise look at /{{METHOD}} folder
 	//
 	return false
 }
 
-func tryLocalFile(request *dvmeta.RequestContext, folder string) bool {
-	name := GetPurePath(folder + request.Url)
+func tryLocalFile(request *dvcontext.RequestContext, folder string) bool {
+	name := dvcontext.GetPurePath(folder + request.Url)
 	fi, err := os.Stat(name)
 	if err != nil {
 		return false
@@ -351,56 +173,7 @@ func tryLocalFile(request *dvmeta.RequestContext, folder string) bool {
 	return false
 }
 
-func provideHeaders(preHeaders map[string][]string, postHeaders map[string][]string, origin string, specialHeaders map[string]dvmeta.MicroCoreHeaderAttribute, w http.ResponseWriter) {
-	for nm, hd := range preHeaders {
-		if _, ok := specialHeaders[nm]; ok {
-			continue
-		}
-		if _, okey := postHeaders[nm]; okey {
-			continue
-		}
-		for _, h := range hd {
-			w.Header().Set(nm, h)
-		}
-	}
-	for nm, hd := range postHeaders {
-		if _, ok := specialHeaders[nm]; ok {
-			continue
-		}
-		for _, h := range hd {
-			w.Header().Set(nm, h)
-		}
-	}
-	for nm, hd := range specialHeaders {
-		pre, ok := preHeaders[nm]
-		post, okey := postHeaders[nm]
-		if !okey && ok {
-			post = pre
-			okey = true
-		}
-		switch hd.Kind {
-		case HEADERS_ADD_TO_LIST:
-			if okey && len(post) > 0 {
-				s := strings.TrimSpace(post[0])
-				oldList := dvparser.ConvertToNonEmptyList(s)
-				s = dvparser.AddNonRepeatingWords(s, oldList, hd.List, hd.Imap, hd.Plain, ", ")
-				w.Header().Set(nm, s)
-			} else {
-				w.Header().Set(nm, hd.Plain)
-			}
-		case HEADERS_SET_ORIGIN:
-			if _, ok = hd.Imap[origin]; ok {
-				w.Header().Set(nm, origin)
-			} else if okey && len(post) > 0 {
-				w.Header().Set(nm, post[0])
-			}
-		case HEADERS_SET_ORIGIN_ALWAYS:
-			w.Header().Set(nm, origin)
-		}
-	}
-}
-
-func createClientBySettings(settings *dvmeta.ServerSettings) *http.Client {
+func createClientBySettings(settings *dvcontext.ServerSettings) *http.Client {
 	tr := &http.Transport{
 		DisableKeepAlives:     settings.DisableKeepAlives,
 		MaxIdleConnsPerHost:   settings.MaxIdleConnsPerHost,
@@ -413,7 +186,7 @@ func createClientBySettings(settings *dvmeta.ServerSettings) *http.Client {
 	return &http.Client{Transport: tr}
 }
 
-func createClientForMicroCoreInfo(server *dvmeta.MicroCoreInfo) {
+func createClientForMicroCoreInfo(server *dvcontext.MicroCoreInfo) {
 	server.Lock()
 	if server.Client != nil {
 		server.Unlock()
@@ -445,7 +218,7 @@ func extractHostFromUrl(url string) string {
 	return url
 }
 
-func tryHttpForward(request *dvmeta.RequestContext, url string) bool {
+func tryHttpForward(request *dvcontext.RequestContext, url string) bool {
 	if request.Server.Client == nil {
 		createClientForMicroCoreInfo(request.Server)
 	}
@@ -460,8 +233,7 @@ func tryHttpForward(request *dvmeta.RequestContext, url string) bool {
 			message := err.Error()
 			log.Print(message)
 			request.Output = dvlog.FormErrorMessage(message)
-			request.StatusCode = 500
-			HandleRequestContext(request)
+			request.HandleInternalServerError()
 			return false
 		}
 		if len(body) == 0 {
@@ -482,7 +254,7 @@ func tryHttpForward(request *dvmeta.RequestContext, url string) bool {
 		}
 		request.Output = dvlog.FormErrorMessage(err.Error())
 		request.StatusCode = 400
-		HandleRequestContext(request)
+		request.HandleCommunication()
 		return false
 	}
 	origin := "*"
@@ -536,7 +308,7 @@ func tryHttpForward(request *dvmeta.RequestContext, url string) bool {
 			request.Output = dvlog.FormErrorMessage(err1.Error())
 			request.StatusCode = 500
 		}
-		HandleRequestContext(request)
+		request.HandleCommunication()
 		return false
 	}
 	body, err2 := ioutil.ReadAll(resp.Body)
@@ -545,25 +317,23 @@ func tryHttpForward(request *dvmeta.RequestContext, url string) bool {
 			log.Printf("Error reading body %s: %s", url+request.Reader.URL.Path, err2.Error())
 		}
 		request.Output = dvlog.FormErrorMessage(err2.Error())
-		request.StatusCode = 500
-		HandleRequestContext(request)
+		request.HandleInternalServerError()
 		return false
 	}
 	if toLog {
 		dvlog.WriteResponseToLog(logFile, resp, body)
 	}
 	if method != "OPTIONS" {
-		provideHeaders(resp.Header, request.Server.HeadersExtraServer, origin, request.Server.HeadersSpecial, request.Writer)
+		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersExtraServer, origin, request.Server.HeadersSpecial, request.Writer)
 	} else {
-		provideHeaders(resp.Header, request.Server.HeadersExtraServerOptions, origin, request.Server.HeadersSpecialOptions, request.Writer)
+		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersExtraServerOptions, origin, request.Server.HeadersSpecialOptions, request.Writer)
 	}
 	request.StatusCode = resp.StatusCode
 	request.Output = body
 	if method != "OPTIONS" && request.Server.PostProcessorBlocks != nil {
 		oldLen := len(body)
 		if CheckProcessorBlocks(request.Server.PostProcessorBlocks, request) {
-			request.StatusCode = 404
-			HandleRequestContext(request)
+			request.HandleFileNotFound()
 			return false
 		}
 		if len(request.Output) != oldLen {
@@ -574,7 +344,7 @@ func tryHttpForward(request *dvmeta.RequestContext, url string) bool {
 	return true
 }
 
-func tryTcpForward(request *dvmeta.RequestContext, url string) bool {
+func tryTcpForward(request *dvcontext.RequestContext, url string) bool {
 	if request.Server.Client == nil {
 		createClientForMicroCoreInfo(request.Server)
 	}
@@ -590,7 +360,7 @@ func tryTcpForward(request *dvmeta.RequestContext, url string) bool {
 			log.Print(message)
 			request.Output = dvlog.FormErrorMessage(message)
 			request.StatusCode = 400
-			HandleRequestContext(request)
+			request.HandleCommunication()
 			return true
 		}
 		if len(body) == 0 {
@@ -661,9 +431,9 @@ func tryTcpForward(request *dvmeta.RequestContext, url string) bool {
 		dvlog.WriteResponseToLog(logFile, resp, body)
 	}
 	if method != "OPTIONS" {
-		provideHeaders(resp.Header, request.Server.HeadersExtraServer, origin, request.Server.HeadersSpecial, request.Writer)
+		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersExtraServer, origin, request.Server.HeadersSpecial, request.Writer)
 	} else {
-		provideHeaders(resp.Header, request.Server.HeadersExtraServerOptions, origin, request.Server.HeadersSpecialOptions, request.Writer)
+		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersExtraServerOptions, origin, request.Server.HeadersSpecialOptions, request.Writer)
 	}
 	request.StatusCode = resp.StatusCode
 	request.Output = body
@@ -696,7 +466,7 @@ func PrepareProxyName(name string) string {
 	return name
 }
 
-func rewriteComRewriteItem(url string, r []*dvmeta.RewriteMapItem) string {
+func rewriteComRewriteItem(url string, r []*dvcontext.RewriteMapItem) string {
 	l := len(url)
 	for _, c := range r {
 		if l < c.UrlLen {
@@ -715,7 +485,7 @@ func rewriteComRewriteItem(url string, r []*dvmeta.RewriteMapItem) string {
 	return url
 }
 
-func prepareMicroCoreInfo(serverInfo *dvmeta.MicroCoreInfo) {
+func prepareMicroCoreInfo(serverInfo *dvcontext.MicroCoreInfo) {
 	serverInfo.BaseFolderUsed = false
 	if serverInfo.BaseFolderUrl != "" {
 		if _, err := os.Stat(serverInfo.BaseFolderUrl); err != nil {
@@ -742,8 +512,8 @@ func prepareMicroCoreInfo(serverInfo *dvmeta.MicroCoreInfo) {
 	}
 }
 
-func PrepareAccessControlLists(data string) dvmeta.MicroCoreHeaderAttribute {
-	res := dvmeta.MicroCoreHeaderAttribute{Kind: HEADERS_ADD_TO_LIST, Imap: make(map[string]int), List: dvparser.ConvertToNonEmptyList(data)}
+func PrepareAccessControlLists(data string) dvcontext.MicroCoreHeaderAttribute {
+	res := dvcontext.MicroCoreHeaderAttribute{Kind: dvcontext.HeadersAddToList, Imap: make(map[string]int), List: dvparser.ConvertToNonEmptyList(data)}
 	if len(res.List) == 0 {
 		res.Kind = -1
 		return res
@@ -796,7 +566,7 @@ func calculateRequestContextParameters(r *http.Request) (res map[string]interfac
 	return
 }
 
-func MakeDefaultHandler(defaultServerInfo *dvmeta.MicroCoreInfo, hostServerInfo map[string]*dvmeta.MicroCoreInfo) http.HandlerFunc {
+func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerInfo map[string]*dvcontext.MicroCoreInfo) http.HandlerFunc {
 	prepareMicroCoreInfo(defaultServerInfo)
 	for _, c := range hostServerInfo {
 		prepareMicroCoreInfo(c)
@@ -806,7 +576,7 @@ func MakeDefaultHandler(defaultServerInfo *dvmeta.MicroCoreInfo, hostServerInfo 
 		if d, okey := hostServerInfo[r.Host]; okey {
 			currentServer = d
 		}
-		request := &dvmeta.RequestContext{
+		request := &dvcontext.RequestContext{
 			Extra:  calculateRequestContextParameters(r),
 			Server: currentServer,
 			Writer: w,
@@ -834,7 +604,7 @@ func MakeDefaultHandler(defaultServerInfo *dvmeta.MicroCoreInfo, hostServerInfo 
 			} else if currentServer.ExtraServerHttp {
 				tryHttpForward(request, currentServer.ExtraServerUrl)
 			} else {
-				HandlerError(w, r, "404 Not Found")
+				request.HandleFileNotFound()
 			}
 		}
 	}

@@ -17,6 +17,45 @@ import (
 	"strings"
 )
 
+func findDependantId(row []string, mapping map[string][]string, depCols []int, idCol int) (string, int) {
+	n := len(depCols)
+	for i := 0; i < n; i++ {
+		k := depCols[i]
+		id := row[k]
+		if mapping[id] != nil && id != row[idCol] {
+			return id, k
+		}
+	}
+	return "", -1
+}
+
+func collectCycleInfo(pool [][]string, depCols []int, idCol int) string {
+	mapping := make(map[string][]string)
+	passed := make(map[string]bool)
+	n := len(pool)
+	if n == 0 {
+		return "Pool of cycled objects is empty"
+	}
+	var id string
+	for i := 0; i < n; i++ {
+		p := pool[i]
+		id = p[idCol]
+		mapping[id] = p
+	}
+	info := id + " -> "
+	for !passed[id] {
+		passed[id] = true
+		nId, nCol := findDependantId(mapping[id], mapping, depCols, idCol)
+		if nCol < 0 {
+			info += " System error - no cycling"
+			break
+		}
+		info += nId + "(" + strconv.Itoa(nCol) + ") -> "
+		id = nId
+	}
+	return info
+}
+
 func OrderObjectsByHierarchy(objects [][]string, leftObjects map[string]bool,
 	idCol int, depCols []int) ([][][]string, error) {
 	n := len(objects)
@@ -44,7 +83,7 @@ func OrderObjectsByHierarchy(objects [][]string, leftObjects map[string]bool,
 			reliant := false
 			for k := 0; k < v; k++ {
 				depend := item[depCols[k]]
-				if depend != "" && mapping[depend] != nil {
+				if depend != "" && mapping[depend] != nil && depend != item[idCol] {
 					reliant = true
 					break
 				}
@@ -59,7 +98,8 @@ func OrderObjectsByHierarchy(objects [][]string, leftObjects map[string]bool,
 		poolSize = m
 		m = len(current)
 		if m == 0 {
-			return nil, errors.New("Cycled objects")
+			info := collectCycleInfo(pool[:poolSize], depCols, idCol)
+			return nil, errors.New("cycled objects (" + info + ")")
 		}
 		for i := 0; i < m; i++ {
 			delete(mapping, current[i][idCol])
