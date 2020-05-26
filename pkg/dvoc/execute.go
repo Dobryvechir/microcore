@@ -261,6 +261,7 @@ var ocExecutorRegistrationConfig = &dvmodules.HookRegistrationConfig{
 
 func RegisterOC() bool {
 	dvmodules.RegisterActionProcessor("", fireAction, false)
+	dvmodules.RegisterActionProcessor("file", fireFileAction, false)
 	return dvmodules.SubscribeForEvents(ocExecutorRegistrationConfig, false)
 }
 

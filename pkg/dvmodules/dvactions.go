@@ -1,7 +1,6 @@
-/***********************************************************************
-MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+// package modules allows to extend the basic functionality of the server
+//  thru creating various modules and registering it here.
+// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
 package dvmodules
 
@@ -12,7 +11,7 @@ import (
 	"strings"
 )
 
-type ActionEndPointHandler func(request *dvcontext.RequestContext) bool
+type ActionEndPointHandler func(ctx *dvcontext.RequestContext) bool
 
 var registeredActionProcessors = make(map[string]ActionEndPointHandler)
 

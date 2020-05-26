@@ -553,13 +553,13 @@ func calculateRequestContextParameters(r *http.Request) (res map[string]interfac
 	res["SERVER_NAME"] = r.Host
 	for key, value := range headers {
 		if len(value) > 0 {
-			res["H_"+strings.ToUpper(key)] = value[0]
+			res["H_"+dvparser.ConvertToUpperAlphaGigital([]byte(key))] = value[0]
 		}
 	}
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 	for key, value := range m {
 		if len(value) > 0 {
-			res["G_"+key] = value[0]
+			res["G_" + dvparser.ConvertToUpperAlphaGigital([]byte(key))] = value[0]
 			res["GM_"+key] = value
 		}
 	}

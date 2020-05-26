@@ -86,3 +86,12 @@ func (obj *DvObject) CalculateStringWithBrackets(b []byte, level int) (string, e
 func (obj *DvObject) CalculateString(str string) (string, error) {
 	return obj.CalculateStringWithBrackets([]byte(str), 2)
 }
+
+func (obj *DvObject) EvaluateBooleanExpression(s string) (bool, error) {
+	expr := ParseForDvObject([]byte(s), obj, 0, 0, s)
+	if expr.Err != nil {
+		return false, expr.Err
+	}
+	v := AnyToBoolean(expr.FinalResult)
+	return v, nil
+}

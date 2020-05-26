@@ -1,6 +1,5 @@
 /***********************************************************************
-MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvcontext
@@ -13,4 +12,5 @@ type DvAction struct {
 	QueryParams map[string]string `json:"query"`
 	Body        string            `json:"body"`
 	Result      string            `json:"result"`
+	Conditions  map[string]string `json:"conditions"`
 }

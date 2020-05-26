@@ -133,3 +133,16 @@ func IsDigitOnly(s string) bool {
 	}
 	return true
 }
+
+func ConvertToUpperAlphaGigital(b []byte) string {
+	n := len(b)
+	for i := 0; i < n; i++ {
+		c := b[i]
+		if c >= 'a' && c <= 'z' {
+			b[i] = c - 32
+		} else if !(c >= 'A' && c <= 'Z' || c >= '0' && c <= '9') {
+			b[i] = '_'
+		}
+	}
+	return string(b)
+}

@@ -5,7 +5,11 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 
 package dvoc
 
-import "github.com/Dobryvechir/microcore/pkg/dvcontext"
+import (
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"io/ioutil"
+	"log"
+)
 
 const (
 	ActionPrefix = "ACTION_"
@@ -44,4 +48,36 @@ func ActionContextResult(ctx *dvcontext.RequestContext) {
 		ctx.Output = []byte(res)
 	}
 	ctx.HandleCommunication()
+}
+
+func fireFileAction(ctx *dvcontext.RequestContext) bool {
+	action:=ctx.Action
+	fileName:=action.Result
+	conditions:=action.Conditions
+	if conditions!=nil {
+		for k,v:=range conditions {
+			res, err:= ctx.ExtraAsDvObject.EvaluateBooleanExpression(k)
+			if err!=nil {
+				log.Printf("Failed to evaluate %s: %v", k, err)
+				ctx.HandleInternalServerError()
+				return true
+			}
+			if res {
+				fileName = v
+			}
+		}
+	}
+	if fileName=="" {
+		ctx.HandleFileNotFound()
+		return true
+	}
+	data, err:=ioutil.ReadFile(fileName)
+	if err!=nil {
+		log.Printf("Cannot read %s: %v", fileName, err)
+		ctx.HandleInternalServerError()
+		return true
+	}
+	ctx.Output = data
+	ctx.HandleCommunication()
+	return true
 }
