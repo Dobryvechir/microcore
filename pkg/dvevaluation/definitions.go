@@ -6,18 +6,12 @@ package dvevaluation
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
+	"math"
 )
 
 const (
-	BOOLEAN_FALSE = "false"
-	BOOLEAN_TRUE  = "true"
-)
-
-const (
-	UNARY_BOOLEAN_NOT = 1 << iota
-	UNARY_LOGICAL_NOT = 1 << iota
-	UNARY_MINUS       = 1 << iota
-	UNARY_PLUS        = 1 << iota
+	BooleanFalse = "false"
+	BooleanTrue  = "true"
 )
 
 const (
@@ -37,4 +31,25 @@ type DvObject struct {
 	Options    int
 	Properties map[string]interface{}
 	Prototype  *DvObject
+}
+
+var buildinTypes map[string]interface{} = map[string]interface{}{
+	"true":      true,
+	"false":     false,
+	"undefined": nil,
+	"NaN":       math.NaN(),
+	"null":      DvObject_null,
+	"":          "",
+}
+
+const (
+	ConversionOptionJSLike     = 0
+	ConversionOptionSimpleLike = 1
+	ConversionOptionJsonLike   = 2
+)
+
+var nullValueVersion = map[int]string{
+	ConversionOptionJSLike:     "undefined",
+	ConversionOptionSimpleLike: "",
+	ConversionOptionJsonLike:   "null",
 }

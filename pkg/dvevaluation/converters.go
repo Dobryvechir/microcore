@@ -4,24 +4,20 @@
 package dvevaluation
 
 import (
-	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"math"
-	"strconv"
 	"strings"
 )
 
-var buildinTypes map[string]interface{} = map[string]interface{}{
-	"true":      true,
-	"false":     false,
-	"undefined": nil,
-	"NaN":       math.NaN(),
-	"null":      DvObject_null,
-	"":          "",
+func AnyToString(v interface{}) string {
+	return AnyToStringWithOptions(v, ConversionOptionJSLike)
 }
 
-func AnyToString(v interface{}) string {
-	f := ""
+func AnyToStringWithOptions(v interface{}, options int) string {
+	f, ok := ConvertSimpleTypeToString(v)
+	if ok {
+		return f
+	}
 	switch v.(type) {
 	case string:
 		f = v.(string)
@@ -29,20 +25,8 @@ func AnyToString(v interface{}) string {
 		f = v.(*DvObject).ToString()
 	case *DvFunction:
 		f = v.(*DvFunction).ToString()
-	case int:
-		f = strconv.Itoa(v.(int))
-	case int64:
-		f = strconv.FormatInt(v.(int64), 10)
-	case bool:
-		if v.(bool) {
-			f = "true"
-		} else {
-			f = "false"
-		}
-	case float64:
-		f = fmt.Sprintf("%f", v.(float64))
 	case nil:
-		f = "undefined"
+		f = nullValueVersion[options]
 	default:
 		f = ConvertAnyTypeToJsonString(v)
 	}
@@ -244,4 +228,22 @@ func AnyWithTypeToNumberInt(kind int, v interface{}) (int64, bool) {
 		return 0, true
 	}
 	return 0, false
+}
+
+func ConvertInterfaceListToStringList(list []interface{}, options int) []string {
+	n := len(list)
+	r := make([]string, n)
+	for i := 0; i < n; i++ {
+		r[i] = AnyToStringWithOptions(list[i], options)
+	}
+	return r
+}
+
+func ConvertInterfaceListsToStringLists(list [][]interface{}, options int) [][]string {
+	n := len(list)
+	r := make([][]string, n)
+	for i := 0; i < n; i++ {
+		r[i] = ConvertInterfaceListToStringList(list[i], options)
+	}
+	return r
 }

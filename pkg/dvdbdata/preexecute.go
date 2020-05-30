@@ -341,11 +341,15 @@ func PreExecute(properties map[string]string) error {
 }
 
 func preExecuteStart(eventName string, data []interface{}) error {
-	logPreExecuteLevel = dvlog.GetLogLevelByDefinition(dvparser.GlobalProperties["DVLOG_PREEXECUTION_LEVEL"], logPreExecuteLevel)
+	InitByGlobalProperties()
 	if logPreExecuteLevel >= dvlog.LogTrace {
 		log.Printf("Event %s with data %v fired", eventName, data)
 	}
 	return PreExecute(dvparser.GlobalProperties)
+}
+
+func InitByGlobalProperties() {
+	logPreExecuteLevel = dvlog.GetLogLevelByDefinition(dvparser.GlobalProperties["DVLOG_PREEXECUTION_LEVEL"], logPreExecuteLevel)
 }
 
 var hookConfig = &dvmodules.HookRegistrationConfig{

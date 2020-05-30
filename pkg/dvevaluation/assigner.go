@@ -1,7 +1,5 @@
-/***********************************************************************
-MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+// package dvevaluation covers expression calculations
+// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
 package dvevaluation
 

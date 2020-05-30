@@ -5,8 +5,6 @@ package dvevaluation
 
 import (
 	"encoding/json"
-	"fmt"
-	"strconv"
 )
 
 var jsonEscapeTable = map[byte]byte{
@@ -43,25 +41,14 @@ func ConvertAnyTypeToJson(buf []byte, v interface{}) []byte {
 		buf = append(buf, buf...)
 		buf = buf[:n]
 	}
+	var ok bool
+	buf, ok = ConvertSimpleTypeToBuf(buf, v)
+	if ok {
+		return buf
+	}
 	switch v.(type) {
-	case int:
-		buf = append(buf, strconv.Itoa(v.(int))...)
-	case int64:
-		buf = append(buf, strconv.FormatInt(v.(int64), 10)...)
-	case float32:
-		buf = append(buf, fmt.Sprintf("%f", float64(v.(float32)))...)
-	case float64:
-		buf = append(buf, fmt.Sprintf("%f", v.(float64))...)
 	case nil:
 		buf = append(buf, []byte("null")...)
-	case bool:
-		{
-			if v.(bool) {
-				buf = append(buf, []byte("true")...)
-			} else {
-				buf = append(buf, []byte("false")...)
-			}
-		}
 	case string:
 		{
 			p := v.(string)

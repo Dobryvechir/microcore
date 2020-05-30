@@ -7,6 +7,7 @@ package dvdbdata
 
 import (
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
 	"strings"
@@ -15,7 +16,6 @@ import (
 var readPropertySql, readPropertySqlEnd string
 var createPropertySql []string = nil
 var updatePropertySql []string = nil
-
 
 func GetTableNameColumnsFromDefinition(def string) (table string, columns []string, colDef []string, err error) {
 	first := strings.Index(def, "(")
@@ -161,7 +161,7 @@ func WriteGlobalDBProperty(props map[string]string, db *DBConnection, name strin
 	return err
 }
 
-func AddItemsToPool(db *DBConnection, sql string, cols int, pool [][]string) ([][]string, error) {
+func AddItemsToPool(db *DBConnection, sql string, cols int, pool [][]interface{}) ([][]interface{}, error) {
 	if logPreExecuteLevel >= dvlog.LogTrace {
 		log.Printf("Add sql rows to pool: %s (%d columns)", sql, cols)
 	}
@@ -179,7 +179,7 @@ func AddItemsToPool(db *DBConnection, sql string, cols int, pool [][]string) ([]
 	}
 	data := make([]interface{}, cols)
 	for rows.Next() {
-		items := make([]string, cols)
+		items := make([]interface{}, cols)
 		for i := 0; i < cols; i++ {
 			data[i] = &items[i]
 		}
@@ -192,7 +192,7 @@ func AddItemsToPool(db *DBConnection, sql string, cols int, pool [][]string) ([]
 }
 
 func ReadItemsInBatches(db *DBConnection, start string, finish string, ids []string, cols int) ([][]string, error) {
-	pool := make([][]string, 0, 1024)
+	pool := make([][]interface{}, 0, 1024)
 	n := len(ids)
 	i := 0
 	var err error
@@ -208,5 +208,5 @@ func ReadItemsInBatches(db *DBConnection, start string, finish string, ids []str
 			return nil, err
 		}
 	}
-	return pool, nil
+	return dvevaluation.ConvertInterfaceListsToStringLists(pool, dvevaluation.ConversionOptionSimpleLike), nil
 }

@@ -134,7 +134,7 @@ func IsDigitOnly(s string) bool {
 	return true
 }
 
-func ConvertToUpperAlphaGigital(b []byte) string {
+func ConvertToUpperAlphaDigital(b []byte) string {
 	n := len(b)
 	for i := 0; i < n; i++ {
 		c := b[i]
@@ -145,4 +145,19 @@ func ConvertToUpperAlphaGigital(b []byte) string {
 		}
 	}
 	return string(b)
+}
+
+func IsUpperAlphaDigitalBytes(b []byte) bool {
+	n := len(b)
+	for i := 0; i < n; i++ {
+		c := b[i]
+		if !(c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' && i != 0 || c == '_') {
+			return false
+		}
+	}
+	return true
+}
+
+func IsUpperAlphaDigital(s string) bool {
+	return IsUpperAlphaDigitalBytes([]byte(s))
 }

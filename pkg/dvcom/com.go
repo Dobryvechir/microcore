@@ -126,7 +126,10 @@ func HandlerWriteDirect(request *dvcontext.RequestContext) {
 	}
 	request.Writer.WriteHeader(request.StatusCode)
 	if request.Output != nil {
-		request.Writer.Write(request.Output)
+		res, err := request.Writer.Write(request.Output)
+		if err != nil {
+			log.Printf("failed to write output to request: %s: %d %v", string(request.Output), res, err)
+		}
 	}
 }
 
@@ -344,112 +347,6 @@ func tryHttpForward(request *dvcontext.RequestContext, url string) bool {
 	return true
 }
 
-func tryTcpForward(request *dvcontext.RequestContext, url string) bool {
-	if request.Server.Client == nil {
-		createClientForMicroCoreInfo(request.Server)
-	}
-	method := request.Reader.Method
-	var logFile string
-	var body []byte
-	var bodyIo = request.Reader.Body
-	toLog := LogServer && dvlog.CurrentLogLevel >= dvlog.LogInfo && (method != "OPTIONS" || dvlog.CurrentLogLevel >= dvlog.LogDetail)
-	if toLog {
-		body, err := ioutil.ReadAll(bodyIo)
-		if err != nil {
-			message := err.Error()
-			log.Print(message)
-			request.Output = dvlog.FormErrorMessage(message)
-			request.StatusCode = 400
-			request.HandleCommunication()
-			return true
-		}
-		if len(body) == 0 {
-			bodyIo = nil
-		} else {
-			bodyIo = ioutil.NopCloser(bytes.NewReader(body))
-		}
-		logFile = dvlog.WriteRequestToLog(body, request.Reader)
-	}
-	finalUrl := url + request.Reader.URL.Path
-	if request.Reader.URL.RawQuery != "" {
-		finalUrl += "?" + request.Reader.URL.RawQuery
-	}
-	req, err := http.NewRequest(method, finalUrl, bodyIo)
-	if err != nil {
-		if dvlog.CurrentLogLevel >= dvlog.LogError {
-			log.Printf("Error making request %s: %s", url+request.Reader.URL.Path, err.Error())
-		}
-		return false
-	}
-	origin := "*"
-	if korig, isok := request.Reader.Header["Origin"]; isok && len(korig) > 0 {
-		origin = korig[0]
-	}
-	req.Header = copyNonEmptyHeaders(request.Reader.Header)
-	req.Header.Set("Host", extractHostFromUrl(url))
-	if request.Server.ProxyName != "" {
-		name := request.Server.ProxyName
-		if len(req.Header["Origin"]) > 0 {
-			origin := req.Header["Origin"][0]
-			p := strings.Index(origin, "//")
-			if p > 0 {
-				origin = origin[:p+2] + name
-			} else {
-				origin = "http://" + name
-			}
-			req.Header["Origin"] = []string{origin}
-		}
-		if len(req.Header["Referer"]) > 0 {
-			referer := req.Header["Referer"][0]
-			proxyReferer := ""
-			p := strings.Index(referer, "//") + 2
-			n := strings.IndexByte(referer[p:], '/') + p
-			if p > 2 {
-				proxyReferer = referer[:p] + name
-				if n > p {
-					proxyReferer += referer[n:]
-				}
-			}
-			req.Header["Referer"][0] = proxyReferer
-		}
-	}
-	resp, err1 := request.Server.Client.Do(req)
-	if err1 != nil {
-		if dvlog.CurrentLogLevel >= dvlog.LogError {
-			log.Print("Error executing %s: %s", url+request.Reader.URL.Path, err1.Error())
-		}
-		return false
-	}
-	body, err2 := ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		if dvlog.CurrentLogLevel >= dvlog.LogError {
-			log.Print("Error reading body %s: %s", url+request.Reader.URL.Path, err2.Error())
-		}
-		return false
-	}
-	if toLog {
-		dvlog.WriteResponseToLog(logFile, resp, body)
-	}
-	if method != "OPTIONS" {
-		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersExtraServer, origin, request.Server.HeadersSpecial, request.Writer)
-	} else {
-		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersExtraServerOptions, origin, request.Server.HeadersSpecialOptions, request.Writer)
-	}
-	request.StatusCode = resp.StatusCode
-	request.Output = body
-	if method != "OPTIONS" && request.Server.PostProcessorBlocks != nil {
-		oldLen := len(body)
-		if CheckProcessorBlocks(request.Server.PostProcessorBlocks, request) {
-			return false
-		}
-		if len(request.Output) != oldLen {
-			request.Writer.Header().Del("Content-Length")
-		}
-	}
-	HandlerWriteDirect(request)
-	return true
-}
-
 func PrepareProxyName(name string) string {
 	name = strings.TrimSpace(name)
 	if name == "" {
@@ -553,13 +450,13 @@ func calculateRequestContextParameters(r *http.Request) (res map[string]interfac
 	res["SERVER_NAME"] = r.Host
 	for key, value := range headers {
 		if len(value) > 0 {
-			res["H_"+dvparser.ConvertToUpperAlphaGigital([]byte(key))] = value[0]
+			res["H_"+dvparser.ConvertToUpperAlphaDigital([]byte(key))] = value[0]
 		}
 	}
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 	for key, value := range m {
 		if len(value) > 0 {
-			res["G_" + dvparser.ConvertToUpperAlphaGigital([]byte(key))] = value[0]
+			res["G_"+dvparser.ConvertToUpperAlphaDigital([]byte(key))] = value[0]
 			res["GM_"+key] = value
 		}
 	}

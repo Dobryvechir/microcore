@@ -6,7 +6,9 @@ package dvdbdata
 import (
 	"database/sql"
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"log"
 	"strings"
 	"sync"
 )
@@ -25,7 +27,7 @@ type connectionPool struct {
 	mux    sync.Mutex
 }
 
-var graph = &connectionGraph{perDB:make(map[string]*connectionPool)}
+var graph = &connectionGraph{perDB: make(map[string]*connectionPool)}
 
 func GetDBConnectionDirect(props map[string]string, connName string) (*sql.DB, string, error) {
 	param := "DB_CONNECTION_" + connName
@@ -43,7 +45,20 @@ func GetDBConnectionDirect(props map[string]string, connName string) (*sql.DB, s
 	if sqlName == "" || conn == "" {
 		return nil, "", errors.New(param + " must be <sql name>,<connection string>")
 	}
-	db, err := sql.Open(sqlName, conn)
+	driverName := sqlName
+	p = strings.Index(sqlName, "(")
+	if p > 0 {
+		driverName = strings.TrimSpace(sqlName[p+1:])
+		sqlName = strings.TrimSpace(sqlName[:p])
+		p = strings.Index(driverName, ")")
+		if p > 0 {
+			driverName = strings.TrimSpace(driverName[:p])
+		}
+		if driverName == "" || sqlName == "" {
+			return nil, "", errors.New(connName + " must contain non empty driver name in brackets")
+		}
+	}
+	db, err := sql.Open(driverName, conn)
 	if err != nil {
 		return nil, "", errors.New(err.Error() + " for " + connName + "(" + connParams + ")")
 	}
@@ -58,6 +73,10 @@ func GetDefaultDbConnection() string {
 func GetConnectionType(connName string) int {
 	sqlName := dvparser.GlobalProperties[connName]
 	p := strings.Index(sqlName, ",")
+	if p > 0 {
+		sqlName = strings.TrimSpace(sqlName[:p])
+	}
+	p = strings.Index(sqlName, "(")
 	if p > 0 {
 		sqlName = strings.TrimSpace(sqlName[:p])
 	}
@@ -123,10 +142,16 @@ func backToPool(db *DBConnection) {
 		}
 		pool.mux.Unlock()
 		if db.Db != nil {
-			db.Db.Close()
+			err := db.Db.Close()
+			if logPreExecuteLevel >= dvlog.LogDebug {
+				log.Printf("Error closing db connection: %v", err)
+			}
 		}
 	} else {
-		db.Db.Close()
+		err := db.Db.Close()
+		if logPreExecuteLevel >= dvlog.LogDebug {
+			log.Printf("Error closing db connection: %v", err)
+		}
 	}
 }
 
