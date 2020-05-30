@@ -47,7 +47,7 @@ func SqlUpdateByConnection(db *DBConnection, query string) error {
 	return err
 }
 
-func GetSqlTableByIds(db *DBConnection, tableId string, ids []string) ([][]string, error) {
+func GetSqlTableByIds(db *DBConnection, tableId string, ids []string) ([][]interface{}, error) {
 	metaInfo, err := ReadTableMetaDataFromGlobal(tableId)
 	if err != nil {
 		return nil, err
@@ -80,8 +80,8 @@ func GetSqlQueryForGettingRowById(metaInfo *TableMetaData, columns string) (star
 	return
 }
 
-func ReadItemsInBulk(db *DBConnection, query string, cols int) ([][]string, error) {
-	return AddItemsToPool(db, query, cols, make([][]string, 0, 100))
+func ReadItemsInBulk(db *DBConnection, query string, cols int) ([][]interface{}, error) {
+	return AddItemsToPool(db, query, cols, make([][]interface{}, 0, 100))
 }
 
 func FindIdsPlaceholder(s string) (outerStart int, outerFinish int, innerStart int, innerFinish int) {
@@ -99,7 +99,7 @@ func FindIdsPlaceholder(s string) (outerStart int, outerFinish int, innerStart i
 	return
 }
 
-func GetSqlTableByQuery(db *DBConnection, ids []string, query string) ([][]string, error) {
+func GetSqlTableByQuery(db *DBConnection, ids []string, query string) ([][]interface{}, error) {
 	posStart, posFinish, _, _ := FindIdsPlaceholder(query)
 	cols := 0
 	if posStart >= 0 {

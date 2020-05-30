@@ -7,7 +7,6 @@ package dvdbdata
 
 import (
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
 	"strings"
@@ -121,13 +120,19 @@ func ReadGlobalDBProperty(props map[string]string, db *DBConnection, name string
 	if rs.Next() {
 		var name string
 		err = rs.Scan(&name)
-		rs.Close()
+		err1 := rs.Close()
+		if err1 != nil && logPreExecuteLevel >= dvlog.LogDebug {
+			log.Printf("Error closing rs: %v", err1)
+		}
 		if err != nil {
 			return "", err
 		}
 		return name, nil
 	}
-	rs.Close()
+	err2 := rs.Close()
+	if err2 != nil && logPreExecuteLevel >= dvlog.LogDebug {
+		log.Printf("Error closing rs: %v", err2)
+	}
 	return defValue, nil
 }
 
@@ -184,14 +189,17 @@ func AddItemsToPool(db *DBConnection, sql string, cols int, pool [][]interface{}
 			data[i] = &items[i]
 		}
 		if err := rows.Scan(data...); err != nil {
-			log.Fatal(err)
+			if logPreExecuteLevel >= dvlog.LogError {
+				log.Printf("Error scanning rows for %s: %v", sql, err)
+			}
+			return nil, err
 		}
 		pool = append(pool, items)
 	}
 	return pool, nil
 }
 
-func ReadItemsInBatches(db *DBConnection, start string, finish string, ids []string, cols int) ([][]string, error) {
+func ReadItemsInBatches(db *DBConnection, start string, finish string, ids []string, cols int) ([][]interface{}, error) {
 	pool := make([][]interface{}, 0, 1024)
 	n := len(ids)
 	i := 0
@@ -208,5 +216,5 @@ func ReadItemsInBatches(db *DBConnection, start string, finish string, ids []str
 			return nil, err
 		}
 	}
-	return dvevaluation.ConvertInterfaceListsToStringLists(pool, dvevaluation.ConversionOptionSimpleLike), nil
+	return pool, nil
 }

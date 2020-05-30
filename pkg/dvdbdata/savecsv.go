@@ -1,7 +1,5 @@
-/***********************************************************************
-MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+// package dvdbdata orchestrates sql database access
+// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
 package dvdbdata
 
@@ -10,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvcsv"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
@@ -388,11 +387,12 @@ func GetSingleValuesFromString(data [][]string, column int) []string {
 	return r
 }
 
-func makeSingleValueArray(items [][]string, separ string) []string {
+func makeSingleValueArray(items [][]interface{}, separ string) []string {
 	n := len(items)
 	r := make([]string, n)
 	for i := 0; i < n; i++ {
-		r[i] = strings.Join(items[i], separ)
+		s := dvevaluation.ConvertInterfaceListToStringList(items[i], dvevaluation.ConversionOptionSimpleLike)
+		r[i] = strings.Join(s, separ)
 	}
 	return r
 }
