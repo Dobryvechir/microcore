@@ -65,7 +65,7 @@ func RecognizerByteQuotation(grammar *GrammarTable, data []byte, pos int, n int)
 		t = &Token{DataType: TYPE_STRING, Value: string(data[pos+g : i-g])}
 	case '"', '\'':
 		i++
-		for i < n && data[i] != '"' {
+		for i < n && data[i] != c {
 			ge := data[i]
 			if ge == 10 || ge == 13 {
 				ending := string([]byte{c})

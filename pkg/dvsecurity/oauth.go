@@ -1,25 +1,27 @@
-// package dvsecurity provides server security, including sessions, login, jwt token
+// package dvsecurity provides server security, including sessions, login, jwt tokens
 // MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
 package dvsecurity
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 )
 
 const (
-	security = "security"
+	Security = "security"
 )
 
+var validTimeDefault = int64(18000)
 var SecretKey = "6876jgj6876876hkh8989899"
 
-func securityEndPointHandler(ctx *dvcontext.RequestContext) bool {
-	token := GetToken()
-	refreshToken := GetRefreshToken()
+func LoginByRequestEndPointHandler(ctx *dvcontext.RequestContext) bool {
+	currentTime := GetCurrentSeconds()
+	expired := validTimeDefault + currentTime
+	token := GetToken(currentTime, expired)
+	refreshToken := GetRefreshToken(currentTime, expired)
 	result := map[string]interface{}{
 		"access_token":       token,
-		"expires_in":         18000,
+		"expires_in":         validTimeDefault,
 		"refresh_expires_in": 1800,
 		"refresh_token":      refreshToken,
 		"token_type":         "bearer",
@@ -31,22 +33,22 @@ func securityEndPointHandler(ctx *dvcontext.RequestContext) bool {
 	return true
 }
 
-func GetToken() string {
-	claims := map[string]string{
-		"jti": "8b5e5323-7503-409d-8831-db0dbdb66b69",
-		// exp: 1590427779,
-		// nbf: 0,
-		// iat: 1590409779,
-		"iss": "microcore",
-		"aud": "account",
-		"sub": "6402d452-3004-4d87-9a0a-9b5783fbac97",
-		"typ": "Bearer",
-		"azp": "frontend",
-		// auth_time: 0,
-		"session_state": "d11bf3d4-381b-4fe5-99f1-05f0338ab800",
-		"acr":           "1",
-		"scope":         "email profile",
-		// email_verified: false,
+func GetToken(current int64, expired int64) string {
+	claims := map[string]interface{}{
+		"jti":                "8b5e5323-7503-409d-8831-db0dbdb66b69",
+		"exp":                expired,
+		"nbf":                0,
+		"iat":                current,
+		"iss":                "microcore",
+		"aud":                "account",
+		"sub":                "6402d452-3004-4d87-9a0a-9b5783fbac97",
+		"typ":                "Bearer",
+		"azp":                "frontend",
+		"auth_time":          0,
+		"session_state":      "d11bf3d4-381b-4fe5-99f1-05f0338ab800",
+		"acr":                "1",
+		"scope":              "email profile",
+		"email_verified":     true,
 		"name":               "Tenant Admin",
 		"preferred_username": "admin@gmail.com",
 		"given_name":         "Tenant",
@@ -54,25 +56,25 @@ func GetToken() string {
 		"tenant-id":          "4556c255-be35-47fb-aba1-8d888999db40",
 		"email":              "admin@gmail.com",
 	}
-	return GenerateHs256Jwt(claims, SecretKey, 36000)
+	return GenerateHs256Jwt(claims, SecretKey, expired)
 }
 
-func GetRefreshToken() string {
-	claims := map[string]string{
-		"jti": "8b5e5323-7503-409d-8831-db0dbdb66b69",
-		// exp: 1590427779,
-		// nbf: 0,
-		// iat: 1590409779,
-		"iss": "microcore",
-		"aud": "account",
-		"sub": "6402d452-3004-4d87-9a0a-9b5783fbac97",
-		"typ": "Bearer",
-		"azp": "frontend",
-		// auth_time: 0,
-		"session_state": "d11bf3d4-381b-4fe5-99f1-05f0338ab800",
-		"acr":           "1",
-		"scope":         "email profile",
-		// email_verified: false,
+func GetRefreshToken(current int64, expired int64) string {
+	claims := map[string]interface{}{
+		"jti":                "8b5e5323-7503-409d-8831-db0dbdb66b69",
+		"exp":                expired,
+		"nbf":                0,
+		"iat":                current,
+		"iss":                "microcore",
+		"aud":                "account",
+		"sub":                "6402d452-3004-4d87-9a0a-9b5783fbac97",
+		"typ":                "Bearer",
+		"azp":                "frontend",
+		"auth_time":          0,
+		"session_state":      "d11bf3d4-381b-4fe5-99f1-05f0338ab800",
+		"acr":                "1",
+		"scope":              "email profile",
+		"email_verified":     true,
 		"name":               "Tenant Admin",
 		"preferred_username": "admin@gmail.com",
 		"given_name":         "Tenant",
@@ -80,11 +82,5 @@ func GetRefreshToken() string {
 		"tenant-id":          "4556c255-be35-47fb-aba1-8d888999db40",
 		"email":              "admin@gmail.com",
 	}
-	return GenerateHs256Jwt(claims, SecretKey, 36000)
+	return GenerateHs256Jwt(claims, SecretKey, expired)
 }
-
-func registerSecurityAction() bool {
-	return dvmodules.RegisterActionProcessor(security, securityEndPointHandler, false)
-}
-
-var registered = registerSecurityAction()

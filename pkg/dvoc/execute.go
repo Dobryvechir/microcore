@@ -6,9 +6,9 @@ package dvoc
 
 import (
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvdbdata"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"strconv"
@@ -262,6 +262,7 @@ var ocExecutorRegistrationConfig = &dvmodules.HookRegistrationConfig{
 func RegisterOC() bool {
 	dvmodules.RegisterActionProcessor("", fireAction, false)
 	dvmodules.RegisterActionProcessor("file", fireFileAction, false)
+	dvmodules.RegisterActionProcessor("security", securityEndPointHandler, false)
 	return dvmodules.SubscribeForEvents(ocExecutorRegistrationConfig, false)
 }
 

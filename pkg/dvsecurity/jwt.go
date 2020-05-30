@@ -7,7 +7,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"github.com/Dobryvechir/microcore/pkg/dvjson"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"strconv"
 	"strings"
 	"time"
@@ -17,19 +17,18 @@ func EncodeJwtBase64(s string) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString([]byte(s)), "=")
 }
 
-func getJwtHeader(valid int64) string {
-	expired := valid + GetCurrentSeconds()
+func getJwtHeader(expired int64) string {
 	data := "{\"typ\": \"JWT\",\"alg\":\"HS256\",\"exp\":" + strconv.FormatInt(expired, 10) + "}"
 	return EncodeJwtBase64(data)
 }
 
-func getJwtContent(data map[string]string) string {
-	jsonStr := dvjson.ConvertSimpleStringMapToJson(data, true)
+func getJwtContent(data map[string]interface{}) string {
+	jsonStr := dvevaluation.ConvertAnyTypeToJsonString(data)
 	return EncodeJwtBase64(jsonStr)
 }
 
-func GenerateHs256Jwt(claims map[string]string, key string, valid int64) string {
-	main := getJwtHeader(valid) + "." + getJwtContent(claims)
+func GenerateHs256Jwt(claims map[string]interface{}, key string, expired int64) string {
+	main := getJwtHeader(expired) + "." + getJwtContent(claims)
 	return main + "." + getJwtSign(main, key)
 }
 

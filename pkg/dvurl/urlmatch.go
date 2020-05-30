@@ -1,8 +1,8 @@
 package dvurl
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"regexp"
 	"strconv"
@@ -204,8 +204,8 @@ func ConvertUrlResultInfoIntoStringMap(url string, track *UrlResultInfo) {
 	for i := 0; i < n; i++ {
 		key := strconv.Itoa(i + 1)
 		val := posInfo[i]
-		valLength := val & (1<<urlMatchLenOffset - 1)
-		valOffset := val >> urlMatchLenOffset
+		valOffset := val & (1<<urlMatchLenOffset - 1)
+		valLength := val >> urlMatchLenOffset
 		valStr := url[valOffset : valOffset+valLength]
 		res[key] = valStr
 	}

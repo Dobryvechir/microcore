@@ -1,7 +1,6 @@
-/***********************************************************************
-MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+// package dvevaluation manages expressions, functions using agrammar
+// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+
 package dvevaluation
 
 import (
@@ -44,6 +43,8 @@ func AnyToString(v interface{}) string {
 		f = fmt.Sprintf("%f", v.(float64))
 	case nil:
 		f = "undefined"
+	default:
+		f = ConvertAnyTypeToJsonString(v)
 	}
 	return f
 }

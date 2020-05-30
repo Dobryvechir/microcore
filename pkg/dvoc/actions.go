@@ -1,12 +1,11 @@
-/***********************************************************************
-MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+// package dvoc orchestrates actions, executions
+// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
 package dvoc
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvsecurity"
 	"io/ioutil"
 	"log"
 )
@@ -51,13 +50,13 @@ func ActionContextResult(ctx *dvcontext.RequestContext) {
 }
 
 func fireFileAction(ctx *dvcontext.RequestContext) bool {
-	action:=ctx.Action
-	fileName:=action.Result
-	conditions:=action.Conditions
-	if conditions!=nil {
-		for k,v:=range conditions {
-			res, err:= ctx.ExtraAsDvObject.EvaluateBooleanExpression(k)
-			if err!=nil {
+	action := ctx.Action
+	fileName := action.Result
+	conditions := action.Conditions
+	if conditions != nil {
+		for k, v := range conditions {
+			res, err := ctx.ExtraAsDvObject.EvaluateBooleanExpression(k)
+			if err != nil {
 				log.Printf("Failed to evaluate %s: %v", k, err)
 				ctx.HandleInternalServerError()
 				return true
@@ -67,12 +66,12 @@ func fireFileAction(ctx *dvcontext.RequestContext) bool {
 			}
 		}
 	}
-	if fileName=="" {
+	if fileName == "" {
 		ctx.HandleFileNotFound()
 		return true
 	}
-	data, err:=ioutil.ReadFile(fileName)
-	if err!=nil {
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
 		log.Printf("Cannot read %s: %v", fileName, err)
 		ctx.HandleInternalServerError()
 		return true
@@ -80,4 +79,12 @@ func fireFileAction(ctx *dvcontext.RequestContext) bool {
 	ctx.Output = data
 	ctx.HandleCommunication()
 	return true
+}
+
+func securityEndPointHandler(ctx *dvcontext.RequestContext) bool {
+	res := dvsecurity.LoginByRequestEndPointHandler(ctx)
+	if res {
+		ActionContextResult(ctx)
+	}
+	return res
 }

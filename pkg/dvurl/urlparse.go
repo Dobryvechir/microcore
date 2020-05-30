@@ -68,7 +68,7 @@ func cutOffFixedParts(data string) (*dvcontext.MaskInfo, string) {
 	}
 	for i = n - 1; i >= 0; i-- {
 		c := data[i]
-		if c == '?' || c == '*' || c == '`' || c == '$' {
+		if c == '?' || c == '*' || c == '`' || c == '$' || c == '}' {
 			break
 		}
 		if c == '/' && data[i+1] == '/' {

@@ -56,6 +56,7 @@ func (obj *DvObject) CalculateStringWithBrackets(b []byte, level int) (string, e
 					} else {
 						r = append(r[:m], d...)
 						k = len(r)
+						m = k
 					}
 				} else {
 					r = append(r[:m], b[j-p:]...)
