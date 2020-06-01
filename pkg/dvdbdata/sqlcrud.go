@@ -7,6 +7,7 @@ package dvdbdata
 
 import (
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"strings"
 )
 
@@ -110,12 +111,11 @@ func GetSqlTableByQuery(db *DBConnection, ids []string, query string) ([][]inter
 	return ReadItemsInBulk(db, query, cols)
 }
 
-func CollectAllChildInfo(tableId string, data [][]string) (map[string][]string, error) {
+func CollectAllChildInfo(tableId string, data [][]interface{}, r map[string]map[string]int) error {
 	metaInfo, err := ReadTableMetaDataFromGlobal(tableId)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	r := make(map[string][]string)
 	refs := metaInfo.References
 	n := len(refs)
 	m := len(data)
@@ -126,13 +126,19 @@ func CollectAllChildInfo(tableId string, data [][]string) (map[string][]string, 
 		for i := 0; i < n; i++ {
 			refName := refs[i]
 			if refName != "" && refName[0] != '_' {
-				pool := make([]string, m)
-				for j := 0; j < m; j++ {
-					pool[j] = data[j][i]
+				pool := r[refName]
+				if pool == nil {
+					pool = make(map[string]int, m)
+					r[refName] = pool
 				}
-				r[refName] = append(r[refName], pool...)
+				for j := 0; j < m; j++ {
+					s := dvevaluation.AnyToStringWithOptions(data[j][i], dvevaluation.ConversionOptionSimpleLike)
+					if s != "" {
+						pool[s] = 1
+					}
+				}
 			}
 		}
 	}
-	return r, nil
+	return nil
 }

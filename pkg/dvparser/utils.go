@@ -161,3 +161,13 @@ func IsUpperAlphaDigitalBytes(b []byte) bool {
 func IsUpperAlphaDigital(s string) bool {
 	return IsUpperAlphaDigitalBytes([]byte(s))
 }
+
+func GetKeysFromStringIntMap(data map[string]int) []string {
+	i := 0
+	r := make([]string, len(data))
+	for k, _ := range data {
+		r[i] = k
+		i++
+	}
+	return r
+}

@@ -247,3 +247,11 @@ func ConvertInterfaceListsToStringLists(list [][]interface{}, options int) [][]s
 	}
 	return r
 }
+
+func ConvertInterfaceListsMapToStringListsMap(listMap map[string][][]interface{}, options int) map[string][][]string {
+	r := make(map[string][][]string, len(listMap))
+	for k, v := range listMap {
+		r[k] = ConvertInterfaceListsToStringLists(v, options)
+	}
+	return r
+}
