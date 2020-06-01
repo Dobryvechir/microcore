@@ -6,6 +6,7 @@ package dvdbdata
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"io/ioutil"
@@ -120,12 +121,12 @@ func SqlRun(data []interface{}) bool {
 				{
 					data := make([]string, 0, 1024)
 					for rs.Next() {
-						var s string
+						var s interface{}
 						err = rs.Scan(&s)
 						if err != nil {
 							break
 						}
-						data = append(data, s)
+						data = append(data, dvevaluation.AnyToStringWithOptions(s, dvevaluation.ConversionOptionSimpleLike))
 					}
 					res = data
 				}
@@ -144,7 +145,7 @@ func SqlRun(data []interface{}) bool {
 					n := len(columns)
 					cols := make([]interface{}, n)
 					if rs.Next() {
-						r := make([]string, n)
+						r := make([]interface{}, n)
 						for i := 0; i < n; i++ {
 							cols[i] = &r[i]
 						}
@@ -152,11 +153,11 @@ func SqlRun(data []interface{}) bool {
 						if kind == SqlKindRow {
 							m := make(map[string]string, n)
 							for i := 0; i < n; i++ {
-								m[columns[i]] = r[i]
+								m[columns[i]] = dvevaluation.AnyToStringWithOptions(r[i], dvevaluation.ConversionOptionSimpleLike)
 							}
 							dataCol = m
 						} else {
-							dataText = r
+							dataText = dvevaluation.ConvertInterfaceListToStringList(r, dvevaluation.ConversionOptionSimpleLike)
 						}
 					}
 					if kind == SqlKindRow {
@@ -180,7 +181,7 @@ func SqlRun(data []interface{}) bool {
 					n := len(columns)
 					cols := make([]interface{}, n)
 					for rs.Next() {
-						r := make([]string, n)
+						r := make([]interface{}, n)
 						for i := 0; i < n; i++ {
 							cols[i] = &r[i]
 						}
@@ -188,11 +189,11 @@ func SqlRun(data []interface{}) bool {
 						if kind == SqlKindRow {
 							m := make(map[string]string, n)
 							for i := 0; i < n; i++ {
-								m[columns[i]] = r[i]
+								m[columns[i]] = dvevaluation.AnyToStringWithOptions(r[i], dvevaluation.ConversionOptionSimpleLike)
 							}
 							dataCol = append(dataCol, m)
 						} else {
-							dataText = append(dataText, r)
+							dataText = append(dataText, dvevaluation.ConvertInterfaceListToStringList(r, dvevaluation.ConversionOptionSimpleLike))
 						}
 					}
 					if kind == SqlKindRow {
