@@ -473,6 +473,7 @@ func PreExecuteCsvFile(conn *DBConnection, name string, options int) error {
 	if logPreExecuteLevel >= dvlog.LogDetail {
 		log.Printf("csv %s has %d tables, target tables are %d: %v\n", name, len(data), len(tables), tables)
 	}
+	isSingleRequests := props["DB_PRELOAD_SINGLE_REQUEST"] == "true"
 	for _, table := range tables {
 		items := data[table]
 		n := len(items)
@@ -499,7 +500,7 @@ func PreExecuteCsvFile(conn *DBConnection, name string, options int) error {
 				}
 				return err
 			}
-			if len(meta.Dependencies) == 0 || len(meta.IdColumns) != 1 {
+			if !isSingleRequests && (len(meta.Dependencies) == 0 || len(meta.IdColumns) != 1) {
 				if logPreExecuteLevel >= dvlog.LogDetail {
 					log.Printf("Single blocks saved: %s", GetMetaInfo(meta))
 				}
@@ -511,7 +512,12 @@ func PreExecuteCsvFile(conn *DBConnection, name string, options int) error {
 					return err
 				}
 			} else {
-				groups, err := OrderObjectsByHierarchy(items, left, meta.IdColumns[0], meta.Dependencies)
+				var groups [][][]string
+				if isSingleRequests {
+					groups = makeSingleRequests(items)
+				} else {
+					groups, err = OrderObjectsByHierarchy(items, left, meta.IdColumns[0], meta.Dependencies)
+				}
 				if err != nil {
 					if logPreExecuteLevel >= dvlog.LogError {
 						log.Printf("For table %s failed to divide items into groups: %v\n", table, err)
@@ -538,4 +544,13 @@ func PreExecuteCsvFile(conn *DBConnection, name string, options int) error {
 		}
 	}
 	return nil
+}
+
+func makeSingleRequests(items [][]string) [][][]string {
+	n := len(items)
+	groups := make([][][]string, n)
+	for i := 0; i < n; i++ {
+		groups[i] = [][]string{items[i]}
+	}
+	return groups
 }

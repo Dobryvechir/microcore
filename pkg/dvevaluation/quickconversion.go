@@ -13,7 +13,7 @@ func ConvertIntToBuf(buf []byte, v int) []byte {
 	n := v / 10
 	k := v % 10
 	sign := 0
-	if n < 0 {
+	if v < 0 {
 		sign = 1
 		n = -n
 		k = -k
@@ -45,7 +45,7 @@ func ConvertInt64ToBuf(buf []byte, v int64) []byte {
 	n := v / 10
 	k := v % 10
 	sign := 0
-	if n < 0 {
+	if v < 0 {
 		sign = 1
 		n = -n
 		k = -k
