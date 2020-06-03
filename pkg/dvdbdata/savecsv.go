@@ -184,7 +184,7 @@ func PlaceStringToSqlQuery(v string, tp string, b []byte, options int) ([]byte, 
 		{
 			if len(v) == 0 {
 				b = append(b, NullStringAsBytes...)
-			} else if dvparser.IsDigitOnly(v) {
+			} else if dvparser.IsSignAndDigitsOnly(v) {
 				b = append(b, '\'')
 				b = append(b, []byte(v)...)
 				b = append(b, '\'')

@@ -134,6 +134,20 @@ func IsDigitOnly(s string) bool {
 	return true
 }
 
+func IsSignAndDigitsOnly(s string) bool {
+	n := len(s)
+	i := 0
+	if n > 0 && (s[0] == '-' || s[0] == '+') {
+		i++
+	}
+	for ; i < n; i++ {
+		if !(s[i] >= '0' && s[i] <= '9') {
+			return false
+		}
+	}
+	return true
+}
+
 func ConvertToUpperAlphaDigital(b []byte) string {
 	n := len(b)
 	for i := 0; i < n; i++ {
