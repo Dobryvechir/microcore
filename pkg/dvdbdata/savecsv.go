@@ -478,6 +478,10 @@ func PreExecuteCsvFile(conn *DBConnection, name string, options int) error {
 		items := data[table]
 		n := len(items)
 		if n > 0 {
+			if props["DB_PRELOAD_SINGLE_TRACK"] == table {
+				isSingleRequests = true
+				logPreExecuteLevel = dvlog.LogTrace
+			}
 			meta, err := ReadTableMetaData(table, props)
 			if err != nil {
 				if logPreExecuteLevel >= dvlog.LogError {
