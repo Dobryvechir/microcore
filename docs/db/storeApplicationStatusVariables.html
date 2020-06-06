@@ -4,3 +4,15 @@ can also use it.
 In particular, the following variables are stored by microcore itself:
 DB_PREEXECUTE_VERSION_TM = the last stored version when preexecution is made.
 If you wish to preexecute from the beginning, you can remove this variable.
+
+The data must be in UTF8 format. If not so, the check and correction
+are done automatically. There is one variable, which allows to change this
+default behavior: DB_DATA_UTF8_CHECK
+If it is not set or set incorrectly, the behavior is the default (check and correction
+of all UTF8-illegal characters). It can take some values changing this default behavior:
+NONE, STRICT, CHECK_ONLY. NONE means no check of UTF8 characters. It should be used only
+when the database encoding is not UTF8. STRICT means that error will be generated if there are incorrect
+characters and the operation will be cancelled. CHECK_ONLY means that only check will be done,
+but no correction (if the database is UTF8 it probably means that the error will be generated at the
+database level).
+

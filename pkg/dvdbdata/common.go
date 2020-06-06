@@ -12,12 +12,14 @@ const (
 	propertyDefaultKind            = "DB_KIND_"
 	propertyDefaultDb              = "DB_CONNECTIONS_DEFAULT"
 	propertyTableDefinitionName    = "DB_LOCAL_STORAGE_TABLE"
+	propertyDataUTF8CsvRestrict   = "DB_DATA_UTF8_CHECK"
 	propertyTableDefinitionDefault = "R_STORAGE_LOCAL(id varchar(255) primary,name varchar(4000))"
 )
 
 const (
 	SqlOracleLike      = 1
 	SqlPostgresLike    = 2
+	SqlTraceError	   = 128
 	CommonMaxBatch     = 1000
 	ComplexIdSeparator = "_._"
 )

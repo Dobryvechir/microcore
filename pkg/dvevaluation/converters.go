@@ -27,6 +27,8 @@ func AnyToStringWithOptions(v interface{}, options int) string {
 		f = v.(*DvFunction).ToString()
 	case nil:
 		f = nullValueVersion[options]
+	case []byte:
+		f = string(v.([]byte))
 	default:
 		f = ConvertAnyTypeToJsonString(v)
 	}

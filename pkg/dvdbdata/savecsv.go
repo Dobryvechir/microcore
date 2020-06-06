@@ -202,15 +202,19 @@ func PlaceStringToSqlQuery(v string, tp string, b []byte, options int) ([]byte, 
 	return b, nil
 }
 
-func SavePortionOfItems(items [][]string, sqlTable string, conn *DBConnection, left map[string]bool,
-	columnIds []int, options int, types []string) (err error) {
+func savePortionOfItemsInBulk(items [][]string, sqlTable string, conn *DBConnection, left map[string]bool,
+	columnIds []int, options int, types []string) (pos int, err error) {
 	oracleLike := (options & SqlOracleLike) != 0
 	postgresLike := (options & SqlPostgresLike) != 0
+	traceError := (options & SqlTraceError) != 0
 	maxBatch := 1
-	if oracleLike {
-		maxBatch = CommonMaxBatch
-	} else if postgresLike {
-		maxBatch = 5000
+	pos = 0
+	if !traceError {
+		if oracleLike {
+			maxBatch = CommonMaxBatch
+		} else if postgresLike {
+			maxBatch = 5000
+		}
 	}
 	cols := len(types)
 	sqlStart := "INSERT INTO " + sqlTable + " "
@@ -285,15 +289,16 @@ func SavePortionOfItems(items [][]string, sqlTable string, conn *DBConnection, l
 			if logPreExecuteLevel >= dvlog.LogDebug {
 				log.Printf("Sql execution: %s", sqlFull)
 			}
-			_, err := conn.Exec(sqlFull)
-			b = b[0:0]
-			count = 0
+			_, err = conn.Exec(sqlFull)
 			if err != nil {
-				if logPreExecuteLevel >= dvlog.LogDebug {
+				if logPreExecuteLevel >= dvlog.LogDebug || count == 1 && logPreExecuteLevel >= dvlog.LogError {
 					log.Printf("Failed to execute sql %s: %v", sqlFull, err)
 				}
-				return err
+				return
 			}
+			pos += count
+			b = b[0:0]
+			count = 0
 		}
 	}
 	if count > 0 {
@@ -301,15 +306,46 @@ func SavePortionOfItems(items [][]string, sqlTable string, conn *DBConnection, l
 		if logPreExecuteLevel >= dvlog.LogDebug {
 			log.Printf("Sql execution: %s", sqlFull)
 		}
-		_, err := conn.Exec(sqlFull)
+		_, err = conn.Exec(sqlFull)
 		if err != nil {
 			if logPreExecuteLevel >= dvlog.LogDebug {
 				log.Printf("Failed to execute sql %s: %v", sqlFull, err)
 			}
-			return err
+			return
+		}
+		pos += count
+	}
+	return
+}
+
+func SavePortionOfItems(items [][]string, sqlTable string, conn *DBConnection, left map[string]bool,
+	columnIds []int, options int, types []string) error {
+	dbUtf8CheckOptions := strings.ToUpper(dvparser.GlobalProperties[propertyDataUTF8CsvRestrict])
+	dbUtf8Check := dbUtf8CheckOptions != "NONE"
+	dbUtf8Strict := dbUtf8CheckOptions == "STRICT"
+	onlyCheck := dbUtf8CheckOptions == "CHECK_ONLY"
+	if dbUtf8Check {
+		res := CheckReplaceNonUtf8CharactersInStringArrayOfArray(items, onlyCheck)
+		if res != "" {
+			if dbUtf8Strict {
+				return errors.New(res)
+			}
+			if logPreExecuteLevel >= dvlog.LogWarning {
+				log.Printf("Warning: %s", res)
+			}
 		}
 	}
-	return nil
+	pos, err := savePortionOfItemsInBulk(items, sqlTable, conn, left, columnIds, options, types)
+	if err == nil {
+		return nil
+	}
+	if logPreExecuteLevel >= dvlog.LogInfo {
+		log.Printf("First try to save %s failed at %d", sqlTable, pos)
+	}
+	items = items[pos:]
+	options |= SqlTraceError
+	_, err = savePortionOfItemsInBulk(items, sqlTable, conn, left, columnIds, options, types)
+	return err
 }
 
 func ReadTableMetaData(table string, props map[string]string) (*TableMetaData, error) {

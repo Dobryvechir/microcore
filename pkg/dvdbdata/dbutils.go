@@ -210,7 +210,9 @@ func ReadItemsInBatches(db *DBConnection, start string, finish string, ids []str
 			m = CommonMaxBatch
 		}
 		n -= m
-		sqlQuery := start + strings.Join(ids[i:i+m], ",") + finish
+		endPart := i + m
+		sqlQuery := start + strings.Join(ids[i:endPart], ",") + finish
+		i = endPart
 		pool, err = AddItemsToPool(db, sqlQuery, cols, pool)
 		if err != nil {
 			return nil, err
