@@ -6,6 +6,7 @@ package dvmodules
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 	"log"
 	"strings"
@@ -26,12 +27,35 @@ func RegisterActionProcessor(name string, proc ActionEndPointHandler, silent boo
 	return true
 }
 
+func ValidateRequest(validations []*dvcontext.ValidatePattern, environment *dvevaluation.DvObject) string {
+	n := len(validations)
+	for i := 0; i < n; i++ {
+		validation := validations[i]
+		src, err := environment.CalculateString(validation.Source)
+		if err != nil {
+			return "Error in expression " + err.Error()
+		}
+		res := validation.Match(src)
+		if res != "" {
+			return res
+		}
+	}
+	return ""
+}
+
 func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) bool {
 	request.Action = action
 	proc, ok := registeredActionProcessors[action.Typ]
 	if !ok {
 		log.Printf("Action %s url %s has incorrect type %s", action.Name, action.Url, action.Typ)
 		return false
+	}
+	if len(action.Validations) > 0 {
+		res := ValidateRequest(action.Validations, request.ExtraAsDvObject)
+		if res != "" {
+			request.SetHttpErrorCode(400, res)
+			return true
+		}
 	}
 	return proc(request)
 }
