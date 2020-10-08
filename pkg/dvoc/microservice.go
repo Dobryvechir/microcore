@@ -10,7 +10,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"github.com/Dobryvechir/microcore/pkg/dvtemp"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -268,7 +268,7 @@ func CreateMicroService(params map[string]string, files map[string]string, comma
 			return false
 		}
 	}
-	path := dvtemp.GetTempPathSlashed() + microServiceName + "__debug_fragments_template.json"
+	path := dvdir.GetTempPathSlashed() + microServiceName + "__debug_fragments_template.json"
 	err = ioutil.WriteFile(path, json, 0664)
 	if err != nil {
 		dvlog.PrintfError("Cannot temporarily save a template file %s", path)
@@ -355,7 +355,7 @@ func SaveMicroServiceOpenShiftInfo(microServiceName string, save int) (deleteInf
 		return
 	}
 	if save == 1 && strings.Index(deployment, templateDebugSign) < 0 || save == 2 {
-		fileName := dvtemp.GetNextSaveFileName(MicroServiceSaveTemporaryFolder, microServiceName)
+		fileName := dvdir.GetNextSaveFileName(MicroServiceSaveTemporaryFolder, microServiceName)
 		err = ioutil.WriteFile(fileName, []byte(deployment), 0664)
 		if err != nil {
 			return
@@ -366,7 +366,7 @@ func SaveMicroServiceOpenShiftInfo(microServiceName string, save int) (deleteInf
 }
 
 func ReduceMicroServiceSaveInfo(microServiceName string) {
-	dvtemp.DeleteAllSavedFilesExceptZero(MicroServiceSaveTemporaryFolder, microServiceName)
+	dvdir.DeleteAllSavedFilesExceptZero(MicroServiceSaveTemporaryFolder, microServiceName)
 }
 
 func microServiceSaveInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -393,7 +393,7 @@ func microServiceSaveSingle(microServiceName string, folder string) (createFile 
 	createFile = folder + "/" + microServiceName + "_up.cmd"
 	deleteFile = folder + "/" + microServiceName + "_down.cmd"
 	templateFile := folder + "/" + microServiceName + "_template.json"
-	err := ioutil.WriteFile(createFile, []byte("oc new-app -f "+dvtemp.MakeLastPathIfNotAbsolute(templateFile)), 0664)
+	err := ioutil.WriteFile(createFile, []byte("oc new-app -f "+dvdir.MakeLastPathIfNotAbsolute(templateFile)), 0664)
 	if err != nil {
 		dvlog.PrintfError("Cannot write file %s: %v", createFile, err)
 		return
@@ -439,8 +439,8 @@ func microServiceSaveRun(data []interface{}) bool {
 			if !isOk {
 				ok = false
 			} else {
-				crInfo += "call " + dvtemp.MakeLastPathIfNotAbsolute(cr) + "\n"
-				dlInfo += "call " + dvtemp.MakeLastPathIfNotAbsolute(dl) + "\n"
+				crInfo += "call " + dvdir.MakeLastPathIfNotAbsolute(cr) + "\n"
+				dlInfo += "call " + dvdir.MakeLastPathIfNotAbsolute(dl) + "\n"
 			}
 		}
 		err = ioutil.WriteFile(folderName+"/__allUp.cmd", []byte(crInfo), 0664)
@@ -471,7 +471,7 @@ func microServiceRestoreInit(command string, ctx *dvcontext.RequestContext) ([]i
 		dvlog.PrintlnError(command + " requires the microservice name as the first parameter")
 		return nil, false
 	}
-	fileName := dvtemp.GetLastSavedFileName(MicroServiceSaveTemporaryFolder, microServiceName)
+	fileName := dvdir.GetLastSavedFileName(MicroServiceSaveTemporaryFolder, microServiceName)
 	if fileName == "" {
 		dvlog.PrintfError("No configuration was saved for %s", microServiceName)
 		return nil, false
@@ -518,12 +518,12 @@ func microServiceCacheCleanInit(command string, ctx *dvcontext.RequestContext) (
 func microServiceCacheCleanRun(data []interface{}) bool {
 	microServiceName := data[0].(string)
 	count := data[1].(int)
-	return dvtemp.DeleteLastSavedFile(MicroServiceSaveTemporaryFolder, microServiceName, count)
+	return dvdir.DeleteLastSavedFile(MicroServiceSaveTemporaryFolder, microServiceName, count)
 }
 
 func MicroServiceRestoration(microServiceName string, templateFileName string) error {
 	if templateFileName == "" {
-		templateFileName = dvtemp.GetLastSavedFileName(MicroServiceSaveTemporaryFolder, microServiceName)
+		templateFileName = dvdir.GetLastSavedFileName(MicroServiceSaveTemporaryFolder, microServiceName)
 		if templateFileName == "" {
 			return errors.New("No configuration was stored for " + microServiceName)
 		}

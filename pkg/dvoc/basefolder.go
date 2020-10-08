@@ -6,7 +6,7 @@ package dvoc
 
 import (
 	"encoding/json"
-	"github.com/Dobryvechir/microcore/pkg/dvtemp"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"errors"
 	"io/ioutil"
 	"strings"
@@ -43,7 +43,7 @@ func CopyToBaseFolder(baseFolder string, params string) error {
 		if k[0] != '/' && k[0] != '\\' {
 			dst = baseFolder + "/" + k
 		}
-		dvtemp.EnsureFolderForUsualFileToBeSaved(dst)
+		dvdir.EnsureFolderForUsualFileToBeSaved(dst)
 		err = ioutil.WriteFile(dst, file, 0644)
 		if err != nil {
 			return err

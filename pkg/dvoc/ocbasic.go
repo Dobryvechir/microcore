@@ -11,7 +11,7 @@ import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"github.com/Dobryvechir/microcore/pkg/dvtemp"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -56,7 +56,7 @@ func RunOCCommandWithEditor(params string) (string, bool) {
 	if !isOCLogined && !OcLogin() {
 		return "", false
 	}
-	tmpFolder := dvtemp.GetUniqueTmpFolder()
+	tmpFolder := dvdir.GetUniqueTmpFolder()
 	info := tmpFolder + "/i"
 	content := tmpFolder + "/c"
 	env := []string{
@@ -70,7 +70,7 @@ func RunOCCommandWithEditor(params string) (string, bool) {
 		if Log >= LogError {
 			dvlog.PrintfError("Cannot execute oc %s: %s", params, exec)
 		}
-		dvtemp.CleanTmpFolder(tmpFolder)
+		dvdir.CleanTmpFolder(tmpFolder)
 		return "", false
 	}
 	info = string(infoRes)
@@ -78,11 +78,11 @@ func RunOCCommandWithEditor(params string) (string, bool) {
 		if Log >= LogError {
 			dvlog.PrintfError("Cannot execute oc %s: %s", params, info)
 		}
-		dvtemp.CleanTmpFolder(tmpFolder)
+		dvdir.CleanTmpFolder(tmpFolder)
 		return "", false
 	}
 	infoRes, err = ioutil.ReadFile(content)
-	dvtemp.CleanTmpFolder(tmpFolder)
+	dvdir.CleanTmpFolder(tmpFolder)
 	if err != nil {
 		if Log >= LogError {
 			dvlog.PrintfError("Cannot read results of editing oc %s: %s %v", params, info, err)
@@ -139,19 +139,19 @@ func RunOCCommand(params string) (string, bool) {
 }
 
 func ResetPodNameCache() {
-	dvtemp.ResetCacheGroups(ocGroupName)
+	dvdir.ResetCacheGroups(ocGroupName)
 }
 
 func OcLogin() bool {
 	if isOCLogined {
 		return true
 	}
-	dvtemp.SetCacheConfigByDescription(ocGroupName, dvparser.GlobalProperties[openShiftCacheProperty], nil)
+	dvdir.SetCacheConfigByDescription(ocGroupName, dvparser.GlobalProperties[openShiftCacheProperty], nil)
 	loginStart := dvparser.GlobalProperties[openShiftStartCacheProperty]
 	if loginStart == "" {
 		loginStart = "3600,3600"
 	}
-	dvtemp.SetCacheConfigByDescription(ocGroupStartName, loginStart, nil)
+	dvdir.SetCacheConfigByDescription(ocGroupStartName, loginStart, nil)
 	projectName, err1 := dvparser.ConvertByteArrayByGlobalProperties([]byte(openShiftProject), "OPENSHIFT_NAME")
 	if err1 != nil {
 		dvlog.PrintfError("Make sure you specified OPENSHIFT_NAME (project name) in .properties")
@@ -163,7 +163,7 @@ func OcLogin() bool {
 		return false
 	}
 	ocCacheLogin := ocGroupStartName + ".project"
-	info, err := dvtemp.GetCacheStringValue(ocCacheLogin)
+	info, err := dvdir.GetCacheStringValue(ocCacheLogin)
 	if err == nil && info == cmdLine {
 		isOCLogined = true
 		isOCLogined = OpenShiftEnsureExposeRoutes()
@@ -180,7 +180,7 @@ func OcLogin() bool {
 		return false
 	}
 	isOCLogined = true
-	dvtemp.SetCacheValue(ocCacheLogin, cmdLine)
+	dvdir.SetCacheValue(ocCacheLogin, cmdLine)
 	isOCLogined = OpenShiftEnsureExposeRoutes()
 	return isOCLogined
 }
@@ -370,18 +370,18 @@ func RunOCCommandOrCache(cmdLine string) (string, error) {
 
 func RunOCCommandOrCacheFailureAllowed(cmdLine string, allowedFailureMessages []string) (string, error) {
 	var status int
-	ocCacheName := ocCachePrefix + dvtemp.GetSafeFileName(cmdLine)
+	ocCacheName := ocCachePrefix + dvdir.GetSafeFileName(cmdLine)
 	if !isOCLogined {
 		OcLogin()
 	}
-	info, err := dvtemp.GetCacheStringValue(ocCacheName)
+	info, err := dvdir.GetCacheStringValue(ocCacheName)
 	if err != nil || info == "" {
 		info, status = RunOCCommandFailureAllowed(cmdLine, allowedFailureMessages)
 		if status < 0 {
 			dvlog.PrintfError("Failed to execute %s", cmdLine)
 			return "", errors.New("Failed to execute " + cmdLine)
 		}
-		dvtemp.SetCacheValue(ocCacheName, info)
+		dvdir.SetCacheValue(ocCacheName, info)
 	}
 	return info, nil
 }

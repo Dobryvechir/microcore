@@ -11,7 +11,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"github.com/Dobryvechir/microcore/pkg/dvtemp"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"sort"
 	"strings"
 )
@@ -57,7 +57,7 @@ func GetKubernetesConfigurationPart(cmdLine string, kind string, mode int, fn Co
 	pos := strings.Index(info, kubernetesConfiguration)
 	if pos < 0 {
 		if fn == nil {
-			return "", errors.New(kind + " does not contain " + kubernetesConfiguration + " (see " + dvtemp.SaveToUniqueFile(original) + ")")
+			return "", errors.New(kind + " does not contain " + kubernetesConfiguration + " (see " + dvdir.SaveToUniqueFile(original) + ")")
 		}
 		data, err := dvjson.ReadYamlAsDvFieldInfo([]byte(info))
 		if err != nil {
@@ -72,16 +72,16 @@ func GetKubernetesConfigurationPart(cmdLine string, kind string, mode int, fn Co
 	}
 	info = strings.TrimSpace(info[pos+len(kubernetesConfiguration):])
 	if info == "" || info[0] != ':' && info[0] != '=' {
-		return "", errors.New(kind + " expected to contain : or = after " + kubernetesConfiguration + " (see " + dvtemp.SaveToUniqueFile(original) + ")")
+		return "", errors.New(kind + " expected to contain : or = after " + kubernetesConfiguration + " (see " + dvdir.SaveToUniqueFile(original) + ")")
 	}
 	info = dvparser.GetNextNonEmptyPartInYaml(info[1:])
 	pos = strings.Index(info, "\n")
 	if info == "" || info[0] != '{' || pos < 0 {
-		return "", errors.New("corrupted " + kind + " (see " + dvtemp.SaveToUniqueFile(original) + ")")
+		return "", errors.New("corrupted " + kind + " (see " + dvdir.SaveToUniqueFile(original) + ")")
 	}
 	info = strings.TrimSpace(info[:pos])
 	if info[len(info)-1] != '}' {
-		return "", errors.New("Corrupted " + kind + " (see " + dvtemp.SaveToUniqueFile(original) + ")")
+		return "", errors.New("Corrupted " + kind + " (see " + dvdir.SaveToUniqueFile(original) + ")")
 	}
 	return info, nil
 }

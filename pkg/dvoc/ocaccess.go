@@ -12,7 +12,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"github.com/Dobryvechir/microcore/pkg/dvtemp"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -181,7 +181,7 @@ func CreateClientCredentials(user string, pw string, microserviceName string) bo
 		"\n  namespace: " +
 		dvparser.GlobalProperties["OPENSHIFT_NAMESPACE"] +
 		"\ntype: Opaque\n"
-	path := dvtemp.GetTempPathSlashed() + "__dobryvechir__debug_fragments_secret.yaml"
+	path := dvdir.GetTempPathSlashed() + "__dobryvechir__debug_fragments_secret.yaml"
 	err := ioutil.WriteFile(path, []byte(yaml), 0664)
 	if err != nil {
 		dvlog.PrintfError("Cannot temporarily save a secret file %s", path)
@@ -260,7 +260,7 @@ func RegisterUserCredentialsWithIdentityProvider(user, pw, microServiceName stri
 	}
 	line := "  " + microServiceName + ": " + pw + "\n"
 	newSecret := info[:pos] + line + info[pos:]
-	path := dvtemp.GetTempPathSlashed() + tmpSuffix + ".yaml"
+	path := dvdir.GetTempPathSlashed() + tmpSuffix + ".yaml"
 	err := ioutil.WriteFile(path, []byte(newSecret), 0664)
 	if err != nil {
 		dvlog.PrintfError("Cannot temporarily save a secret file %s", path)

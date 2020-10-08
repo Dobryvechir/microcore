@@ -24,18 +24,19 @@ type ProcessFunction struct {
 }
 
 const (
-	CommandHttp                   = "http"
-	CommandEnv                    = "env"
 	CommandCopyToPod              = "copyToPod"
 	CommandCopyFromPod            = "copyFromPod"
+	CommandEnv                    = "env"
+	CommandExpose                 = "expose"
+	CommandHttp                   = "http"
+	CommandMicroServiceCacheClean = "microserviceCacheClean"
+	CommandMicroServiceDown       = "microserviceDown"
 	CommandMicroServiceExec       = "microserviceExec"
+	CommandMicroServiceSave       = "microserviceSave"
+	CommandMicroServiceTemplate   = "microserviceTemplate"
+	CommandMicroServiceRestore    = "microserviceRestore"
 	CommandMicroServiceUp         = "microserviceUp"
 	CommandMicroServiceUpOnly     = "microserviceUpOnly"
-	CommandMicroServiceDown       = "microserviceDown"
-	CommandMicroServiceSave       = "microserviceSave"
-	CommandMicroServiceRestore    = "microserviceRestore"
-	CommandMicroServiceCacheClean = "microserviceCacheClean"
-	CommandExpose                 = "expose"
 	CommandNet                    = "net"
 	CommandOs                     = "os"
 	CommandPortForward            = "forward"
@@ -43,18 +44,19 @@ const (
 )
 
 var processFunctions = map[string]ProcessFunction{
-	CommandHttp:                   {Init: processNetInit, Run: processNetRun},
-	CommandEnv:                    {Init: processEnvSettingInit, Run: processEnvSettingsRun},
 	CommandCopyToPod:              {Init: copyToPodInit, Run: copyToPodRun},
 	CommandCopyFromPod:            {Init: copyFromPodInit, Run: copyFromPodRun},
+	CommandEnv:                    {Init: processEnvSettingInit, Run: processEnvSettingsRun},
+	CommandExpose:                 {Init: exposeMicroServiceInit, Run: exposeMicroServiceRun},
+	CommandHttp:                   {Init: processNetInit, Run: processNetRun},
+	CommandMicroServiceCacheClean: {Init: microServiceCacheCleanInit, Run: microServiceCacheCleanRun},
 	CommandMicroServiceExec:       {Init: microServiceExecInit, Run: microServiceExecRun},
-	CommandMicroServiceUp:         {Init: microServiceUpInit, Run: microServiceUpRun},
-	CommandMicroServiceUpOnly:     {Init: microServiceUpInit, Run: microServiceUpOnlyRun},
 	CommandMicroServiceDown:       {Init: microServiceDownInit, Run: microServiceDownRun},
 	CommandMicroServiceSave:       {Init: microServiceSaveInit, Run: microServiceSaveRun},
+	CommandMicroServiceTemplate:   {Init: microServiceTemplateInit, Run: microServiceTemplateRun},
 	CommandMicroServiceRestore:    {Init: microServiceRestoreInit, Run: microServiceRestoreRun},
-	CommandMicroServiceCacheClean: {Init: microServiceCacheCleanInit, Run: microServiceCacheCleanRun},
-	CommandExpose:                 {Init: exposeMicroServiceInit, Run: exposeMicroServiceRun},
+	CommandMicroServiceUp:         {Init: microServiceUpInit, Run: microServiceUpRun},
+	CommandMicroServiceUpOnly:     {Init: microServiceUpInit, Run: microServiceUpOnlyRun},
 	CommandNet:                    {Init: SmartNetInit, Run: SmartNetRun},
 	CommandOs:                     {Init: processOsInit, Run: processOsRun},
 	CommandPortForward:            {Init: portForwardInit, Run: portForwardRun, Async: true},

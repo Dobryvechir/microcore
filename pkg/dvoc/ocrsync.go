@@ -10,7 +10,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"github.com/Dobryvechir/microcore/pkg/dvtemp"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -100,7 +100,7 @@ func OpenShiftGetPodNameAndPath(name string) (tmpFolder string, serviceName, pod
 				if !ok {
 					err = errors.New("Pod " + podName + " does not exist")
 				} else {
-					tmpFolder = dvtemp.GetUniqueTmpFolder()
+					tmpFolder = dvdir.GetUniqueTmpFolder()
 					if tmpFolder == "" {
 						err = errors.New("Cannot create temporary folder")
 					}
@@ -124,7 +124,7 @@ func OpenShiftReadTextFile(name string, strategy int) (data string, err error) {
 	case StrategyReadWriteSingleFileThruDir:
 		if !ReadDirectoryFromPod(podName, tmpFolder, podFolder, GetRsyncOptionsForSingleFile(fileName)) {
 			err = errors.New("Cannot read access " + name)
-			dvtemp.CleanTmpFolder(tmpFolder)
+			dvdir.CleanTmpFolder(tmpFolder)
 			return
 		}
 		pos := strings.LastIndex(podFolder, "/")
@@ -132,19 +132,19 @@ func OpenShiftReadTextFile(name string, strategy int) (data string, err error) {
 		if pos >= 0 {
 			subFolder = podFolder[pos+1:]
 		}
-		tmpFileName := dvtemp.GetFirstExistingPath(tmpFolder+"/"+fileName, tmpFolder+"/"+subFolder+"/"+fileName)
+		tmpFileName := dvdir.GetFirstExistingPath(tmpFolder+"/"+fileName, tmpFolder+"/"+subFolder+"/"+fileName)
 		if tmpFileName == "" {
 			return "", errors.New("File " + fileName + " does not exist in " + podFolder + " at " + podName)
 		}
 		var byteData []byte
 		byteData, err = ioutil.ReadFile(tmpFileName)
-		dvtemp.CleanTmpFolder(tmpFolder)
+		dvdir.CleanTmpFolder(tmpFolder)
 		if err != nil {
 			return
 		}
 		return string(byteData), nil
 	case StrategyReadWriteSingleFileThruCat:
-		dvtemp.CleanTmpFolder(tmpFolder)
+		dvdir.CleanTmpFolder(tmpFolder)
 		info, err := ExecuteCommandOnPod(podName, "cat "+podFolder+"/"+fileName)
 		if err != nil {
 			return "", err
@@ -184,17 +184,17 @@ func OpenShiftWriteTextFile(name string, data string, strategy int) error {
 		}
 		err = ioutil.WriteFile(filePlace, []byte(data), 0664)
 		if err != nil {
-			dvtemp.CleanTmpFolder(tmpFolder)
+			dvdir.CleanTmpFolder(tmpFolder)
 			return err
 		}
 		if !WriteDirectoryToPod(podName, writeFolder, podFolder, "") {
 			err = errors.New("Cannot write access " + name)
-			dvtemp.CleanTmpFolder(tmpFolder)
+			dvdir.CleanTmpFolder(tmpFolder)
 			return err
 		}
 		return nil
 	case StrategyReadWriteSingleFileThruCat:
-		dvtemp.CleanTmpFolder(tmpFolder)
+		dvdir.CleanTmpFolder(tmpFolder)
 		cmd := "echo VOL >/tmp/vol.txt"
 		info, err := ExecuteCommandOnSpecificPod(podName, cmd)
 		dvlog.PrintfError("info: %s err: %v", info, err)
@@ -485,12 +485,12 @@ func openShiftPodNameForFolderCopy(fullPodName string, action string, folderName
 		fullPodName += "/"
 	}
 	tmpFolder, _, podName, podFolder, _, err = OpenShiftGetPodNameAndPath(fullPodName + action)
-	folderName = dvtemp.GetFolderNameWithoutLastSlash(folderName)
-	lastLocalPart := dvtemp.GetFolderLastPartName(folderName)
-	lastPodPart := dvtemp.GetFolderLastPartName(podFolder)
+	folderName = dvdir.GetFolderNameWithoutLastSlash(folderName)
+	lastLocalPart := dvdir.GetFolderLastPartName(folderName)
+	lastPodPart := dvdir.GetFolderLastPartName(podFolder)
 	if lastLocalPart != "" && lastLocalPart == lastPodPart {
-		localFolderName = dvtemp.GetFolderNameWithoutLastPart(folderName)
-		dvtemp.CleanTmpFolder(tmpFolder)
+		localFolderName = dvdir.GetFolderNameWithoutLastPart(folderName)
+		dvdir.CleanTmpFolder(tmpFolder)
 		tmpFolder = ""
 		return
 	}
@@ -506,17 +506,17 @@ func OpenShiftCopyFolderToPod(folderName string, fullPodName string) error {
 		return err
 	}
 	if extraFolder != "" {
-		err = dvtemp.CopyWholeFolder(folderName, extraFolder)
+		err = dvdir.CopyWholeFolder(folderName, extraFolder)
 		if err != nil {
 			return err
 		}
 	}
 	if !WriteDirectoryToPod(podName, localFolderName, podFolder, "") {
 		err = errors.New("Cannot write access " + fullPodName)
-		dvtemp.CleanTmpFolder(tmpFolder)
+		dvdir.CleanTmpFolder(tmpFolder)
 		return err
 	}
-	dvtemp.CleanTmpFolder(tmpFolder)
+	dvdir.CleanTmpFolder(tmpFolder)
 	return nil
 }
 
@@ -530,16 +530,16 @@ func OpenShiftCopyFolderFromPod(folderName string, fullPodName string) error {
 	}
 	if !ReadDirectoryFromPod(podName, localFolderName, podFolder, "") {
 		err = errors.New("Cannot read access " + fullPodName)
-		dvtemp.CleanTmpFolder(tmpFolder)
+		dvdir.CleanTmpFolder(tmpFolder)
 		return err
 	}
 	if extraFolder != "" {
-		err = dvtemp.CopyWholeFolder(extraFolder, folderName)
+		err = dvdir.CopyWholeFolder(extraFolder, folderName)
 		if err != nil {
-			dvtemp.CleanTmpFolder(tmpFolder)
+			dvdir.CleanTmpFolder(tmpFolder)
 			return err
 		}
 	}
-	dvtemp.CleanTmpFolder(tmpFolder)
+	dvdir.CleanTmpFolder(tmpFolder)
 	return nil
 }
