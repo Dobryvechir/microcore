@@ -69,16 +69,23 @@ type SmartNetConfig struct {
 	Body     string                 `json:"body"`
 }
 
-func SmartNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func DefaultInitWithObject(command string,result interface{}) bool {
 	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
 	if cmd == "" || cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
-		log.Printf("Empty net parameters", command)
-		return nil, false
+		log.Printf("Empty parameters in %s", command)
+		return false
 	}
-	config := &SmartNetConfig{}
-	err := json.Unmarshal([]byte(cmd), config)
+	err := json.Unmarshal([]byte(cmd), result)
 	if err != nil {
-		log.Printf("Error converting parameters: %v", err)
+		log.Printf("Error converting parameters: %v in %s", err, command)
+		return false
+	}
+	return true
+}
+
+func SmartNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+	config := &SmartNetConfig{}
+	if !DefaultInitWithObject(command, config) {
 		return nil, false
 	}
 	if config.Url == "" {
