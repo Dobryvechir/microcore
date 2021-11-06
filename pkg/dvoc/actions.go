@@ -31,6 +31,11 @@ func fireAction(ctx *dvcontext.RequestContext) bool {
 	return true
 }
 
+func fireStaticAction(ctx *dvcontext.RequestContext) bool {
+	ActionContextResult(ctx)
+	return true
+}
+
 func ActionContextResult(ctx *dvcontext.RequestContext) {
 	if ctx.StatusCode >= 400 {
 		ctx.HandleCommunication()
