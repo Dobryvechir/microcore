@@ -5,9 +5,9 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvoc
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"strings"
 	"time"
 )
@@ -95,7 +95,7 @@ func OpenShiftSetEnv(list string) bool {
 }
 
 func OpenShiftScale(list string, replicas int) bool {
-	microServices := dvparser.ConvertToNonEmptyList(list)
+	microServices := dvtextutils.ConvertToNonEmptyList(list)
 	n := len(microServices)
 	res := true
 	for i := 0; i < n; i++ {
@@ -112,7 +112,7 @@ func OpenShiftResetUp(service string) {
 }
 
 func OpenShiftReset(list string) bool {
-	microServices := dvparser.ConvertToNonEmptyList(list)
+	microServices := dvtextutils.ConvertToNonEmptyList(list)
 	n := len(microServices)
 	res := true
 	for i := 0; i < n; i++ {

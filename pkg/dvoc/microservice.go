@@ -6,11 +6,12 @@ package dvoc
 
 import (
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"github.com/Dobryvechir/microcore/pkg/dvdir"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -111,7 +112,7 @@ func DownMicroServiceCommands(deleteInfo []string) (ok bool) {
 }
 
 func DownWholeMicroServiceHard(microServiceName string, microServiceAliases string, includeList []string) bool {
-	aliases := dvparser.ConvertToNonEmptyList(microServiceName + "," + microServiceAliases)
+	aliases := dvtextutils.ConvertToNonEmptyList(microServiceName + "," + microServiceAliases)
 	n := len(aliases)
 	deleteInfo := make([]string, 0, n*5)
 	for i := 0; i < n; i++ {
@@ -124,7 +125,7 @@ func DownWholeMicroServiceHard(microServiceName string, microServiceAliases stri
 		route := ensureOpenShiftRouteNameInParams(nil, name)
 		deleteInfo = append(deleteInfo, "delete route "+route)
 	}
-	deleteInfo = dvparser.MakeUniqueStringList(deleteInfo, includeList)
+	deleteInfo = dvtextutils.MakeUniqueStringList(deleteInfo, includeList)
 	return DownMicroServiceCommands(deleteInfo)
 }
 
@@ -247,7 +248,7 @@ func CreateMicroService(params map[string]string, files map[string]string, comma
 				dvlog.PrintfError("Your template file for %s does not contain legal template", microServiceName)
 				return false
 			}
-			requiredParams, ok := dvparser.ComposeParametersInTemplate(specTemplate, 2, templateRequired)
+			requiredParams, ok := dvtextutils.ComposeParametersInTemplate(specTemplate, 2, templateRequired)
 			if !ok {
 				dvlog.PrintfError("Your template is corrupt: %s", specTemplate)
 				return false
@@ -308,7 +309,7 @@ func microServiceDownInit(command string, ctx *dvcontext.RequestContext) ([]inte
 	debugNotSaved := true
 	pos := strings.Index(command, "{")
 	if pos >= 0 {
-		saveOption := strings.ToLower(dvparser.QuickLookJsonOption(command[pos:], "save"))
+		saveOption := strings.ToLower(dvtextutils.QuickLookJsonOption(command[pos:], "save"))
 		switch saveOption {
 		case "false", "\"false\"":
 			save = MicroServiceDeleteForced
@@ -371,7 +372,7 @@ func ReduceMicroServiceSaveInfo(microServiceName string) {
 
 func microServiceSaveInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	pos := strings.Index(command, ":")
-	params := dvparser.ConvertToNonEmptyList(command[pos+1:])
+	params := dvtextutils.ConvertToNonEmptyList(command[pos+1:])
 	n := len(params)
 	if n == 0 {
 		dvlog.PrintlnError("microserviceSave:<microservice name>,<folder where information will be saved, optional, defaults to the current folder>")
@@ -492,7 +493,7 @@ func microServiceRestoreRun(data []interface{}) bool {
 
 func microServiceCacheCleanInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	pos := strings.Index(command, ":")
-	params := dvparser.ConvertToNonEmptyList(command[pos+1:])
+	params := dvtextutils.ConvertToNonEmptyList(command[pos+1:])
 	n := len(params)
 	if n == 0 {
 		dvlog.PrintlnError("microserviceCacheClean:<microservice name>,<optionally, number of last cache versions to be removed, defaults to all>")
@@ -573,7 +574,7 @@ func microServiceExecRun(data []interface{}) bool {
 func exposeMicroServiceInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	pos := strings.Index(command, ":")
 	command = command[pos+1:]
-	microServices := dvparser.ConvertToNonEmptyList(command)
+	microServices := dvtextutils.ConvertToNonEmptyList(command)
 	if len(microServices) == 0 {
 		dvlog.PrintfError("Empty expose executor %s", command)
 		return nil, false

@@ -7,7 +7,7 @@ package dvdir
 
 import (
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"strings"
 )
 
@@ -101,7 +101,7 @@ func WildMaskStringScan(lst []string, mask string) []string {
 		return lst
 	}
 	endAny := mask[p-1] == '*'
-	m := dvparser.ReduceListToNonEmptyList(strings.Split(mask, "*"))
+	m := dvtextutils.ReduceListToNonEmptyList(strings.Split(mask, "*"))
 	ml := len(m)
 	if ml == 0 {
 		return lst

@@ -1,15 +1,16 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvoc
 
 import (
 	"encoding/json"
-	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"log"
 	"os"
@@ -42,7 +43,7 @@ func convertToHeader(list []string) (res map[string]string) {
 }
 
 func processNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
-	params := dvparser.ConvertToNonEmptyList(command)
+	params := dvtextutils.ConvertToNonEmptyList(command)
 	url := params[0]
 	headers := convertToHeader(params[1:])
 	return []interface{}{url, headers}, true
@@ -69,7 +70,7 @@ type SmartNetConfig struct {
 	Body     string                 `json:"body"`
 }
 
-func DefaultInitWithObject(command string,result interface{}) bool {
+func DefaultInitWithObject(command string, result interface{}) bool {
 	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
 	if cmd == "" || cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
 		log.Printf("Empty parameters in %s", command)
@@ -112,11 +113,33 @@ func SmartNetRun(data []interface{}) bool {
 	return SmartNetRunByConfig(config, ctx)
 }
 
+func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestContext) {
+	if result != "" {
+		if ctx != nil {
+			ctx.ExtraAsDvObject.SetProperty(result, data)
+		} else {
+			switch data.(type) {
+			case string:
+				dvparser.SetGlobalPropertiesValue(result, data.(string))
+			}
+		}
+	}
+}
+
+func ProcessSavingActionResult(result string, data interface{}, ctx *dvcontext.RequestContext, err error, message1 string, message2 string) bool {
+	if err != nil {
+		log.Printf("%s %s %v", message1, message2, err)
+		return false
+	}
+	SaveActionResult(result, data, ctx)
+	return true
+}
+
 func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) bool {
 	options := dvnet.GetAveragePersistentOptions()
 	headers := make(map[string]string)
 	if config.Headers != "" {
-		dvparser.PutDescribedAttributesToMapFromCommaSeparatedList(dvparser.GlobalProperties, headers, config.Headers)
+		dvtextutils.PutDescribedAttributesToMapFromCommaSeparatedList(dvparser.GlobalProperties, headers, config.Headers)
 	}
 	if strings.HasPrefix(headers[Authorization], "M2M_") {
 		microServiceName := headers[Authorization][4:]
@@ -128,13 +151,7 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 		log.Printf("%s %s failed: %v", config.Method, config.Url, err)
 		return false
 	}
-	if config.Result != "" {
-		if ctx != nil {
-			ctx.ExtraAsDvObject.SetProperty(config.Result, string(res))
-		} else {
-			dvparser.SetGlobalPropertiesValue(config.Result, string(res))
-		}
-	}
+	SaveActionResult(config.Result, string(res), ctx)
 	if config.Template.Dst != "" {
 		if config.Template.Src != "" {
 			s, err := dvparser.ConvertByteArrayByGlobalPropertiesRuntime([]byte(config.Template.Src), "net step")
@@ -204,7 +221,7 @@ func processOsRun(data []interface{}) bool {
 
 func portForwardInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	p := strings.Index(command, ":")
-	items := dvparser.ConvertToNonEmptyList(command[p+1:])
+	items := dvtextutils.ConvertToNonEmptyList(command[p+1:])
 	if len(items) != 2 {
 		dvlog.Printf("forward: <host>, <target> expected, but you specified %s", command)
 		return nil, false

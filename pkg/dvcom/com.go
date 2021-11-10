@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvcom
 
@@ -9,6 +9,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 	"io/ioutil"
 	"log"
@@ -27,8 +28,8 @@ var ServiceFolder = "..$$$"
 
 func SetRequestUrl(request *dvcontext.RequestContext, url string) {
 	request.Url = url
-	request.UrlsLowerCase = dvparser.ConvertURLToList(strings.ToLower(url))
-	request.Urls = dvparser.ConvertURLToList(url)
+	request.UrlsLowerCase = dvtextutils.ConvertURLToList(strings.ToLower(url))
+	request.Urls = dvtextutils.ConvertURLToList(url)
 }
 
 func CheckProcessorBlocks(blocks []dvcontext.ProcessorBlock, request *dvcontext.RequestContext) bool {
@@ -410,7 +411,7 @@ func prepareMicroCoreInfo(serverInfo *dvcontext.MicroCoreInfo) {
 }
 
 func PrepareAccessControlLists(data string) dvcontext.MicroCoreHeaderAttribute {
-	res := dvcontext.MicroCoreHeaderAttribute{Kind: dvcontext.HeadersAddToList, Imap: make(map[string]int), List: dvparser.ConvertToNonEmptyList(data)}
+	res := dvcontext.MicroCoreHeaderAttribute{Kind: dvcontext.HeadersAddToList, Imap: make(map[string]int), List: dvtextutils.ConvertToNonEmptyList(data)}
 	if len(res.List) == 0 {
 		res.Kind = -1
 		return res
@@ -450,17 +451,21 @@ func calculateRequestContextParameters(r *http.Request) (res map[string]interfac
 	res["SERVER_NAME"] = r.Host
 	for key, value := range headers {
 		if len(value) > 0 {
-			res["H_"+dvparser.ConvertToUpperAlphaDigital([]byte(key))] = value[0]
+			res["H_"+dvtextutils.ConvertToUpperAlphaDigital([]byte(key))] = value[0]
 		}
 	}
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 	for key, value := range m {
 		if len(value) > 0 {
-			res["G_"+dvparser.ConvertToUpperAlphaDigital([]byte(key))] = value[0]
+			res["G_"+dvtextutils.ConvertToUpperAlphaDigital([]byte(key))] = value[0]
 			res["GM_"+key] = value
 		}
 	}
 	return
+}
+
+func logRequest(request *dvcontext.RequestContext, place string) {
+	log.Printf("[%v %v] %s", request.Extra["REQUEST_METHOD"], request.Extra["REQUEST_URI"], place)
 }
 
 func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerInfo map[string]*dvcontext.MicroCoreInfo) http.HandlerFunc {
@@ -489,20 +494,30 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 		if ok {
 			SetRequestUrl(request, rewriteComRewriteItem(request.Url, rew))
 		}
+		var place string
 		if currentServer.BaseFolderUsed && tryLocalFile(request, currentServer.BaseFolderUrl) {
+			place = "Local"
 		} else if currentServer.ActionHandler != nil && currentServer.ActionHandler(request) {
+			place = "Action"
 		} else if currentServer.ModuleHandler != nil && currentServer.ModuleHandler(request) {
+			place = "Module"
 		} else {
 			rew, ok := currentServer.ServerRewrite[firstUrl]
 			if ok {
 				SetRequestUrl(request, rewriteComRewriteItem(request.Url, rew))
 			}
 			if currentServer.ExtraServerFile && tryLocalFile(request, currentServer.ExtraServerUrl) {
+				place = "ExtraLocal"
 			} else if currentServer.ExtraServerHttp {
 				tryHttpForward(request, currentServer.ExtraServerUrl)
+				place = "http"
 			} else {
 				request.HandleFileNotFound()
+				place = "none"
 			}
+		}
+		if currentServer.LogLevel > dvcontext.LogLevelNone {
+			logRequest(request, place)
 		}
 	}
 

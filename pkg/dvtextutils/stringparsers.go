@@ -1,8 +1,8 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
-package dvparser
+package dvtextutils
 
 import (
 	"fmt"
@@ -323,14 +323,6 @@ func ReadInsideBrackets(str string, pos int) (endPos int, err error) {
 		}
 	}
 	return 0, fmt.Errorf("Unclosed [ in %s at %d", str, pos)
-}
-
-func GetByGlobalPropertiesOrDefault(propName, defValue string) string {
-	value := defValue
-	if propName != "" && GlobalProperties[propName] != "" {
-		value = GlobalProperties[propName]
-	}
-	return value
 }
 
 func CopyStringMap(src map[string]string) map[string]string {

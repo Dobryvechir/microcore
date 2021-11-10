@@ -6,7 +6,7 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvgeolocation
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 )
 
@@ -38,7 +38,7 @@ func LookupDbInit(srcIP4, srcIP6 string, countryPropertiesSrc string, activate i
 		}
 	}
 	if activate&4 != 0 {
-		CountryInfo, err = dvparser.LoadSimpleMapFromFile(countryPropertiesSrc, '=')
+		CountryInfo, err = dvtextutils.LoadSimpleMapFromFile(countryPropertiesSrc, '=')
 		if err != nil {
 			return err
 		}

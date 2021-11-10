@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvjson
 
@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"log"
 	"strconv"
 	"strings"
@@ -841,7 +841,7 @@ func (item *DvFieldInfo) ReadSimpleChildValue(fieldName string) string {
 	if subItem == nil {
 		return ""
 	}
-	return dvparser.GetUnquotedString(subItem.GetStringValue())
+	return dvtextutils.GetUnquotedString(subItem.GetStringValue())
 }
 
 func (item *DvFieldInfo) ReadChildStringValue(fieldName string) string {
@@ -849,7 +849,7 @@ func (item *DvFieldInfo) ReadChildStringValue(fieldName string) string {
 	if err != nil || subItem == nil {
 		return ""
 	}
-	return dvparser.GetUnquotedString(subItem.GetStringValue())
+	return dvtextutils.GetUnquotedString(subItem.GetStringValue())
 }
 
 func ExpressionEvaluation(expr string, resolver ExpressionResolver) (string, error) {
@@ -887,7 +887,7 @@ func (item *DvFieldInfo) ReadChild(childName string, resolver ExpressionResolver
 		c = childName[pos]
 	}
 	if c == '[' {
-		endPos, err := dvparser.ReadInsideBrackets(childName, pos)
+		endPos, err := dvtextutils.ReadInsideBrackets(childName, pos)
 		if err != nil {
 			return nil, err
 		}
@@ -910,7 +910,7 @@ func (item *DvFieldInfo) ReadChild(childName string, resolver ExpressionResolver
 				}
 				pos = i + 1
 				var err error
-				i, err = dvparser.ReadInsideBrackets(childName, i)
+				i, err = dvtextutils.ReadInsideBrackets(childName, i)
 				if err != nil {
 					return nil, err
 				}
@@ -944,6 +944,28 @@ func (item *DvFieldInfo) ReadChild(childName string, resolver ExpressionResolver
 		return nil, fmt.Errorf("Cannot read %s of undefined in %s", childName, data)
 	}
 	return current.ReadChild(childName, resolver)
+}
+
+func (item *DvFieldInfo) GetChildrenByRange(startIndex int, count int) *DvFieldInfo {
+	if item == nil || (item.Kind != FIELD_ARRAY && item.Kind != FIELD_OBJECT) {
+		return nil
+	}
+	subfields := item.Fields
+	n := len(subfields)
+	if n == 0 {
+		return nil
+	}
+	for startIndex < 0 {
+		startIndex += n
+	}
+	if startIndex > n {
+		return nil
+	}
+	if count > n-startIndex {
+		count = n - startIndex
+	}
+	res := &DvFieldInfo{Kind: FIELD_ARRAY, Fields: subfields[startIndex : startIndex+count]}
+	return res
 }
 
 func (item *DvFieldInfo) GetStringValue() string {
@@ -982,4 +1004,42 @@ func (item *DvFieldInfo) GetStringValue() string {
 		return "null"
 	}
 	return string(item.Value)
+}
+
+func (item *DvFieldInfo) ReadChildOfAnyLevel(name string) (*DvFieldInfo, bool) {
+	name = strings.TrimSpace(name)
+	if len(name) == 0 {
+		return item, true
+	}
+	names := strings.Split(name, ".")
+	n := len(names)
+	for i := 0; i < n; i++ {
+		if item == nil {
+			return nil, false
+		}
+		s := names[i]
+		item = item.ReadSimpleChild(s)
+	}
+	return item, true
+}
+
+func ReadJsonChild(data []byte, childName string, rejectChildOfUndefined bool) (*DvFieldInfo, error) {
+	item, err := JsonFullParser(data)
+	if err != nil {
+		return nil, err
+	}
+	var res bool
+	item, res = item.ReadChildOfAnyLevel(childName)
+	if !res && rejectChildOfUndefined {
+		return nil, errors.New("Read of undefined at " + childName)
+	}
+	return item, nil
+}
+
+func DvFieldInfoToStringConverter(v interface{}) (string, bool) {
+	switch v.(type) {
+	case *DvFieldInfo:
+		return string(v.(*DvFieldInfo).PrintToJson(2)), true
+	}
+	return "", false
 }

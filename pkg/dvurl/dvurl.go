@@ -6,9 +6,10 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvurl
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"log"
 	"strings"
 )
@@ -126,7 +127,7 @@ func SingleSimplifiedUrlVerifier(context interface{}, resolver *UrlResolver, url
 }
 
 func SingleSimplifiedUrlSearch(urlPool *UrlPool, url string) (bool, *UrlResultInfo) {
-	urls := dvparser.ConvertURLToList(strings.ToLower(url))
+	urls := dvtextutils.ConvertURLToList(strings.ToLower(url))
 	extra := map[string]interface{}{"URL": url}
 	extraParams := dvparser.GetProptertiesPrototypedToGlobalProperties(extra)
 	return UrlSearch(url, urlPool, urls, SingleSimplifiedUrlVerifier, extraParams)

@@ -1,5 +1,7 @@
-// package dvevaluation manages expressions, functions using agrammar
-// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+/***********************************************************************
+MicroCore
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+************************************************************************/
 
 package dvevaluation
 
@@ -9,8 +11,16 @@ import (
 	"strings"
 )
 
+type MethodToStringConverter func(v interface{}) (string, bool)
+
+var poolStringConverters = make([]MethodToStringConverter, 0, 7)
+
+func RegisterToStringConverter(converter MethodToStringConverter) {
+	poolStringConverters = append(poolStringConverters, converter)
+}
+
 func AnyToString(v interface{}) string {
-	return AnyToStringWithOptions(v, ConversionOptionJSLike)
+	return AnyToStringWithOptions(v, ConversionOptionJsonLike)
 }
 
 func AnyToStringWithOptions(v interface{}, options int) string {
@@ -25,12 +35,22 @@ func AnyToStringWithOptions(v interface{}, options int) string {
 		f = v.(*DvObject).ToString()
 	case *DvFunction:
 		f = v.(*DvFunction).ToString()
-	case nil:
-		f = nullValueVersion[options]
 	case []byte:
 		f = string(v.([]byte))
+	case nil:
+		f = nullValueVersion[options]
 	default:
-		f = ConvertAnyTypeToJsonString(v)
+		n := len(poolStringConverters)
+		done := false
+		for i := 0; i < n; i++ {
+			f, done = poolStringConverters[i](v)
+			if done {
+				break
+			}
+		}
+		if !done {
+			f = ConvertAnyTypeToJsonString(v)
+		}
 	}
 	return f
 }

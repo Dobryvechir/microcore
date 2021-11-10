@@ -7,7 +7,7 @@ package dvjson
 
 import (
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"strconv"
 )
 
@@ -375,7 +375,7 @@ func ConvertFieldItemArrayIntoMap(info *DvFieldInfo, keyField string, valueField
 			valueNode := info.Fields[i].ReadSimpleChild(valueField)
 			value := defValue
 			if valueNode != nil {
-				value = dvparser.GetUnquotedString(valueNode.GetStringValue())
+				value = dvtextutils.GetUnquotedString(valueNode.GetStringValue())
 			}
 			res[key] = value
 		}

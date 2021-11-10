@@ -8,7 +8,7 @@ package dvoc
 import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"strings"
 )
 
@@ -18,7 +18,7 @@ const (
 )
 
 func UpdateContentSecurityPolicyOnPods(pods string, hosts string) bool {
-	podList := dvparser.ConvertToNonEmptyList(pods)
+	podList := dvtextutils.ConvertToNonEmptyList(pods)
 	hosts = strings.Replace(hosts, "http://", "", -1)
 	hosts = strings.Replace(hosts, "https://", "", -1)
 	hosts = strings.Replace(hosts, "ws://", "", -1)

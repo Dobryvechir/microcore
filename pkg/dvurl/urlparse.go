@@ -2,7 +2,7 @@ package dvurl
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"log"
 	"regexp"
 	"strings"
@@ -199,7 +199,7 @@ func ScanNamedIds(maskInfo *dvcontext.MaskInfo) (res []string) {
 }
 
 func PreparseMaskExpressions(data string) (masks []*dvcontext.MaskInfo) {
-	parts := dvparser.ConvertToNonEmptyList(data)
+	parts := dvtextutils.ConvertToNonEmptyList(data)
 	n := len(parts)
 	masks = make([]*dvcontext.MaskInfo, n)
 	for i := 0; i < n; i++ {

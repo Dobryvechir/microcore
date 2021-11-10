@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvoc
 
@@ -41,6 +41,9 @@ const (
 	CommandOs                     = "os"
 	CommandPortForward            = "forward"
 	CommandSql                    = "sql"
+	CommandFile                   = "file"
+	CommandPaging                 = "paging"
+	CommandConvert                = "convert"
 )
 
 var processFunctions = map[string]ProcessFunction{
@@ -61,6 +64,9 @@ var processFunctions = map[string]ProcessFunction{
 	CommandOs:                     {Init: processOsInit, Run: processOsRun},
 	CommandPortForward:            {Init: portForwardInit, Run: portForwardRun, Async: true},
 	CommandSql:                    {Init: dvdbdata.SqlInit, Run: dvdbdata.SqlRun},
+	CommandFile:                   {Init: readFileActionInit, Run: readFileActionRun},
+	CommandPaging:                 {Init: pagingInit, Run: pagingRun},
+	CommandConvert:                {Init: jsonConvertInit, Run: jsonConvertRun},
 }
 
 func AddProcessFunction(key string, processor ProcessFunction) {

@@ -8,7 +8,7 @@ package dvprocessors
 import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"log"
 	"regexp"
 	"strings"
@@ -143,15 +143,15 @@ func readMoveKindPosWhere(options string, defPos int, defWhere int) (kind int, p
 			where = searchDirLast
 		case 'L':
 			kind = moveKindLine
-			pos = dvparser.TryReadInteger(options[i+1:], defPos)
+			pos = dvtextutils.TryReadInteger(options[i+1:], defPos)
 			return
 		case 'P':
 			kind = moveKindPos
-			pos = dvparser.TryReadInteger(options[i+1:], defPos)
+			pos = dvtextutils.TryReadInteger(options[i+1:], defPos)
 			return
 		case 'W':
 			kind = moveKindWord
-			pos = dvparser.TryReadInteger(options[i+1:], defPos)
+			pos = dvtextutils.TryReadInteger(options[i+1:], defPos)
 			return
 		default:
 			log.Printf("Unknown option at %d in %s", i, options)
@@ -163,7 +163,7 @@ func readMoveKindPosWhere(options string, defPos int, defWhere int) (kind int, p
 
 func processReplaceOptions(pattern string, defStartWhere int) (res *replacerOptions) {
 	res = &replacerOptions{moveWhere: defStartWhere}
-	options := dvparser.ConvertToNonEmptyList(pattern)
+	options := dvtextutils.ConvertToNonEmptyList(pattern)
 	n := len(options)
 	for i := 0; i < n; i++ {
 		s := options[i]
@@ -369,7 +369,7 @@ func MakeComplexReplacement(src []byte, k string, neue string) []byte {
 	}
 	m := len(src)
 	old := []byte(params[1])
-	rest := dvparser.GetStringArrayWithDefaults(params[2:], defReplaceParams)
+	rest := dvtextutils.GetStringArrayWithDefaults(params[2:], defReplaceParams)
 	startSearch := []byte(rest[0])
 	endSearch := []byte(rest[1])
 	whereStart := processReplaceOptions(rest[2], searchDirFirst)
@@ -407,7 +407,7 @@ LoopEqualLen:
 			continue
 		}
 		var dif int
-		src, dif = dvparser.InsertTextIntoBuffer(src, posStart, posEnd, whereStart.crlf, neuBuf, whereEnd.crlf)
+		src, dif = dvtextutils.InsertTextIntoBuffer(src, posStart, posEnd, whereStart.crlf, neuBuf, whereEnd.crlf)
 		i += dif
 		reqMin := posStart + len(neue) - 1
 		if i < reqMin {

@@ -11,6 +11,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"log"
 	"os"
@@ -129,7 +130,7 @@ func ExecuteSqlFromFolder(db *DBConnection, root string) error {
 			p := strings.LastIndex(t, ".")
 			if p >= 0 {
 				t = t[p+1:]
-				if dvparser.IsAlphabeticalLowCase(t) && t != mask {
+				if dvtextutils.IsAlphabeticalLowCase(t) && t != mask {
 					if logPreExecuteLevel >= dvlog.LogInfo {
 						log.Printf("omitting %s because it is %s, not %s\n", path, t, mask)
 					}
@@ -197,7 +198,7 @@ func PreExecuteForNewerVersions(props map[string]string, db *DBConnection, folde
 	}
 	key = "DB_PREEXECUTE_VERSION_" + key
 	version, _ := ReadGlobalDBProperty(props, db, key, "0")
-	versionIndex := dvparser.ReadHexValue(version)
+	versionIndex := dvtextutils.ReadHexValue(version)
 	if versionIndex < 0 {
 		versionIndex = 0
 	}
@@ -208,7 +209,7 @@ func PreExecuteForNewerVersions(props map[string]string, db *DBConnection, folde
 		}
 		return err
 	}
-	version = dvparser.GetCanonicalVersion(versionIndex)
+	version = dvtextutils.GetCanonicalVersion(versionIndex)
 	if logPreExecuteLevel >= dvlog.LogInfo {
 		log.Printf("Sql preexecution started in folder %s, sql - %s, version older than %s", folder, db.Kind, version)
 	}
@@ -218,14 +219,14 @@ func PreExecuteForNewerVersions(props map[string]string, db *DBConnection, folde
 		if file.IsDir() {
 			nm := file.Name()
 			if nm != "" && (nm[0] == 'v' || nm[0] == 'V') {
-				versionNmb := dvparser.GetVersionIndex(nm[1:])
+				versionNmb := dvtextutils.GetVersionIndex(nm[1:])
 				if versionNmb > versionIndex {
-					versionSql = append(versionSql, dvparser.Int64ToFullHex(versionNmb)+nm)
+					versionSql = append(versionSql, dvtextutils.Int64ToFullHex(versionNmb)+nm)
 					if logPreExecuteLevel > dvlog.LogTrace {
 						log.Printf("File %s added for processing", nm)
 					}
 				} else if logPreExecuteLevel > dvlog.LogInfo {
-					log.Printf("Folder %s omitted because its version %s is not older than %s", file.Name(), dvparser.GetCanonicalVersion(versionNmb), version)
+					log.Printf("Folder %s omitted because its version %s is not older than %s", file.Name(), dvtextutils.GetCanonicalVersion(versionNmb), version)
 				}
 			} else if strings.HasPrefix(strings.ToLower(nm), "common") {
 				commonSql = append(commonSql, nm)
@@ -254,7 +255,7 @@ func PreExecuteForNewerVersions(props map[string]string, db *DBConnection, folde
 		if err != nil {
 			if lastOk != "" {
 				if logPreExecuteLevel >= dvlog.LogInfo {
-					log.Printf("Highest version last well-stored is %s", dvparser.GetCanonicalVersionFromHexName(lastOk))
+					log.Printf("Highest version last well-stored is %s", dvtextutils.GetCanonicalVersionFromHexName(lastOk))
 				}
 				err1 := WriteGlobalDBProperty(props, db, key, lastOk)
 				if err1 != nil {
@@ -281,7 +282,7 @@ func PreExecuteForNewerVersions(props map[string]string, db *DBConnection, folde
 	if n >= 0 {
 		name := versionSql[n][:16]
 		if logPreExecuteLevel >= dvlog.LogInfo {
-			log.Printf("Highest version stored is %s", dvparser.GetCanonicalVersionFromHexName(name))
+			log.Printf("Highest version stored is %s", dvtextutils.GetCanonicalVersionFromHexName(name))
 		}
 		err := WriteGlobalDBProperty(props, db, key, name)
 		if err != nil {
@@ -313,7 +314,7 @@ func PreExecute(properties map[string]string) error {
 	if c != '/' && c != '\\' {
 		folder += "/"
 	}
-	connections := dvparser.ConvertToNonEmptyList(inits)
+	connections := dvtextutils.ConvertToNonEmptyList(inits)
 	for _, connection := range connections {
 		if logPreExecuteLevel >= dvlog.LogInfo {
 			log.Printf("Preexecution started for connection %s", connection)

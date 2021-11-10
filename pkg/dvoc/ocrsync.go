@@ -7,10 +7,10 @@ package dvoc
 
 import (
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvdir"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -290,7 +290,7 @@ func parseSyncCommand(command string) (files []string, strategies []int, ok bool
 		dvlog.PrintfError(sample)
 		return
 	}
-	fileEntries := dvparser.ConvertToNonEmptySemicolonList(command[1:n])
+	fileEntries := dvtextutils.ConvertToNonEmptySemicolonList(command[1:n])
 	n = len(fileEntries)
 	if n == 0 {
 		dvlog.PrintfError(sample)

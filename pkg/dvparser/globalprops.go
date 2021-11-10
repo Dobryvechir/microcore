@@ -115,3 +115,12 @@ func InitAndReadCommandLine() []string {
 	CallInitBySettingFuncDefault()
 	return res
 }
+
+func GetByGlobalPropertiesOrDefault(propName, defValue string) string {
+	value := defValue
+	if propName != "" && GlobalProperties[propName] != "" {
+		value = GlobalProperties[propName]
+	}
+	return value
+}
+

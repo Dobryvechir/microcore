@@ -1,8 +1,9 @@
 // Package dvconfig manages configuration for http server
-// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+// MicroCore Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 package dvconfig
 
 import (
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,7 +12,6 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvprocessors"
 	"github.com/Dobryvechir/microcore/pkg/dvproviders"
 )
@@ -42,6 +42,19 @@ func prepareMapOfStringArrays(smap map[string]string) map[string][]string {
 		r[k] = []string{v}
 	}
 	return r
+}
+
+func getLogLevelCode(level string) int {
+	level = strings.ToLower(level)
+	switch level {
+	case "url":
+		return dvcontext.LogLevelInputURL
+	case "input":
+		return dvcontext.LogLevelFullInput
+	case "all":
+		return dvcontext.LogLevelFull
+	}
+	return dvcontext.LogLevelNone
 }
 
 func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
@@ -75,11 +88,12 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 		HeadersSpecial:            make(map[string]dvcontext.MicroCoreHeaderAttribute),
 		HeadersSpecialOptions:     make(map[string]dvcontext.MicroCoreHeaderAttribute),
 		HeadersSpecialStatic:      make(map[string]dvcontext.MicroCoreHeaderAttribute),
-		DirectoryIndex:            dvparser.ConvertToNonEmptyList(server.DirectoryIndex),
+		DirectoryIndex:            dvtextutils.ConvertToNonEmptyList(server.DirectoryIndex),
 		BaseProcessorBlocks:       dvprocessors.InitializeProcessors(server.Processors),
 		BaseProviderBlocks:        dvproviders.MakeProviderBlocks(server.Providers),
 		PostProcessorBlocks:       dvprocessors.InitializePostProcessors(server.PostProcessors),
 		HostHeader:                strings.TrimSpace(server.HostHeader),
+		LogLevel:                  getLogLevelCode(server.LogLevel),
 	}
 
 	accessControlAllowOrigin := dvcom.PrepareAccessControlLists(server.AccessControlAllowOrigin)

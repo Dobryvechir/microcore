@@ -1,9 +1,9 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 -2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 -2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
-package dvparser
+package dvtextutils
 
 import (
 	"bytes"

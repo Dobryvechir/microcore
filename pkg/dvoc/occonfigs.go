@@ -8,10 +8,10 @@ package dvoc
 import (
 	"errors"
 	"fmt"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"github.com/Dobryvechir/microcore/pkg/dvdir"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"sort"
 	"strings"
 )
@@ -74,7 +74,7 @@ func GetKubernetesConfigurationPart(cmdLine string, kind string, mode int, fn Co
 	if info == "" || info[0] != ':' && info[0] != '=' {
 		return "", errors.New(kind + " expected to contain : or = after " + kubernetesConfiguration + " (see " + dvdir.SaveToUniqueFile(original) + ")")
 	}
-	info = dvparser.GetNextNonEmptyPartInYaml(info[1:])
+	info = dvtextutils.GetNextNonEmptyPartInYaml(info[1:])
 	pos = strings.Index(info, "\n")
 	if info == "" || info[0] != '{' || pos < 0 {
 		return "", errors.New("corrupted " + kind + " (see " + dvdir.SaveToUniqueFile(original) + ")")
@@ -162,7 +162,7 @@ func GetObjectFullList(shortName string) ([]string, error) {
 	res := make([]string, n-1)
 	k := 0
 	for i := 1; i < n; i++ {
-		s := dvparser.GetNextWordInText(items[i])
+		s := dvtextutils.GetNextWordInText(items[i])
 		if s != "" {
 			res[k] = s
 			k++
@@ -198,7 +198,7 @@ func GetMicroServiceServices(microServiceName string) ([]string, error) {
 		if namePos < 0 {
 			return nil, errors.New("Corrupted structure of service description " + s + lookup)
 		}
-		name := dvparser.GetNextWordInText(s[namePos+5:])
+		name := dvtextutils.GetNextWordInText(s[namePos+5:])
 		if name == "" {
 			return nil, errors.New("Corrupted structure of service description " + s + lookup)
 		}
@@ -236,7 +236,7 @@ func GetMicroServiceRoutes(services []string) ([]string, error) {
 	m := len(services)
 	res := make([]string, 0, m)
 	for i := 0; i < n; i++ {
-		s := dvparser.ConvertToNonEmptyList(items[i])
+		s := dvtextutils.ConvertToNonEmptyList(items[i])
 		if len(s) > 2 {
 			svc := s[2]
 			for j := 0; j < m; j++ {
@@ -394,7 +394,7 @@ func ResolveMostSimilarObjectByMicroserviceNameAndObjectType(microServiceName st
 		if s == microServiceName {
 			return s, true
 		}
-		rate := dvparser.EvaluateDifferenceRate(s, microServiceName)
+		rate := dvtextutils.EvaluateDifferenceRate(s, microServiceName)
 		if rate > choiceRate {
 			choiceRate = rate
 			choice = s

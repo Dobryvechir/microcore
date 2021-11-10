@@ -9,9 +9,10 @@ import (
 	"bufio"
 	"encoding/base64"
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"github.com/Dobryvechir/microcore/pkg/dvdir"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -245,21 +246,21 @@ func OpenShiftExposeSpecificRoutes(routes []string) bool {
 }
 
 func OpenShiftEnsureExposeRoutes() bool {
-	routes := dvparser.ConvertToNonEmptyList(dvparser.GlobalProperties[openShiftEnsureRoutes])
+	routes := dvtextutils.ConvertToNonEmptyList(dvparser.GlobalProperties[openShiftEnsureRoutes])
 	return OpenShiftExposeSpecificRoutes(routes)
 }
 
 func OpenShiftAddRoutesTOBeExposed(routeList string) {
-	origRoutes := dvparser.ConvertToNonEmptyList(dvparser.GlobalProperties[openShiftEnsureRoutes])
+	origRoutes := dvtextutils.ConvertToNonEmptyList(dvparser.GlobalProperties[openShiftEnsureRoutes])
 	if len(origRoutes) == 0 {
 		dvparser.GlobalProperties[openShiftEnsureRoutes] = routeList
 		return
 	}
-	newRoutes := dvparser.ConvertToNonEmptyList(routeList)
+	newRoutes := dvtextutils.ConvertToNonEmptyList(routeList)
 	if len(newRoutes) == 0 {
 		return
 	}
-	origRoutes = dvparser.AddStringListWithoutRepeats(origRoutes, newRoutes)
+	origRoutes = dvtextutils.AddStringListWithoutRepeats(origRoutes, newRoutes)
 	dvparser.GlobalProperties[openShiftEnsureRoutes] = strings.Join(origRoutes, ",")
 }
 

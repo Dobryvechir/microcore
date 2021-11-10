@@ -72,6 +72,7 @@ type MicroCoreInfo struct {
 	ServerRewrite             RewriteMap
 	ModuleHandler             HandlerFunc
 	ActionHandler             HandlerFunc
+        LogLevel                  int
 }
 
 type RequestContext struct {

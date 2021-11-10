@@ -11,6 +11,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"log"
 	"strconv"
 	"strings"
@@ -172,7 +173,7 @@ func PlaceStringToSqlQuery(v string, tp string, b []byte, options int) ([]byte, 
 		{
 			if len(v) == 0 {
 				b = append(b, NullStringAsBytes...)
-			} else if dvparser.IsDigitOnly(v) && len(v) == 1 {
+			} else if dvtextutils.IsDigitOnly(v) && len(v) == 1 {
 				b = append(b, '\'')
 				b = append(b, []byte(v)...)
 				b = append(b, '\'')
@@ -184,7 +185,7 @@ func PlaceStringToSqlQuery(v string, tp string, b []byte, options int) ([]byte, 
 		{
 			if len(v) == 0 {
 				b = append(b, NullStringAsBytes...)
-			} else if dvparser.IsSignAndDigitsOnly(v) {
+			} else if dvtextutils.IsSignAndDigitsOnly(v) {
 				b = append(b, '\'')
 				b = append(b, []byte(v)...)
 				b = append(b, '\'')
@@ -505,7 +506,7 @@ func PreExecuteCsvFile(conn *DBConnection, name string, options int) error {
 		return err
 	}
 	props := dvparser.GlobalProperties
-	tables := dvparser.ConvertToNonEmptyList(props["DB_CSV_TABLE_ALIASES"])
+	tables := dvtextutils.ConvertToNonEmptyList(props["DB_CSV_TABLE_ALIASES"])
 	if logPreExecuteLevel >= dvlog.LogDetail {
 		log.Printf("csv %s has %d tables, target tables are %d: %v\n", name, len(data), len(tables), tables)
 	}

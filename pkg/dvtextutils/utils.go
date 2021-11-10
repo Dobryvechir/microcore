@@ -3,7 +3,7 @@ MicroCore
 Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
-package dvparser
+package dvtextutils
 
 func ReadHexValue(v string) int64 {
 	var r int64 = 0

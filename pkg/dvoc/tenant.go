@@ -8,6 +8,7 @@ package dvoc
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
 
 var (
@@ -34,7 +35,7 @@ func ResolveTenantIdByTenant(tenant string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return dvparser.GetUnquotedString(tenantId), nil
+	return dvtextutils.GetUnquotedString(tenantId), nil
 }
 
 /***********************************************************************

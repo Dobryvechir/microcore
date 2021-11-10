@@ -5,7 +5,7 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvgeolocation
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"net/http"
 	"strings"
 )
@@ -36,7 +36,7 @@ func PlaceGeoInfo(r *http.Request, params map[string]string) {
 }
 
 func GetIPAddress(r *http.Request) string {
-	ips := dvparser.ConvertToNonEmptyList(r.Header.Get("X-FORWARDED-FOR"))
+	ips := dvtextutils.ConvertToNonEmptyList(r.Header.Get("X-FORWARDED-FOR"))
 	for _, v := range ips {
 		if _, ok := ReadIP(v); ok {
 			return v

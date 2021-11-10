@@ -6,7 +6,7 @@ package dvcom
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"log"
 	"strconv"
 	"strings"
@@ -192,7 +192,7 @@ func addToHosts(ips map[string]string, conf *hostsConfig) {
 }
 
 func makeUrlList(url string) []string {
-	urls := dvparser.ConvertToList(url)
+	urls := dvtextutils.ConvertToList(url)
 	count := 0
 	for i := 0; i < len(urls); i++ {
 		a := urls[i]
@@ -323,7 +323,7 @@ func ResolveAdministrativeTasks() {
 	if len(administrativeTasks) > 0 {
 		params := ""
 		for _, task := range administrativeTasks {
-			options, count := dvparser.PrepareAndMayQuoteParams(task.options)
+			options, count := dvtextutils.PrepareAndMayQuoteParams(task.options)
 			params += " " + task.name + "_" + strconv.Itoa(count) + " " + options
 		}
 		resolveAdministrativeTasks(administrativeTasks, params)

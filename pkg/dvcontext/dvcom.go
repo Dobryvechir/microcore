@@ -1,13 +1,13 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvcontext
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,6 +20,13 @@ const (
 	HeadersAddToList       = iota
 	HeadersSetOrigin       = iota
 	HeadersSetOriginAlways = iota
+)
+
+const (
+	LogLevelNone      = iota
+	LogLevelInputURL  = iota
+	LogLevelFullInput = iota
+	LogLevelFull      = iota
 )
 
 var isRecord = false
@@ -46,8 +53,8 @@ func (request *RequestContext) HandleCommunication() {
 		request.Writer.WriteHeader(request.StatusCode)
 	}
 	if request.Error != nil {
-		if len(request.Output)==0 {
-			request.Output =[]byte(request.Error.Error())
+		if len(request.Output) == 0 {
+			request.Output = []byte(request.Error.Error())
 		}
 	}
 	Send(request.Writer, request.Reader, request.Output)
@@ -173,8 +180,8 @@ func ProvideHeaders(preHeaders map[string][]string, postHeaders map[string][]str
 		case HeadersAddToList:
 			if okey && len(post) > 0 {
 				s := strings.TrimSpace(post[0])
-				oldList := dvparser.ConvertToNonEmptyList(s)
-				s = dvparser.AddNonRepeatingWords(s, oldList, hd.List, hd.Imap, hd.Plain, ", ")
+				oldList := dvtextutils.ConvertToNonEmptyList(s)
+				s = dvtextutils.AddNonRepeatingWords(s, oldList, hd.List, hd.Imap, hd.Plain, ", ")
 				w.Header().Set(nm, s)
 			} else {
 				w.Header().Set(nm, hd.Plain)
@@ -244,7 +251,7 @@ func SetRecordMode(path string) {
 }
 
 func (ctx *RequestContext) HandleInternalServerError() {
-	if ctx.StatusCode<400 {
+	if ctx.StatusCode < 400 {
 		ctx.StatusCode = 500
 	}
 	ctx.HandleCommunication()

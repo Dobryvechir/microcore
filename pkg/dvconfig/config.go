@@ -5,16 +5,17 @@ package dvconfig
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvjsmaster"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvprocessors"
@@ -49,22 +50,22 @@ type DvRewrite struct {
 
 // DvHostServer collects all parameters for a specific host server
 type DvHostServer struct {
-	Hosts                     string                   `json:"hosts"`
-	BaseFolder                string                   `json:"baseFolder"`
-	Actions                   []dvcontext.DvAction     `json:"actions"`
-	Rewrites                  []DvRewrite              `json:"rewrites"`
-	ExtraServer               string                   `json:"extraServer"`
-	ExtraServerSettings       dvcontext.ServerSettings `json:"extraServerSettings"`
-	ServerRewrites            []DvRewrite              `json:"serverRewrites"`
-	ProxyName                 string                   `json:"proxyName"`
-	CacheControl              string                   `json:"cacheControl"`
-	DirectoryIndex            string                   `json:"directoryIndex"`
-	HeadersStatic             map[string]string        `json:"headersStatic"`
-	HeadersExtraServer        map[string]string        `json:"headersExtraServer"`
-	HeadersStaticOptions      map[string]string        `json:"headersStaticOptions"`
-	HeadersExtraServerOptions map[string]string        `json:"headersExtraServerOptions"`
-	AccessControlAllowOrigin  string                   `json:"accessControlAllowOrigin"`
-	AccessControlAllowMethod  string                   `json:"accessControlAllowMethod"`
+	Hosts                         string                         `json:"hosts"`
+	BaseFolder                    string                         `json:"baseFolder"`
+	Actions                       []dvcontext.DvAction           `json:"actions"`
+	Rewrites                      []DvRewrite                    `json:"rewrites"`
+	ExtraServer                   string                         `json:"extraServer"`
+	ExtraServerSettings           dvcontext.ServerSettings       `json:"extraServerSettings"`
+	ServerRewrites                []DvRewrite                    `json:"serverRewrites"`
+	ProxyName                     string                         `json:"proxyName"`
+	CacheControl                  string                         `json:"cacheControl"`
+	DirectoryIndex                string                         `json:"directoryIndex"`
+	HeadersStatic                 map[string]string              `json:"headersStatic"`
+	HeadersExtraServer            map[string]string              `json:"headersExtraServer"`
+	HeadersStaticOptions          map[string]string              `json:"headersStaticOptions"`
+	HeadersExtraServerOptions     map[string]string              `json:"headersExtraServerOptions"`
+	AccessControlAllowOrigin      string                         `json:"accessControlAllowOrigin"`
+	AccessControlAllowMethod      string                         `json:"accessControlAllowMethod"`
 	AccessControlAllowHeaders     string                         `json:"accessControlAllowHeaders"`
 	AccessControlMaxAge           string                         `json:"accessControlMaxAge"`
 	AccessControlExposeHeaders    string                         `json:"accessControlExposeHeaders"`
@@ -74,6 +75,7 @@ type DvHostServer struct {
 	PostProcessors                []dvprocessors.ProcessorConfig `json:"postProcessors"`
 	Providers                     []dvproviders.ProviderConfig   `json:"providers"`
 	HostHeader                    string                         `json:"hostHeader"`
+	LogLevel                      string                         `json:"logLevel"`
 }
 
 // DvConfig is a full structure of the config for http server
@@ -225,7 +227,7 @@ func postConfigInit(cf *DvConfig) {
 	}
 	logModules := strings.TrimSpace(cf.LogModules)
 	if logModules != "" {
-		logMods := dvparser.ConvertToList(logModules)
+		logMods := dvtextutils.ConvertToList(logModules)
 		for _, logModule := range logMods {
 			if logModule == "" {
 				continue

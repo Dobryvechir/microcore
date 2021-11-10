@@ -11,7 +11,6 @@ import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 	"io/ioutil"
@@ -337,7 +336,7 @@ func crudProcessEntities(baseUrl string, crudInfo *DvCrudInfo, urlPool *dvurl.Ur
 	return nil
 }
 
-func crudGlobalInitialization(data map[string]string) error {
+func CrudGlobalInitialization(data map[string]string) error {
 	for k, v := range data {
 		switch k {
 		case "configPath":
@@ -356,7 +355,7 @@ func crudCheckGlobalPaths() {
 	dataPathGeneral = dvlog.EnsureSubFolderCritical(dataPathGeneral, "CRUD")
 }
 
-func crudGenerateHandlers(url string, params []string, urlPool *dvurl.UrlPool) error {
+func CrudGenerateHandlers(url string, params []string, urlPool *dvurl.UrlPool) error {
 	if len(params) == 0 || params[0] == "" {
 		return errors.New("Crud config name is not specified")
 	}
@@ -384,11 +383,3 @@ func crudGenerateHandlers(url string, params []string, urlPool *dvurl.UrlPool) e
 	}
 	return crudProcessEntities(url, cf, urlPool)
 }
-
-var crudRegistrationConfig *dvmodules.RegistrationConfig = &dvmodules.RegistrationConfig{
-	Name:              "crud",
-	GlobalInitHandler: crudGlobalInitialization,
-	GenerateHandlers:  crudGenerateHandlers,
-}
-
-var crudInited bool = dvmodules.RegisterModule(crudRegistrationConfig, false)
