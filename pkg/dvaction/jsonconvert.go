@@ -3,7 +3,7 @@ MicroCore
 Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
-package dvoc
+package dvaction
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"

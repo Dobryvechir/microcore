@@ -8,6 +8,7 @@ package dvoc
 import (
 	"errors"
 	"fmt"
+	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"strings"
@@ -38,7 +39,7 @@ func ResolveMicroServiceUrl(microServiceName string) (string, error) {
 	if url != "" {
 		return url, nil
 	}
-	url = dvparser.GlobalProperties[MicroserviceUrlProperty+GetMicroServicePropertyName(microServiceName)]
+	url = dvparser.GlobalProperties[MicroserviceUrlProperty+dvaction.GetMicroServicePropertyName(microServiceName)]
 	if url != "" {
 		resolvedMicroServiceUrls[microServiceName] = url
 		return url, nil

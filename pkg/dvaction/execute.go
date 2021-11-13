@@ -2,7 +2,7 @@
 MicroCore
 Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
-package dvoc
+package dvaction
 
 import (
 	"errors"
@@ -24,53 +24,35 @@ type ProcessFunction struct {
 }
 
 const (
-	CommandCopyToPod              = "copyToPod"
-	CommandCopyFromPod            = "copyFromPod"
-	CommandEnv                    = "env"
-	CommandExpose                 = "expose"
-	CommandHttp                   = "http"
-	CommandMicroServiceCacheClean = "microserviceCacheClean"
-	CommandMicroServiceDown       = "microserviceDown"
-	CommandMicroServiceExec       = "microserviceExec"
-	CommandMicroServiceSave       = "microserviceSave"
-	CommandMicroServiceTemplate   = "microserviceTemplate"
-	CommandMicroServiceRestore    = "microserviceRestore"
-	CommandMicroServiceUp         = "microserviceUp"
-	CommandMicroServiceUpOnly     = "microserviceUpOnly"
-	CommandNet                    = "net"
-	CommandOs                     = "os"
-	CommandPortForward            = "forward"
-	CommandSql                    = "sql"
-	CommandFile                   = "file"
-	CommandPaging                 = "paging"
-	CommandConvert                = "convert"
+	CommandHttp        = "http"
+	CommandNet         = "net"
+	CommandOs          = "os"
+	CommandPortForward = "forward"
+	CommandSql         = "sql"
+	CommandFile        = "file"
+	CommandPaging      = "paging"
+	CommandConvert     = "convert"
 )
 
 var processFunctions = map[string]ProcessFunction{
-	CommandCopyToPod:              {Init: copyToPodInit, Run: copyToPodRun},
-	CommandCopyFromPod:            {Init: copyFromPodInit, Run: copyFromPodRun},
-	CommandEnv:                    {Init: processEnvSettingInit, Run: processEnvSettingsRun},
-	CommandExpose:                 {Init: exposeMicroServiceInit, Run: exposeMicroServiceRun},
-	CommandHttp:                   {Init: processNetInit, Run: processNetRun},
-	CommandMicroServiceCacheClean: {Init: microServiceCacheCleanInit, Run: microServiceCacheCleanRun},
-	CommandMicroServiceExec:       {Init: microServiceExecInit, Run: microServiceExecRun},
-	CommandMicroServiceDown:       {Init: microServiceDownInit, Run: microServiceDownRun},
-	CommandMicroServiceSave:       {Init: microServiceSaveInit, Run: microServiceSaveRun},
-	CommandMicroServiceTemplate:   {Init: microServiceTemplateInit, Run: microServiceTemplateRun},
-	CommandMicroServiceRestore:    {Init: microServiceRestoreInit, Run: microServiceRestoreRun},
-	CommandMicroServiceUp:         {Init: microServiceUpInit, Run: microServiceUpRun},
-	CommandMicroServiceUpOnly:     {Init: microServiceUpInit, Run: microServiceUpOnlyRun},
-	CommandNet:                    {Init: SmartNetInit, Run: SmartNetRun},
-	CommandOs:                     {Init: processOsInit, Run: processOsRun},
-	CommandPortForward:            {Init: portForwardInit, Run: portForwardRun, Async: true},
-	CommandSql:                    {Init: dvdbdata.SqlInit, Run: dvdbdata.SqlRun},
-	CommandFile:                   {Init: readFileActionInit, Run: readFileActionRun},
-	CommandPaging:                 {Init: pagingInit, Run: pagingRun},
-	CommandConvert:                {Init: jsonConvertInit, Run: jsonConvertRun},
+	CommandHttp:        {Init: processNetInit, Run: processNetRun},
+	CommandOs:          {Init: processOsInit, Run: processOsRun},
+	CommandPortForward: {Init: portForwardInit, Run: portForwardRun, Async: true},
+	CommandNet:         {Init: SmartNetInit, Run: SmartNetRun},
+	CommandSql:         {Init: dvdbdata.SqlInit, Run: dvdbdata.SqlRun},
+	CommandFile:        {Init: readFileActionInit, Run: readFileActionRun},
+	CommandPaging:      {Init: pagingInit, Run: pagingRun},
+	CommandConvert:     {Init: jsonConvertInit, Run: jsonConvertRun},
 }
 
 func AddProcessFunction(key string, processor ProcessFunction) {
 	processFunctions[key] = processor
+}
+
+func AddProcessFunctions(pf map[string]ProcessFunction) {
+	for key, processor := range pf {
+		processFunctions[key] = processor
+	}
 }
 
 func getWaitKeys() string {
@@ -104,7 +86,7 @@ func ExecuteProcessFunction(fn *ProcessFunction, pauseTime int, totalTime int, c
 			break
 		}
 		if totalTime > 0 {
-			if Log >= LogInfo {
+			if Log >= dvlog.LogInfo {
 				dvlog.PrintfError("Waiting for %d / %d seconds", pauseTime, totalTime)
 			}
 			time.Sleep(time.Duration(pauseTime) * time.Second)
@@ -224,12 +206,12 @@ func ExecuteSequence(prefix string, ctx *dvcontext.RequestContext) bool {
 			parallel = false
 		}
 		if idleTime > 0 {
-			if Log >= LogInfo {
+			if Log >= dvlog.LogInfo {
 				dvlog.PrintfError("idle waiting for %d seconds before %s", idleTime, waitCommand)
 			}
 			time.Sleep(time.Duration(idleTime) * time.Second)
 		}
-		if Log >= LogInfo {
+		if Log >= dvlog.LogInfo {
 			dvlog.PrintfError("starting waiting %d seconds for %s", totalTime, waitCommand)
 		}
 		if parallel {

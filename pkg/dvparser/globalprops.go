@@ -7,6 +7,7 @@ package dvparser
 import (
 	"log"
 	"os"
+	"runtime"
 	"strings"
 )
 
@@ -28,6 +29,13 @@ func makePremapOfEnvironment() map[string]string {
 			v := strings.TrimSpace(s[p+1:])
 			mappa[k] = v
 		}
+	}
+	osname:=strings.ToLower(runtime.GOOS)
+	switch osname {
+	case "windows":
+		mappa["IS_WINDOWS"]="1"
+	default:
+		mappa["IS_LINUX"]="1"
 	}
 	commands := os.Args[1:]
 	globalCommandLine = make([]string, 0, len(commands))

@@ -8,6 +8,7 @@ package dvoc
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"strings"
@@ -42,7 +43,7 @@ const (
 func GetDbaasProperties(microServiceName string, m2mToken string, database string, tenantId string) (*DbaasInfo, error) {
 	var ok bool
 	if m2mToken == "" {
-		m2mToken, ok = GetM2MToken(microServiceName)
+		m2mToken, ok = dvaction.GetM2MToken(microServiceName)
 		if !ok {
 			return nil, fmt.Errorf("Cannot get M2M token for %s", microServiceName)
 		}

@@ -10,6 +10,22 @@ import (
 	"strings"
 )
 
+var UINT8_COUNT = 256
+var closingMap = createClosingMap()
+
+func createClosingMap() []uint8 {
+	res := make([]uint8, UINT8_COUNT)
+	for i := 0; i < UINT8_COUNT; i++ {
+		res[i] = 0
+	}
+	res['{'] = '}'
+	res['['] = ']'
+	res['('] = ')'
+	res['"'] = '"'
+	res['\''] = '\''
+	return res
+}
+
 func AddNonRepeatingWords(s string, oldList, newList []string, imap map[string]int, plain, joiner string) string {
 	if len(oldList) > 0 {
 		l := len(newList)
@@ -287,37 +303,39 @@ func InsertTextIntoBuffer(src []byte, posStart int, posEnd int, buf ...[]byte) (
 
 func ReadInsideBrackets(str string, pos int) (endPos int, err error) {
 	opening := str[pos]
-	var closing byte
-	switch opening {
-	case '[':
-		closing = ']'
-	case '{':
-		closing = '}'
-	case '(':
-		closing = ')'
-	default:
+	var closing byte = closingMap[opening]
+	if closing == 0 || closing == opening {
 		return 0, fmt.Errorf("Unknown bracket in %s at %d", str, pos)
 	}
 	pos++
 	count := 1
+	stack := make([]byte, 32)
+	stack[0] = closing
 	n := len(str)
 	for ; pos < n; pos++ {
 		b := str[pos]
-		if b == closing {
+		c := closingMap[b]
+		if b == stack[count-1] {
 			count--
 			if count == 0 {
 				return pos, nil
 			}
-		} else if b == opening {
-			count++
-		}
-		if b == '"' || b == '\'' {
-			for pos++; pos < n; pos++ {
-				c := str[pos]
-				if c == '\\' {
-					pos++
-				} else if c == b {
-					break
+		} else if c != 0 {
+			if b != c {
+				if count < len(stack) {
+					stack[count] = c
+				} else {
+					stack = append(stack, c)
+				}
+				count++
+			} else if b != 0 {
+				for pos++; pos < n; pos++ {
+					d := str[pos]
+					if d == '\\' {
+						pos++
+					} else if d == b {
+						break
+					}
 				}
 			}
 		}

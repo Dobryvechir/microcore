@@ -2,7 +2,7 @@
 MicroCore
 Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
-package dvoc
+package dvaction
 
 import (
 	"encoding/json"
@@ -20,6 +20,12 @@ import (
 
 const (
 	Authorization = "Authorization"
+)
+
+const (
+	M2MTokenPrefix          = "M2M_TOKEN_"
+	M2MTokenPath            = "M2MTOKEN_PATH"
+	M2MAuthorizationRequest = "AuthorizationM2MService"
 )
 
 func convertToHeader(list []string) (res map[string]string) {
@@ -209,8 +215,8 @@ func processOsRun(data []interface{}) bool {
 	cmd := exec.Command("cmd.exe", "/c", command)
 	stdoutStderr, err := cmd.CombinedOutput()
 	res := string(stdoutStderr)
-	if Log >= LogInfo || Log >= LogError && err != nil {
-		if Log < LogInfo {
+	if Log >= dvlog.LogInfo || Log >= dvlog.LogError && err != nil {
+		if Log < dvlog.LogInfo {
 			dvlog.Printf("Executed: %s ", command)
 		}
 		dvlog.Println("", "-------------------START EXECUTING "+command+"--------------------\n"+res)

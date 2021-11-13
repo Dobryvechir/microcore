@@ -3,10 +3,11 @@ MicroCore
 Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
-package dvoc
+package dvaction
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"io/ioutil"
 	"log"
@@ -17,7 +18,7 @@ type ReadFileConfig struct {
 	FileName          string `json:"name"`
 	Kind              string `json:"kind"`
 	Result            string `json:"result"`
-	Trim              string `json:"trim"`
+	Path              string `json:"path"`
 	NoReadOfUndefined bool   `json:"noReadOfUndefined"`
 }
 
@@ -66,13 +67,17 @@ func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext)
 	var res interface{}
 	switch config.Kind {
 	case "json":
-		res, err1 = ReadJsonTrimmed(dat, config.Trim, config.NoReadOfUndefined)
+		var props *dvevaluation.DvObject = nil
+		if ctx!=nil {
+			props = ctx.ExtraAsDvObject
+		}
+		res, err1 = ReadJsonTrimmed(dat, config.Path, config.NoReadOfUndefined, props)
 	}
 	return ProcessSavingActionResult(config.Result, res, ctx, err1, "in file ", config.FileName)
 }
 
-func ReadJsonTrimmed(data []byte, trim string, noReadOfUndefined bool) (interface{}, error) {
-	item, err:=dvjson.ReadJsonChild(data, trim, noReadOfUndefined)
+func ReadJsonTrimmed(data []byte, path string, noReadOfUndefined bool, props *dvevaluation.DvObject) (interface{}, error) {
+	item, err:=dvjson.ReadJsonChild(data, path, noReadOfUndefined, props)
 	if err!=nil {
 		return nil, err
 	}

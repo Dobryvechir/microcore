@@ -7,16 +7,16 @@ package dvconfig
 
 import (
 	"encoding/json"
+	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
-	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
-	"github.com/Dobryvechir/microcore/pkg/dvoc"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvprocessors"
 	"github.com/Dobryvechir/microcore/pkg/dvproviders"
@@ -54,7 +54,7 @@ func ServerStart() {
 			dvparser.SetGlobalPropertiesValue("CURRENT_MICROCORE_CONFIG", string(data))
 		}
 		ProvideServerCommand()
-		dvoc.ExecuteSequence("EXECUTE_"+osargs2, nil)
+		dvaction.ExecuteSequence("EXECUTE_"+osargs2, nil)
 	default:
 		serverStartByConfigDirect(cf)
 	}
@@ -62,7 +62,7 @@ func ServerStart() {
 
 // ProvideServerCommand registers the http server as server for command execution purposes
 func ProvideServerCommand() {
-	dvoc.AddProcessFunction("server", dvoc.ProcessFunction{
+	dvaction.AddProcessFunction("server", dvaction.ProcessFunction{
 		Init:  processServerInit,
 		Run:   processServerRun,
 		Async: true,

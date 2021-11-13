@@ -484,7 +484,7 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 			Writer: w,
 			Reader: r,
 		}
-		request.ExtraAsDvObject = dvparser.GetProptertiesPrototypedToGlobalProperties(request.Extra)
+		request.ExtraAsDvObject = dvparser.GetPropertiesPrototypedToGlobalProperties(request.Extra)
 		SetRequestUrl(request, r.URL.Path)
 		firstUrl := ""
 		if len(request.Urls) >= 1 {

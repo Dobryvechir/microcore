@@ -1,95 +1,50 @@
-// package dvoc orchestrates actions, executions
-// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+/***********************************************************************
+MicroCore
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+************************************************************************/
 
 package dvoc
 
-import (
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvsecurity"
-	"io/ioutil"
-	"log"
-)
+import "github.com/Dobryvechir/microcore/pkg/dvaction"
 
 const (
-	ActionPrefix = "ACTION_"
+	CommandCopyToPod              = "copyToPod"
+	CommandCopyFromPod            = "copyFromPod"
+	CommandEnv                    = "env"
+	CommandExpose                 = "expose"
+	CommandMicroServiceCacheClean = "microserviceCacheClean"
+	CommandMicroServiceDown       = "microserviceDown"
+	CommandMicroServiceExec       = "microserviceExec"
+	CommandMicroServiceSave       = "microserviceSave"
+	CommandMicroServiceTemplate   = "microserviceTemplate"
+	CommandMicroServiceRestore    = "microserviceRestore"
+	CommandMicroServiceUp         = "microserviceUp"
+	CommandMicroServiceUpOnly     = "microserviceUpOnly"
 )
 
-func fireAction(ctx *dvcontext.RequestContext) bool {
-	action := ctx.Action
-	prefix := ActionPrefix + action.Name
-	if ctx.ExtraAsDvObject.GetString(prefix+"_1") == "" {
-		ctx.StatusCode = 501
-		ctx.HandleCommunication()
-		return true
-	}
-	res := ExecuteSequence(prefix, ctx)
-	if !res {
-		ctx.HandleInternalServerError()
-	} else {
-		ActionContextResult(ctx)
-	}
+var processFunctions = map[string]dvaction.ProcessFunction{
+	CommandCopyToPod:              {Init: CopyToPodInit, Run: CopyToPodRun},
+	CommandCopyFromPod:            {Init: CopyFromPodInit, Run: CopyFromPodRun},
+	CommandEnv:                    {Init: ProcessEnvSettingInit, Run: ProcessEnvSettingsRun},
+	CommandExpose:                 {Init: ExposeMicroServiceInit, Run: ExposeMicroServiceRun},
+	CommandMicroServiceCacheClean: {Init: MicroServiceCacheCleanInit, Run: MicroServiceCacheCleanRun},
+	CommandMicroServiceExec:       {Init: MicroServiceExecInit, Run: MicroServiceExecRun},
+	CommandMicroServiceDown:       {Init: MicroServiceDownInit, Run: MicroServiceDownRun},
+	CommandMicroServiceSave:       {Init: MicroServiceSaveInit, Run: MicroServiceSaveRun},
+	CommandMicroServiceTemplate:   {Init: MicroServiceTemplateInit, Run: MicroServiceTemplateRun},
+	CommandMicroServiceRestore:    {Init: MicroServiceRestoreInit, Run: MicroServiceRestoreRun},
+	CommandMicroServiceUp:         {Init: MicroServiceUpInit, Run: MicroServiceUpRun},
+	CommandMicroServiceUpOnly:     {Init: MicroServiceUpInit, Run: MicroServiceUpOnlyRun},
+}
+
+const (
+	openShiftEnsureRoutes = "OPENSHIFT_ENSURE_ROUTES"
+)
+
+func actionInit() bool {
+	dvaction.AddProcessFunctions(processFunctions)
+	dvaction.RegisterCredentialProvider(GetOpenshiftSecrets)
 	return true
 }
 
-func fireStaticAction(ctx *dvcontext.RequestContext) bool {
-	ActionContextResult(ctx)
-	return true
-}
-
-func ActionContextResult(ctx *dvcontext.RequestContext) {
-	if ctx.StatusCode >= 400 {
-		ctx.HandleCommunication()
-		return
-	}
-	action := ctx.Action
-	if action != nil && action.Result != "" {
-		res, err := ctx.ExtraAsDvObject.CalculateString(action.Result)
-		if err != nil {
-			ctx.Error = err
-			ctx.HandleInternalServerError()
-			return
-		}
-		ctx.Output = []byte(res)
-	}
-	ctx.HandleCommunication()
-}
-
-func fireFileAction(ctx *dvcontext.RequestContext) bool {
-	action := ctx.Action
-	fileName := action.Result
-	conditions := action.Conditions
-	if conditions != nil {
-		for k, v := range conditions {
-			res, err := ctx.ExtraAsDvObject.EvaluateBooleanExpression(k)
-			if err != nil {
-				log.Printf("Failed to evaluate %s: %v", k, err)
-				ctx.HandleInternalServerError()
-				return true
-			}
-			if res {
-				fileName = v
-			}
-		}
-	}
-	if fileName == "" {
-		ctx.HandleFileNotFound()
-		return true
-	}
-	data, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Printf("Cannot read %s: %v", fileName, err)
-		ctx.HandleInternalServerError()
-		return true
-	}
-	ctx.Output = data
-	ctx.HandleCommunication()
-	return true
-}
-
-func securityEndPointHandler(ctx *dvcontext.RequestContext) bool {
-	res := dvsecurity.LoginByRequestEndPointHandler(ctx)
-	if res {
-		ActionContextResult(ctx)
-	}
-	return res
-}
+var actionInited = actionInit()

@@ -6,6 +6,7 @@ package dvoc
 
 import (
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
@@ -27,7 +28,7 @@ const (
 	MicroServiceProperty                    = "MICROSERVICE"
 )
 
-func microServiceUpInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func MicroServiceUpInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	pos := strings.Index(command, ":")
 	command = strings.TrimSpace(command[pos+1:])
 	pos = strings.Index(command, "{")
@@ -220,7 +221,7 @@ func CreateMicroService(params map[string]string, files map[string]string, comma
 	tmpSuffix := "__dvoc_create_microservice__" + microServiceName
 	_, _, ok := GetOpenshiftSecrets(microServiceName)
 	if !ok {
-		user, pw, ok := GetIdentityProviderClientCredentials(microServiceName)
+		user, pw, ok := dvaction.GetIdentityProviderClientCredentials(microServiceName)
 		if !ok {
 			return false
 		}
@@ -289,7 +290,7 @@ func CreateMicroService(params map[string]string, files map[string]string, comma
 	return UploadFiles(microServiceName, files, commands)
 }
 
-func microServiceUpRun(data []interface{}) bool {
+func MicroServiceUpRun(data []interface{}) bool {
 	params := data[0].(map[string]string)
 	files := data[1].(map[string]string)
 	commands := data[2].([]string)
@@ -297,14 +298,14 @@ func microServiceUpRun(data []interface{}) bool {
 	return CreateMicroService(params, files, commands)
 }
 
-func microServiceUpOnlyRun(data []interface{}) bool {
+func MicroServiceUpOnlyRun(data []interface{}) bool {
 	params := data[0].(map[string]string)
 	files := data[1].(map[string]string)
 	commands := data[2].([]string)
 	return CreateMicroService(params, files, commands)
 }
 
-func microServiceDownInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func MicroServiceDownInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	save := MicroServiceDeleteTrySaveAndForceDelete
 	debugNotSaved := true
 	pos := strings.Index(command, "{")
@@ -337,7 +338,7 @@ func microServiceDownInit(command string, ctx *dvcontext.RequestContext) ([]inte
 	return []interface{}{command, save, debugNotSaved}, true
 }
 
-func microServiceDownRun(data []interface{}) bool {
+func MicroServiceDownRun(data []interface{}) bool {
 	name := data[0].(string)
 	save := data[1].(int)
 	debugNotSaved := data[2].(bool)
@@ -370,7 +371,7 @@ func ReduceMicroServiceSaveInfo(microServiceName string) {
 	dvdir.DeleteAllSavedFilesExceptZero(MicroServiceSaveTemporaryFolder, microServiceName)
 }
 
-func microServiceSaveInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func MicroServiceSaveInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	pos := strings.Index(command, ":")
 	params := dvtextutils.ConvertToNonEmptyList(command[pos+1:])
 	n := len(params)
@@ -390,7 +391,7 @@ func microServiceSaveInit(command string, ctx *dvcontext.RequestContext) ([]inte
 	return []interface{}{params[0], dir}, true
 }
 
-func microServiceSaveSingle(microServiceName string, folder string) (createFile string, deleteFile string, ok bool) {
+func MicroServiceSaveSingle(microServiceName string, folder string) (createFile string, deleteFile string, ok bool) {
 	createFile = folder + "/" + microServiceName + "_up.cmd"
 	deleteFile = folder + "/" + microServiceName + "_down.cmd"
 	templateFile := folder + "/" + microServiceName + "_template.json"
@@ -422,7 +423,7 @@ func microServiceSaveSingle(microServiceName string, folder string) (createFile 
 	return
 }
 
-func microServiceSaveRun(data []interface{}) bool {
+func MicroServiceSaveRun(data []interface{}) bool {
 	microServiceName := data[0].(string)
 	folderName := data[1].(string)
 	if microServiceName == "*" {
@@ -436,7 +437,7 @@ func microServiceSaveRun(data []interface{}) bool {
 		crInfo := ""
 		dlInfo := ""
 		for i := 0; i < n; i++ {
-			cr, dl, isOk := microServiceSaveSingle(list[i], folderName)
+			cr, dl, isOk := MicroServiceSaveSingle(list[i], folderName)
 			if !isOk {
 				ok = false
 			} else {
@@ -456,11 +457,11 @@ func microServiceSaveRun(data []interface{}) bool {
 		}
 		return ok
 	}
-	_, _, ok := microServiceSaveSingle(microServiceName, folderName)
+	_, _, ok := MicroServiceSaveSingle(microServiceName, folderName)
 	return ok
 }
 
-func microServiceRestoreInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func MicroServiceRestoreInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	pos := strings.Index(command, ":")
 	microServiceName := strings.TrimSpace(command[pos+1:])
 	pos = strings.Index(microServiceName, "{")
@@ -480,7 +481,7 @@ func microServiceRestoreInit(command string, ctx *dvcontext.RequestContext) ([]i
 	return []interface{}{microServiceName, fileName}, true
 }
 
-func microServiceRestoreRun(data []interface{}) bool {
+func MicroServiceRestoreRun(data []interface{}) bool {
 	microServiceName := data[0].(string)
 	templateFileName := data[1].(string)
 	err := MicroServiceRestoration(microServiceName, templateFileName)
@@ -491,7 +492,7 @@ func microServiceRestoreRun(data []interface{}) bool {
 	return true
 }
 
-func microServiceCacheCleanInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func MicroServiceCacheCleanInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	pos := strings.Index(command, ":")
 	params := dvtextutils.ConvertToNonEmptyList(command[pos+1:])
 	n := len(params)
@@ -516,7 +517,7 @@ func microServiceCacheCleanInit(command string, ctx *dvcontext.RequestContext) (
 	return []interface{}{microServiceName, count}, true
 }
 
-func microServiceCacheCleanRun(data []interface{}) bool {
+func MicroServiceCacheCleanRun(data []interface{}) bool {
 	microServiceName := data[0].(string)
 	count := data[1].(int)
 	return dvdir.DeleteLastSavedFile(MicroServiceSaveTemporaryFolder, microServiceName, count)
@@ -540,7 +541,7 @@ func MicroServiceRestoration(microServiceName string, templateFileName string) e
 	return nil
 }
 
-func microServiceExecInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func MicroServiceExecInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	pos := strings.Index(command, ":")
 	command = command[pos+1:]
 	pos = strings.Index(command, "[")
@@ -565,13 +566,13 @@ func microServiceExecInit(command string, ctx *dvcontext.RequestContext) ([]inte
 	return []interface{}{microServiceName, commands}, true
 }
 
-func microServiceExecRun(data []interface{}) bool {
+func MicroServiceExecRun(data []interface{}) bool {
 	microServiceName := data[0].(string)
 	commands := data[1].([]string)
 	return ExecuteCommandsOnPod(microServiceName, commands)
 }
 
-func exposeMicroServiceInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func ExposeMicroServiceInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	pos := strings.Index(command, ":")
 	command = command[pos+1:]
 	microServices := dvtextutils.ConvertToNonEmptyList(command)
@@ -582,7 +583,7 @@ func exposeMicroServiceInit(command string, ctx *dvcontext.RequestContext) ([]in
 	return []interface{}{microServices}, true
 }
 
-func exposeMicroServiceRun(data []interface{}) bool {
+func ExposeMicroServiceRun(data []interface{}) bool {
 	microServices := data[0].([]string)
 	return OpenShiftExposeSpecificRoutes(microServices)
 }

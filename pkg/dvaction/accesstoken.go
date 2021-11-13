@@ -2,7 +2,7 @@
 MicroCore
 Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
-package dvoc
+package dvaction
 
 type AccessToken struct {
 	AccessToken      string `json:"access_token"`
@@ -15,6 +15,3 @@ type AccessToken struct {
 	Scope            string `json:"scope"`
 }
 
-const (
-	openShiftEnsureRoutes = "OPENSHIFT_ENSURE_ROUTES"
-)

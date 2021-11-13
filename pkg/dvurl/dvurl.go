@@ -129,6 +129,6 @@ func SingleSimplifiedUrlVerifier(context interface{}, resolver *UrlResolver, url
 func SingleSimplifiedUrlSearch(urlPool *UrlPool, url string) (bool, *UrlResultInfo) {
 	urls := dvtextutils.ConvertURLToList(strings.ToLower(url))
 	extra := map[string]interface{}{"URL": url}
-	extraParams := dvparser.GetProptertiesPrototypedToGlobalProperties(extra)
+	extraParams := dvparser.GetPropertiesPrototypedToGlobalProperties(extra)
 	return UrlSearch(url, urlPool, urls, SingleSimplifiedUrlVerifier, extraParams)
 }

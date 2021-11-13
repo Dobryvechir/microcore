@@ -125,7 +125,7 @@ func OpenShiftReset(list string) bool {
 	return res
 }
 
-func processEnvSettingInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func ProcessEnvSettingInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	if !strings.HasPrefix(command, "env:") {
 		dvlog.PrintfError("command %s must start with env:", command)
 		return nil, false
@@ -140,7 +140,7 @@ func processEnvSettingInit(command string, ctx *dvcontext.RequestContext) ([]int
 	return []interface{}{command}, true
 }
 
-func processEnvSettingsRun(data []interface{}) bool {
+func ProcessEnvSettingsRun(data []interface{}) bool {
 	command := data[0].(string)
 	return OpenShiftSetEnv(command)
 }

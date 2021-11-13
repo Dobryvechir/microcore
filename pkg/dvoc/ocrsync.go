@@ -389,23 +389,23 @@ func executeSyncWriteCommand(files []string, strategies []int) bool {
 	return true
 }
 
-func copyToPodInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func CopyToPodInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	files, strategies, ok := parseSyncCommand(command)
 	return []interface{}{files, strategies}, ok
 }
 
-func copyToPodRun(data []interface{}) bool {
+func CopyToPodRun(data []interface{}) bool {
 	files := data[0].([]string)
 	strategies := data[1].([]int)
 	return executeSyncWriteCommand(files, strategies)
 }
 
-func copyFromPodInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func CopyFromPodInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	files, strategies, ok := parseSyncCommand(command)
 	return []interface{}{files, strategies}, ok
 }
 
-func copyFromPodRun(data []interface{}) bool {
+func CopyFromPodRun(data []interface{}) bool {
 	files := data[0].([]string)
 	strategies := data[1].([]int)
 	return executeSyncReadCommand(files, strategies)

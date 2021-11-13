@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvevaluation
 
@@ -87,6 +87,19 @@ func Parse(data []byte, globalMap map[string]string, localMap map[string]string,
 		r = ParseForDvObject(data, NewDvObjectFrom2Maps(localMap, globalMap), row, column, place)
 	}
 	return r
+}
+
+func ParseForDvObjectShort(data string, params *DvObject) (interface{}, error) {
+	res:=ParseForDvObject([]byte(data), params, 1, 1, data)
+	return res.FinalResult, res.Err
+}
+
+func ParseForDvObjectString(data string, params *DvObject) (string, error) {
+	res, err:= ParseForDvObjectShort(data, params)
+	if err!=nil {
+		return "", err
+	}
+	return ConvertAnyTypeToJsonString(res), nil
 }
 
 func ParseForDvObject(data []byte, params *DvObject, row int, column int, place string) *EvaluateResult {

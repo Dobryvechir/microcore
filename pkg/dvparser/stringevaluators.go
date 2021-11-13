@@ -1,3 +1,8 @@
+/***********************************************************************
+MicroCore
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+************************************************************************/
+
 package dvparser
 
 import (

@@ -90,7 +90,7 @@ func GetGlobalPropertiesAsDvObject() *dvevaluation.DvObject {
 	return GlobalPropertiesAsDvObject
 }
 
-func GetProptertiesPrototypedToGlobalProperties(localMap map[string]interface{}) *dvevaluation.DvObject {
+func GetPropertiesPrototypedToGlobalProperties(localMap map[string]interface{}) *dvevaluation.DvObject {
 	return dvevaluation.NewObjectWithPrototype(localMap, GetGlobalPropertiesAsDvObject())
 }
 
