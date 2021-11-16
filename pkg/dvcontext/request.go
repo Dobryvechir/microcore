@@ -72,26 +72,27 @@ type MicroCoreInfo struct {
 	ServerRewrite             RewriteMap
 	ModuleHandler             HandlerFunc
 	ActionHandler             HandlerFunc
-        LogLevel                  int
+	LogLevel                  int
 }
 
 type RequestContext struct {
-	Extra           map[string]interface{}
-	ExtraAsDvObject *dvevaluation.DvObject
-	Params          map[string]string
-	UrlInlineParams map[string]string
-	Url             string
-	Urls            []string
-	UrlsLowerCase   []string
-	FileName        string
-	DataType        string
-	Writer          http.ResponseWriter
-	Reader          *http.Request
-	Server          *MicroCoreInfo
-	Output          []byte
-	Error           error
-	Action          *DvAction
-	StatusCode      int
+	Extra                     map[string]interface{}
+	PrimaryContextEnvironment *dvevaluation.DvObject
+	LocalContextEnvironment   *dvevaluation.DvObject
+	Params                    map[string]string
+	UrlInlineParams           map[string]string
+	Url                       string
+	Urls                      []string
+	UrlsLowerCase             []string
+	FileName                  string
+	DataType                  string
+	Writer                    http.ResponseWriter
+	Reader                    *http.Request
+	Server                    *MicroCoreInfo
+	Output                    []byte
+	Error                     error
+	Action                    *DvAction
+	StatusCode                int
 }
 
 type HandlerFunc func(request *RequestContext) bool

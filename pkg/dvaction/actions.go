@@ -4,7 +4,10 @@
 package dvaction
 
 import (
+	"bytes"
+	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvsecurity"
 	"io/ioutil"
@@ -18,24 +21,32 @@ const (
 var Log = dvlog.LogError
 
 func fireAction(ctx *dvcontext.RequestContext) bool {
-	action := ctx.Action
-	prefix := ActionPrefix + action.Name
-	if ctx.ExtraAsDvObject.GetString(prefix+"_1") == "" {
+	return fireActionByName(ctx, ctx.Action.Name, ctx.Action.Definitions)
+}
+
+func fireActionByName(ctx *dvcontext.RequestContext, name string,
+	definitions map[string]string) bool {
+	prefix := ActionPrefix + name
+	if ctx.PrimaryContextEnvironment.GetString(prefix+"_1") == "" {
 		ctx.StatusCode = 501
 		ctx.HandleCommunication()
 		return true
 	}
-	res := ExecuteSequence(prefix, ctx)
+	res := ExecuteSequence(prefix, ctx, definitions)
+	ActionProcessResult(ctx, res)
+	return true
+}
+
+func ActionProcessResult(ctx *dvcontext.RequestContext, res bool) {
 	if !res {
 		ctx.HandleInternalServerError()
 	} else {
 		ActionContextResult(ctx)
 	}
-	return true
 }
 
 func fireStaticAction(ctx *dvcontext.RequestContext) bool {
-	ActionContextResult(ctx)
+	ActionProcessResult(ctx, true)
 	return true
 }
 
@@ -46,7 +57,20 @@ func ActionContextResult(ctx *dvcontext.RequestContext) {
 	}
 	action := ctx.Action
 	if action != nil && action.Result != "" {
-		res, err := ctx.ExtraAsDvObject.CalculateString(action.Result)
+		res, err := ctx.PrimaryContextEnvironment.CalculateString(action.Result)
+		if err != nil {
+			ctx.Error = err
+			ctx.HandleInternalServerError()
+			return
+		}
+		switch action.ResultMode {
+		case "file":
+			ctx.Output, err = GetContextFileResult(ctx, res)
+		case "var":
+			ctx.Output, err = GetContextVarResult(ctx, res)
+		default:
+			ctx.Output = []byte(res)
+		}
 		if err != nil {
 			ctx.Error = err
 			ctx.HandleInternalServerError()
@@ -57,36 +81,52 @@ func ActionContextResult(ctx *dvcontext.RequestContext) {
 	ctx.HandleCommunication()
 }
 
-func fireFileAction(ctx *dvcontext.RequestContext) bool {
+func GetContextVarResult(ctx *dvcontext.RequestContext, varName string) ([]byte, error) {
+	dat, ok := ctx.PrimaryContextEnvironment.Get(varName)
+	if !ok {
+		return nil, errors.New("Variable " + varName + " not set")
+	}
+	str := dvevaluation.AnyToString(dat)
+	return []byte(str), nil
+}
+
+func GetContextFileResult(ctx *dvcontext.RequestContext, fileName string) ([]byte, error) {
+	if fileName == "" {
+		ctx.HandleFileNotFound()
+		return nil, errors.New("Empty file name")
+	}
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		log.Printf("Cannot read %s: %v", fileName, err)
+		ctx.HandleInternalServerError()
+		return nil, errors.New("File " + fileName + " not found")
+	}
+	if !bytes.Contains(data, []byte("{{")) {
+		return data, nil
+	}
+	res, err := ctx.PrimaryContextEnvironment.CalculateString(string(data))
+	return []byte(res), err
+}
+
+func fireSwitchAction(ctx *dvcontext.RequestContext) bool {
 	action := ctx.Action
-	fileName := action.Result
+	actionName := action.Result
 	conditions := action.Conditions
-	if conditions != nil {
+	if nil != conditions {
 		for k, v := range conditions {
-			res, err := ctx.ExtraAsDvObject.EvaluateBooleanExpression(k)
+			res, err := ctx.PrimaryContextEnvironment.EvaluateBooleanExpression(k)
 			if err != nil {
 				log.Printf("Failed to evaluate %s: %v", k, err)
 				ctx.HandleInternalServerError()
 				return true
 			}
 			if res {
-				fileName = v
+				actionName = v
+				break
 			}
 		}
 	}
-	if fileName == "" {
-		ctx.HandleFileNotFound()
-		return true
-	}
-	data, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Printf("Cannot read %s: %v", fileName, err)
-		ctx.HandleInternalServerError()
-		return true
-	}
-	ctx.Output = data
-	ctx.HandleCommunication()
-	return true
+	return fireActionByName(ctx, actionName, action.Definitions)
 }
 
 func securityEndPointHandler(ctx *dvcontext.RequestContext) bool {

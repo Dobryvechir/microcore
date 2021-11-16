@@ -51,7 +51,7 @@ func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) b
 		return false
 	}
 	if len(action.Validations) > 0 {
-		res := ValidateRequest(action.Validations, request.ExtraAsDvObject)
+		res := ValidateRequest(action.Validations, request.PrimaryContextEnvironment)
 		if res != "" {
 			request.SetHttpErrorCode(400, res)
 			return true
@@ -97,7 +97,7 @@ func getActionHandlerFunc(base map[string]*dvurl.UrlPool) dvcontext.HandlerFunc 
 			return false
 		}
 		urls := context.Urls
-		ok, _ := dvurl.UrlSearch(context, urlPool, urls, urlActionVerifier, context.ExtraAsDvObject)
+		ok, _ := dvurl.UrlSearch(context, urlPool, urls, urlActionVerifier, context.PrimaryContextEnvironment)
 		return ok
 	}
 }

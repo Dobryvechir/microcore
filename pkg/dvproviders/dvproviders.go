@@ -109,7 +109,7 @@ func PlaceProviderReferences(request *dvcontext.RequestContext) {
 	for i := 0; i < n; i++ {
 		provider := providers[i]
 		urlRules := provider.Urls
-		if len(urlRules) != 0 && !dvurl.MatchMasksWithDefault(urlRules, urls, dvurl.MatchDefaultFalse, request.ExtraAsDvObject) {
+		if len(urlRules) != 0 && !dvurl.MatchMasksWithDefault(urlRules, urls, dvurl.MatchDefaultFalse, request.PrimaryContextEnvironment) {
 			continue
 		}
 		if provider.Data != nil {

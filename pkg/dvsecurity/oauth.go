@@ -29,7 +29,7 @@ func LoginByRequestEndPointHandler(ctx *dvcontext.RequestContext) bool {
 		"session_state":      "467a8f63-3c4c-40a6-8e6c-d5388b59c7a0",
 		"scope":              "profile email",
 	}
-	ctx.ExtraAsDvObject.Set("OAUTH", result)
+	ctx.PrimaryContextEnvironment.Set("OAUTH", result)
 	return true
 }
 

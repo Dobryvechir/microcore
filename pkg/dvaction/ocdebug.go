@@ -32,9 +32,9 @@ func debugInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bo
 	if !okay || key == "" || !DefaultInitWithObject(command, config) {
 		return nil, false
 	}
-	currentKey, okey := ctx.ExtraAsDvObject.Properties["URL_PARAM_KEY"]
+	currentKey, okey := ctx.PrimaryContextEnvironment.Properties["URL_PARAM_KEY"]
 	if !okey {
-		currentKey, okey = ctx.ExtraAsDvObject.Properties["BODY_PARAM_KEY"]
+		currentKey, okey = ctx.PrimaryContextEnvironment.Properties["BODY_PARAM_KEY"]
 		if !okey {
 			return nil, false
 		}
@@ -76,7 +76,7 @@ func RunReadAllVariables(config *DebugConfig, ctx *dvcontext.RequestContext) err
 		result = "DEBUG_ALL_VARIABLES"
 	}
 	props := dvparser.GlobalProperties
-	ctx.ExtraAsDvObject.Properties[result] = props
+	ctx.PrimaryContextEnvironment.Properties[result] = props
 	return nil
 }
 
@@ -85,7 +85,7 @@ func RunGetOneVariable(config *DebugConfig, ctx *dvcontext.RequestContext) error
 	if result == "" {
 		result = "DEBUG_ONE_VARIABLE"
 	}
-	nameStr, ok := ctx.ExtraAsDvObject.Properties["URL_PARAM_NAME"]
+	nameStr, ok := ctx.PrimaryContextEnvironment.Properties["URL_PARAM_NAME"]
 	if !ok {
 		return nil
 	}
@@ -97,7 +97,7 @@ func RunGetOneVariable(config *DebugConfig, ctx *dvcontext.RequestContext) error
 		return nil
 	}
 	val := dvparser.GlobalProperties[name]
-	ctx.ExtraAsDvObject.Properties[result] = val
+	ctx.PrimaryContextEnvironment.Properties[result] = val
 	return nil
 }
 
@@ -106,8 +106,8 @@ func RunSetOneVariable(config *DebugConfig, ctx *dvcontext.RequestContext) error
 	if result == "" {
 		result = "DEBUG_ONE_VARIABLE"
 	}
-	nameStr, ok := ctx.ExtraAsDvObject.Properties["BODY_PARAM_NAME"]
-	valueStr, ok1 := ctx.ExtraAsDvObject.Properties["BODY_PARAM_VALUE"]
+	nameStr, ok := ctx.PrimaryContextEnvironment.Properties["BODY_PARAM_NAME"]
+	valueStr, ok1 := ctx.PrimaryContextEnvironment.Properties["BODY_PARAM_VALUE"]
 	if !ok || !ok1 {
 		return nil
 	}
@@ -125,7 +125,7 @@ func RunSetOneVariable(config *DebugConfig, ctx *dvcontext.RequestContext) error
 		return nil
 	}
 	val := dvparser.GlobalProperties[name]
-	ctx.ExtraAsDvObject.Properties[result] = val
+	ctx.PrimaryContextEnvironment.Properties[result] = val
 	dvparser.GlobalProperties[name] = value
 	return nil
 }

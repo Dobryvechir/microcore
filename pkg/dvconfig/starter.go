@@ -54,7 +54,7 @@ func ServerStart() {
 			dvparser.SetGlobalPropertiesValue("CURRENT_MICROCORE_CONFIG", string(data))
 		}
 		ProvideServerCommand()
-		dvaction.ExecuteSequence("EXECUTE_"+osargs2, nil)
+		dvaction.ExecuteSequence("EXECUTE_"+osargs2, nil, nil)
 	default:
 		serverStartByConfigDirect(cf)
 	}

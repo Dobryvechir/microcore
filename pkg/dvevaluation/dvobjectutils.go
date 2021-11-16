@@ -96,3 +96,11 @@ func (obj *DvObject) EvaluateBooleanExpression(s string) (bool, error) {
 	v := AnyToBoolean(expr.FinalResult)
 	return v, nil
 }
+
+func (obj *DvObject) EvaluateAnyTypeExpression(s string) (interface{}, error) {
+	expr := ParseForDvObject([]byte(s), obj, 0, 0, s)
+	if expr.Err != nil {
+		return false, expr.Err
+	}
+	return expr.FinalResult, nil
+}

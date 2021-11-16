@@ -36,7 +36,7 @@ func CheckProcessorBlocks(blocks []dvcontext.ProcessorBlock, request *dvcontext.
 	n := len(blocks)
 	urls := request.Urls
 	for i := 0; i < n; i++ {
-		if dvurl.MatchMasksForUrlParts(blocks[i].Urls, urls, request.ExtraAsDvObject) {
+		if dvurl.MatchMasksForUrlParts(blocks[i].Urls, urls, request.PrimaryContextEnvironment) {
 			request.Params = blocks[i].Data
 			if blocks[i].EndPointHandler(request) {
 				return true
@@ -484,7 +484,7 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 			Writer: w,
 			Reader: r,
 		}
-		request.ExtraAsDvObject = dvparser.GetPropertiesPrototypedToGlobalProperties(request.Extra)
+		request.PrimaryContextEnvironment = dvparser.GetPropertiesPrototypedToGlobalProperties(request.Extra)
 		SetRequestUrl(request, r.URL.Path)
 		firstUrl := ""
 		if len(request.Urls) >= 1 {

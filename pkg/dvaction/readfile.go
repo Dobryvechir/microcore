@@ -69,7 +69,7 @@ func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext)
 	case "json":
 		var props *dvevaluation.DvObject = nil
 		if ctx!=nil {
-			props = ctx.ExtraAsDvObject
+			props = ctx.PrimaryContextEnvironment
 		}
 		res, err1 = ReadJsonTrimmed(dat, config.Path, config.NoReadOfUndefined, props)
 	}

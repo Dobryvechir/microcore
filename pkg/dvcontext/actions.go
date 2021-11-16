@@ -13,6 +13,7 @@ type DvAction struct {
 	Body        map[string]string  `json:"body"`
 	Result      string             `json:"result"`
 	ResultMode  string             `json:"mode"`
+	Definitions map[string]string  `json:"definitions"`
 	InnerParams string             `json:"params"`
 	Conditions  map[string]string  `json:"conditions"`
 	Validations []*ValidatePattern `json:"validations"`

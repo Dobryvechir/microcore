@@ -1,0 +1,29 @@
+Actions are supposed to implement the backend functionality
+Actions are described in the configuration as follows:
+{
+   "name" : "unique name of the action"
+   "type" : "'static'(no action is performed) | 'short'(single action defined in 'params' is executed),
+            'switch':depending on conditions actions are changed, '' (default - actions are executed in sequence by properties)",
+   "url" : "url of the action by which it can be executed"
+   "query": {"param1":"type1:name1", "param2":"type2:name2",...}
+         // param1 is the name of the parameter in url
+         // type1 = string, number, boolean, ...
+         // name1 is optional, it is how it is stored in variables,
+         // by default name1 = "URL_PARAM_" + UpperCase(param1), all non-alpha-digital characters are replaced with "_"
+   "body" :  {"path1":"type1:name1", "path2":"type2:name2",...}
+         // path1 is the path of the parameter in the body's json, for example "action.0.id"
+         // type1 = string, number, boolean, ...
+         // name1 is optional, it is how it is stored in variables,
+         // by default name1 = "BODY_PARAM_" + UpperCase(path1), all non-alpha-digital characters are replaced with "_"
+         // for example:"action_0_id" 
+         // this is necessary if you work only with some parts of the body,
+         // in any case the whole body is saved BODY_STRING (plain text) and if it can be converted to json, 
+         // also as "BODY_JSON"
+   "result": "the message returned from this request, it can be of some forms, depending on the mode
+   "mode": "'text' (the plain result is returned if ok) 'file'(the result contains the file name and the response is the file content)
+            'var' (the variable name)"
+   "params": (string) additional params to be used in specific actions. When "type" is "short", the params contains the action definition,
+   "conditions": map of conditions of eligibility for this call, in case of switch, this is the switch for different conditions
+               (the default action is provided by "name" itself )
+   "validations": validations of input parameters
+} 

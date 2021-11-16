@@ -210,7 +210,7 @@ func SqlRun(data []interface{}) bool {
 	}
 	if err != nil {
 		if sqlAction.Error != "" {
-			ctx.ExtraAsDvObject.Set(sqlAction.Error, err.Error())
+			ctx.PrimaryContextEnvironment.Set(sqlAction.Error, err.Error())
 			return true
 		} else {
 			dvlog.PrintfError("Error %s: %v", query, err)
@@ -226,7 +226,7 @@ func SqlRun(data []interface{}) bool {
 		return false
 	}
 	if sqlAction.Result != "" {
-		ctx.ExtraAsDvObject.Set(sqlAction.Result, res)
+		ctx.PrimaryContextEnvironment.Set(sqlAction.Result, res)
 	}
 	return true
 }

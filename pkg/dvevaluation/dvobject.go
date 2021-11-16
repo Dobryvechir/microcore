@@ -49,7 +49,29 @@ func (obj *DvObject) GetString(key string) string {
 	if !ok || v == nil {
 		return ""
 	}
+	switch v.(type) {
+	case string:
+		return v.(string)
+	}
 	return AnyToString(v)
+}
+
+func (obj *DvObject) GetInt(key string) int {
+	v, ok := obj.Get(key)
+	if !ok || v == nil {
+		return 0
+	}
+	switch v.(type) {
+	case int:
+		return v.(int)
+	case int64:
+		return int(v.(int64))
+	}
+	res, ok := AnyToNumberInt(v)
+	if !ok {
+		return 0
+	}
+	return int(res)
 }
 
 func (obj *DvObject) Set(key string, value interface{}) {

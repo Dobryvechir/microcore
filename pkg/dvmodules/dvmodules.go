@@ -121,7 +121,7 @@ func urlVerifier(context interface{}, resolver *dvurl.UrlResolver, urlData *dvur
 func getHandlerFunc(urlPool *dvurl.UrlPool) dvcontext.HandlerFunc {
 	return func(context *dvcontext.RequestContext) bool {
 		urls := context.Urls
-		ok, _ := dvurl.UrlSearch(context, urlPool, urls, urlVerifier, context.ExtraAsDvObject)
+		ok, _ := dvurl.UrlSearch(context, urlPool, urls, urlVerifier, context.PrimaryContextEnvironment)
 		return ok
 	}
 }

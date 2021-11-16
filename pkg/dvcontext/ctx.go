@@ -36,5 +36,5 @@ func (ctx *RequestContext) SetError(err error) {
 
 func (ctx *RequestContext) SetUrlInlineParameters(params map[string]string) {
 	ctx.UrlInlineParams = params
-	ctx.ExtraAsDvObject.SetPropertiesWithPrefixFromString(UrlPrefix, params, dvevaluation.TransformUpperCase)
+	ctx.PrimaryContextEnvironment.SetPropertiesWithPrefixFromString(UrlPrefix, params, dvevaluation.TransformUpperCase)
 }
