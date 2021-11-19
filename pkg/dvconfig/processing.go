@@ -4,6 +4,7 @@ package dvconfig
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
+	"github.com/Dobryvechir/microcore/pkg/dvurl"
 	"log"
 	"net/http"
 	"strconv"
@@ -57,6 +58,25 @@ func getLogLevelCode(level string) int {
 	return dvcontext.LogLevelNone
 }
 
+func prepareProxyInfo(servers []ProxyServerInfo) []*dvcontext.ProxyServerBlock {
+	n := len(servers)
+	if n == 0 {
+		return nil
+	}
+	res := make([]*dvcontext.ProxyServerBlock, 0, n)
+	for i := 0; i < n; i++ {
+		url := dvcontext.GetPurePath(servers[i].Url)
+		if url == "" || len(servers[i].Filter)==0 {
+			continue
+		}
+		filters := dvurl.PreparseMaskExpressions(servers[i].Filter)
+		if len(filters) > 0 {
+			res = append(res, &dvcontext.ProxyServerBlock{ServerUrl: url, FilterUrls: filters})
+		}
+	}
+	return res
+}
+
 func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 	server.AccessControlMaxAge = strings.TrimSpace(server.AccessControlMaxAge)
 	if server.AccessControlMaxAge != "" {
@@ -76,15 +96,16 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 	}
 	dvServerInfo := &dvcontext.MicroCoreInfo{
 		BaseFolderUrl:             dvcontext.GetPurePath(server.BaseFolder),
-		ExtraServerUrl:            dvcontext.GetPurePath(server.ExtraServer),
-		ExtraServerSettings:       server.ExtraServerSettings,
+		ProxyServerUrl:            dvcontext.GetPurePath(server.DefaultProxyServer),
+		ProxyServerSettings:       server.ProxyServerSettings,
 		ProxyName:                 dvcom.PrepareProxyName(server.ProxyName),
+		ProxyServers:              prepareProxyInfo(server.ProxyServers),
 		BaseRewrite:               prepareComRewriteMap(server.Rewrites),
 		ServerRewrite:             prepareComRewriteMap(server.ServerRewrites),
 		HeadersStatic:             prepareMapOfStringArrays(server.HeadersStatic),
 		HeadersStaticOptions:      prepareMapOfStringArrays(server.HeadersStaticOptions),
-		HeadersExtraServer:        prepareMapOfStringArrays(server.HeadersExtraServer),
-		HeadersExtraServerOptions: prepareMapOfStringArrays(server.HeadersExtraServerOptions),
+		HeadersProxyServer:        prepareMapOfStringArrays(server.HeadersProxyServer),
+		HeadersProxyServerOptions: prepareMapOfStringArrays(server.HeadersProxyServerOptions),
 		HeadersSpecial:            make(map[string]dvcontext.MicroCoreHeaderAttribute),
 		HeadersSpecialOptions:     make(map[string]dvcontext.MicroCoreHeaderAttribute),
 		HeadersSpecialStatic:      make(map[string]dvcontext.MicroCoreHeaderAttribute),
@@ -102,18 +123,18 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 	accessControlExposeHeaders := dvcom.PrepareAccessControlLists(server.AccessControlExposeHeaders)
 	if server.AccessControlMaxAge != "" {
 		dvServerInfo.HeadersStaticOptions["Access-Control-Max-Age"] = []string{server.AccessControlMaxAge}
-		dvServerInfo.HeadersExtraServerOptions["Access-Control-Max-Age"] = []string{server.AccessControlMaxAge}
+		dvServerInfo.HeadersProxyServerOptions["Access-Control-Max-Age"] = []string{server.AccessControlMaxAge}
 	}
 	if server.AccessControlAllowCredentials != "" {
 		dvServerInfo.HeadersStatic["Access-Control-Allow-Credentials"] = []string{"true"}
 		dvServerInfo.HeadersStaticOptions["Access-Control-Allow-Credentials"] = []string{"true"}
-		dvServerInfo.HeadersExtraServer["Access-Control-Allow-Credentials"] = []string{"true"}
-		dvServerInfo.HeadersExtraServerOptions["Access-Control-Allow-Credentials"] = []string{"true"}
+		dvServerInfo.HeadersProxyServer["Access-Control-Allow-Credentials"] = []string{"true"}
+		dvServerInfo.HeadersProxyServerOptions["Access-Control-Allow-Credentials"] = []string{"true"}
 	}
 	cacheControl := strings.TrimSpace(server.CacheControl)
 	if cacheControl != "" {
 		dvServerInfo.HeadersStatic["Cache-Control"] = []string{cacheControl}
-		dvServerInfo.HeadersExtraServer["Cache-Control"] = []string{cacheControl}
+		dvServerInfo.HeadersProxyServer["Cache-Control"] = []string{cacheControl}
 	}
 	if accessControlExposeHeaders.Kind >= 0 {
 		dvServerInfo.HeadersStatic["Access-Control-Expose-Headers"] = []string{accessControlExposeHeaders.Plain}

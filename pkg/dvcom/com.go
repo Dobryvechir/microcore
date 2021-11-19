@@ -141,6 +141,20 @@ func tryLocalFileByMethodAndRequest(request *dvcontext.RequestContext, folder st
 	return false
 }
 
+func tryProxyServers(request *dvcontext.RequestContext) bool {
+	n := len(request.Server.ProxyServers)
+	urls := request.Urls
+	for i := 0; i < n; i++ {
+		srv := request.Server.ProxyServers[i]
+		if dvurl.MatchMasksForUrlParts(srv.FilterUrls, urls, request.PrimaryContextEnvironment) {
+			if tryHttpForward(request, srv.ServerUrl) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func tryLocalFile(request *dvcontext.RequestContext, folder string) bool {
 	name := dvcontext.GetPurePath(folder + request.Url)
 	fi, err := os.Stat(name)
@@ -196,7 +210,7 @@ func createClientForMicroCoreInfo(server *dvcontext.MicroCoreInfo) {
 		server.Unlock()
 		return
 	}
-	server.Client = createClientBySettings(&server.ExtraServerSettings)
+	server.Client = createClientBySettings(&server.ProxyServerSettings)
 	server.Unlock()
 }
 
@@ -328,9 +342,9 @@ func tryHttpForward(request *dvcontext.RequestContext, url string) bool {
 		dvlog.WriteResponseToLog(logFile, resp, body)
 	}
 	if method != "OPTIONS" {
-		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersExtraServer, origin, request.Server.HeadersSpecial, request.Writer)
+		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersProxyServer, origin, request.Server.HeadersSpecial, request.Writer)
 	} else {
-		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersExtraServerOptions, origin, request.Server.HeadersSpecialOptions, request.Writer)
+		dvcontext.ProvideHeaders(resp.Header, request.Server.HeadersProxyServerOptions, origin, request.Server.HeadersSpecialOptions, request.Writer)
 	}
 	request.StatusCode = resp.StatusCode
 	request.Output = body
@@ -395,19 +409,20 @@ func prepareMicroCoreInfo(serverInfo *dvcontext.MicroCoreInfo) {
 	if len(serverInfo.DirectoryIndex) == 0 {
 		serverInfo.DirectoryIndex = defaultDirectoryIndex
 	}
-	serverInfo.ExtraServerHttp = false
-	serverInfo.ExtraServerFile = false
-	if serverInfo.ExtraServerUrl != "" {
-		if len(serverInfo.ExtraServerUrl) > 5 && (serverInfo.ExtraServerUrl[:5] == "http:" || serverInfo.ExtraServerUrl[:6] == "https:") {
-			serverInfo.ExtraServerHttp = true
+	serverInfo.ProxyServerHttp = false
+	serverInfo.ExtraStaticServer = false
+	if serverInfo.ProxyServerUrl != "" {
+		if len(serverInfo.ProxyServerUrl) > 5 && (serverInfo.ProxyServerUrl[:5] == "http:" || serverInfo.ProxyServerUrl[:6] == "https:") {
+			serverInfo.ProxyServerHttp = true
 		} else {
-			if _, err := os.Stat(serverInfo.ExtraServerUrl); err != nil {
-				log.Printf("extraServer path %s is not correct %v\n", serverInfo.ExtraServerUrl, err.Error())
+			if _, err := os.Stat(serverInfo.ProxyServerUrl); err != nil {
+				log.Printf("extraServer path %s is not correct %v\n", serverInfo.ProxyServerUrl, err.Error())
 			} else {
-				serverInfo.ExtraServerFile = true
+				serverInfo.ExtraStaticServer = true
 			}
 		}
 	}
+	serverInfo.HasProxyServers = len(serverInfo.ProxyServers) > 0
 }
 
 func PrepareAccessControlLists(data string) dvcontext.MicroCoreHeaderAttribute {
@@ -423,8 +438,9 @@ func PrepareAccessControlLists(data string) dvcontext.MicroCoreHeaderAttribute {
 	return res
 }
 
-func calculateRequestContextParameters(r *http.Request) (res map[string]interface{}) {
+func calculateRequestContextParameters(r *http.Request) (res map[string]interface{}, queries map[string]string) {
 	res = make(map[string]interface{})
+	queries = make(map[string]string)
 	headers := r.Header
 	res["HTTP_ACCEPT"] = headers.Get("Accept")
 	res["HTTP_COOKIE"] = headers.Get("Cookie")
@@ -457,8 +473,9 @@ func calculateRequestContextParameters(r *http.Request) (res map[string]interfac
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 	for key, value := range m {
 		if len(value) > 0 {
-			res["G_"+dvtextutils.ConvertToUpperAlphaDigital([]byte(key))] = value[0]
-			res["GM_"+key] = value
+			res["URL_PARAM_"+dvtextutils.ConvertToUpperAlphaDigital([]byte(key))] = value[0]
+			queries[key] = value[0]
+			res["URL_PARAMS_"+key] = value
 		}
 	}
 	return
@@ -478,11 +495,13 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 		if d, okey := hostServerInfo[r.Host]; okey {
 			currentServer = d
 		}
+		extra, queries := calculateRequestContextParameters(r)
 		request := &dvcontext.RequestContext{
-			Extra:  calculateRequestContextParameters(r),
-			Server: currentServer,
-			Writer: w,
-			Reader: r,
+			Extra:   extra,
+			Server:  currentServer,
+			Writer:  w,
+			Reader:  r,
+			Queries: queries,
 		}
 		request.PrimaryContextEnvironment = dvparser.GetPropertiesPrototypedToGlobalProperties(request.Extra)
 		SetRequestUrl(request, r.URL.Path)
@@ -506,10 +525,12 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 			if ok {
 				SetRequestUrl(request, rewriteComRewriteItem(request.Url, rew))
 			}
-			if currentServer.ExtraServerFile && tryLocalFile(request, currentServer.ExtraServerUrl) {
-				place = "ExtraLocal"
-			} else if currentServer.ExtraServerHttp {
-				tryHttpForward(request, currentServer.ExtraServerUrl)
+			if currentServer.ExtraStaticServer && tryLocalFile(request, currentServer.ProxyServerUrl) {
+				place = "ExtraStatic"
+			} else if currentServer.HasProxyServers && tryProxyServers(request) {
+				place = "proxy"
+			} else if currentServer.ProxyServerHttp {
+				tryHttpForward(request, currentServer.ProxyServerUrl)
 				place = "http"
 			} else {
 				request.HandleFileNotFound()

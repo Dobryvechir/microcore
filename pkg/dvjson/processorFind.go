@@ -7,6 +7,9 @@ package dvjson
 
 import (
 	"bytes"
+	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"strings"
 )
 
 func ProcessorFind(parent *DvFieldInfo, params string) (*DvFieldInfo, error) {
@@ -66,4 +69,83 @@ func MatchDvFieldInfo(model *DvFieldInfo, pattern *DvFieldInfo) bool {
 		}
 	}
 	return false
+}
+
+func CollectValuesByMap(data interface{}, params map[string]string, env *dvevaluation.DvObject) (res map[string]interface{}) {
+	res = make(map[string]interface{})
+	for k, _ := range params {
+		val, err := CollectValueByKey(data, k, env)
+		if err != nil {
+			res[k] = val
+		}
+	}
+	return res
+}
+
+func CollectValueByKey(data interface{}, key string, env *dvevaluation.DvObject) (interface{}, error) {
+	switch data.(type) {
+	case *DvFieldInfo:
+		res, err := data.(*DvFieldInfo).ReadChildOfAnyLevel(key, env)
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
+	}
+	return nil, errors.New("Unknown type to extrace " + key)
+}
+
+func CollectJsonVariables(data interface{}, params map[string]string, env *dvevaluation.DvObject, anyway bool) {
+	if params == nil || (data == nil && !anyway) {
+		return
+	}
+	src := CollectValuesByMap(data, params, env)
+	CollectVariablesByAnyMap(src, params, env, anyway)
+}
+
+func CollectVariablesByStringMap(src map[string]string, params map[string]string, data *dvevaluation.DvObject, anyway bool) {
+	if params == nil || (src == nil && !anyway) {
+		return
+	}
+	for k, v := range params {
+		if v != "" && v[0] >= 'A' && v[0] <= 'Z' {
+			p := strings.Index(v, ":")
+			if p > 0 {
+				v = v[:p]
+			}
+			if src != nil {
+				v1, ok := src[k]
+				if ok {
+					data.Properties[v] = v1
+				} else if anyway {
+					data.Properties[v] = ""
+				}
+			} else {
+				data.Properties[v] = ""
+			}
+		}
+	}
+}
+
+func CollectVariablesByAnyMap(src map[string]interface{}, params map[string]string, data *dvevaluation.DvObject, anyway bool) {
+	if params == nil || (src == nil && !anyway) {
+		return
+	}
+	for k, v := range params {
+		if v != "" && v[0] >= 'A' && v[0] <= 'Z' {
+			p := strings.Index(v, ":")
+			if p > 0 {
+				v = v[:p]
+			}
+			if src != nil {
+				v1, ok := src[k]
+				if ok {
+					data.Properties[v] = v1
+				} else if anyway {
+					data.Properties[v] = ""
+				}
+			} else {
+				data.Properties[v] = ""
+			}
+		}
+	}
 }

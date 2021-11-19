@@ -47,6 +47,11 @@ type DvRewrite struct {
 	Condition string `json:"condition"`
 	Options   string `json:"options"`
 }
+type ProxyServerInfo struct {
+	Filter string `json:"filter"`
+	Url    string `json:"url"`
+	Kind   string `json:"kind"`
+}
 
 // DvHostServer collects all parameters for a specific host server
 type DvHostServer struct {
@@ -54,16 +59,17 @@ type DvHostServer struct {
 	BaseFolder                    string                         `json:"baseFolder"`
 	Actions                       []dvcontext.DvAction           `json:"actions"`
 	Rewrites                      []DvRewrite                    `json:"rewrites"`
-	ExtraServer                   string                         `json:"extraServer"`
-	ExtraServerSettings           dvcontext.ServerSettings       `json:"extraServerSettings"`
+	DefaultProxyServer            string                         `json:"defaultProxy"`
+	ProxyServers                  []ProxyServerInfo              `json:"proxyServers"`
+	ProxyServerSettings           dvcontext.ServerSettings       `json:"proxyServerSettings"`
 	ServerRewrites                []DvRewrite                    `json:"serverRewrites"`
 	ProxyName                     string                         `json:"proxyName"`
 	CacheControl                  string                         `json:"cacheControl"`
 	DirectoryIndex                string                         `json:"directoryIndex"`
 	HeadersStatic                 map[string]string              `json:"headersStatic"`
-	HeadersExtraServer            map[string]string              `json:"headersExtraServer"`
+	HeadersProxyServer            map[string]string              `json:"headersProxyServer"`
 	HeadersStaticOptions          map[string]string              `json:"headersStaticOptions"`
-	HeadersExtraServerOptions     map[string]string              `json:"headersExtraServerOptions"`
+	HeadersProxyServerOptions     map[string]string              `json:"headersProxyServerOptions"`
 	AccessControlAllowOrigin      string                         `json:"accessControlAllowOrigin"`
 	AccessControlAllowMethod      string                         `json:"accessControlAllowMethod"`
 	AccessControlAllowHeaders     string                         `json:"accessControlAllowHeaders"`

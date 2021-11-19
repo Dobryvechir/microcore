@@ -7,8 +7,8 @@ package dvmodules
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
-	"log"
 	"strings"
 )
 
@@ -47,8 +47,18 @@ func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) b
 	request.Action = action
 	proc, ok := registeredActionProcessors[action.Typ]
 	if !ok {
-		log.Printf("Action %s url %s has incorrect type %s", action.Name, action.Url, action.Typ)
+		dvlog.Printf("Action %s url %s has incorrect type %s", action.Name, action.Url, action.Typ)
 		return false
+	}
+	if request.Reader.Method=="OPTIONS" {
+		request.HandleCommunication()
+		return true
+	}
+	err := collectRequestParameters(request)
+	if err != nil {
+		dvlog.PrintlnError("Cannot load body " + err.Error())
+		request.HandleInternalServerError()
+		return true
 	}
 	if len(action.Validations) > 0 {
 		res := ValidateRequest(action.Validations, request.PrimaryContextEnvironment)

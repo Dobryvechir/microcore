@@ -27,6 +27,11 @@ type MicroCoreHeaderAttribute struct {
 	Plain string
 }
 
+type ProxyServerBlock struct {
+	ServerUrl  string
+	FilterUrls []*MaskInfo
+}
+
 type RewriteMapItem struct {
 	Url    string
 	UrlLen int
@@ -50,16 +55,18 @@ type MicroCoreInfo struct {
 	sync.RWMutex
 	Client                    *http.Client
 	BaseFolderUsed            bool
-	ExtraServerFile           bool
-	ExtraServerHttp           bool
+	ExtraStaticServer         bool
+	ProxyServerHttp           bool
+	HasProxyServers           bool
 	BaseFolderUrl             string
-	ExtraServerUrl            string
-	ExtraServerSettings       ServerSettings
+	ProxyServerUrl            string
+	ProxyServerSettings       ServerSettings
 	ProxyName                 string
+	ProxyServers              []*ProxyServerBlock
 	HeadersStatic             map[string][]string
-	HeadersExtraServer        map[string][]string
+	HeadersProxyServer        map[string][]string
 	HeadersStaticOptions      map[string][]string
-	HeadersExtraServerOptions map[string][]string
+	HeadersProxyServerOptions map[string][]string
 	HeadersSpecial            map[string]MicroCoreHeaderAttribute
 	HeadersSpecialOptions     map[string]MicroCoreHeaderAttribute
 	HeadersSpecialStatic      map[string]MicroCoreHeaderAttribute
@@ -86,9 +93,13 @@ type RequestContext struct {
 	UrlsLowerCase             []string
 	FileName                  string
 	DataType                  string
+	Queries					  map[string]string
 	Writer                    http.ResponseWriter
 	Reader                    *http.Request
 	Server                    *MicroCoreInfo
+	Input                     []byte
+	InputStr                  string
+	InputJson                 interface{}
 	Output                    []byte
 	Error                     error
 	Action                    *DvAction
@@ -96,3 +107,8 @@ type RequestContext struct {
 }
 
 type HandlerFunc func(request *RequestContext) bool
+
+const (
+	BODY_STRING = "BODY_STRING"
+	BODY_JSON   = "BODY_JSON"
+)

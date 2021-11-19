@@ -39,6 +39,7 @@ const (
 	CommandSwitch      = "switch"
 	CommandRange       = "range"
 	CommandReturn      = "return"
+	CommandCompareJson = "compare"
 )
 
 var processFunctions = map[string]ProcessFunction{
@@ -56,6 +57,7 @@ var processFunctions = map[string]ProcessFunction{
 	CommandRange:       {Init: execRangeInit, Run: execRangeRun},
 	CommandSwitch:      {Init: execSwitchInit, Run: execSwitchRun},
 	CommandReturn:      {Init: execReturnInit, Run: execReturnRun},
+	CommandCompareJson: {Init: compareJsonInit, Run: compareJsonRun},
 }
 
 const (

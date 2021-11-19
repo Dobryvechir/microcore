@@ -28,11 +28,17 @@ type DvCrudDetails struct {
 	nextId         int
 }
 
+type QuickSearchInfo struct {
+	Looker map[string]*DvFieldInfo
+	Key    string
+}
+
 type DvFieldInfo struct {
 	Name          []byte
 	Value         []byte
 	Kind          int
 	Fields        []*DvFieldInfo
+	QuickSearch   *QuickSearchInfo
 	valueStartPos int
 	valueEndPos   int
 	FieldStatus   int
@@ -666,4 +672,3 @@ func JsonFullParser(body []byte) (*DvFieldInfo, error) {
 	}
 	return ConvertDvCrudParsingInfoToDvFieldInfo(parsed), nil
 }
-

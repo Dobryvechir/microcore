@@ -106,10 +106,10 @@ MicroCore can be used as a library for various purposes:
        "listen": ":80", <br/>
        "server": {"baseFolder": "."}
    </p>
-   <p>To forward a request to another server, you should specify <span class="dv_cmd">extraServer</span> (you can specify either <span class="dv_cmd">baseFolder</span> or <span class="dv_cmd">extraServer</span> or <span class="dv_cmd">processors</span> or any their combination). </p>
+   <p>To forward a request to another server, you should specify <span class="dv_cmd">proxyServers</span> or <span class="dv_cmd">defaultProxy</span>(you can do it in addition to <span class="dv_cmd">baseFolder</span>, <span class="dv_cmd">dv_cmd">processors</span> or any their combination). </p>
    <p class="dv_subinfo">
        "listen": ":80", <br/>
-       "server": {"baseFolder": "/home/Danyil/public","extraServer": "http://localhost:3000"}, <br/>
+       "server": {"baseFolder": "/home/Danyil/public","defaultProxy": "http://localhost:3000"}, <br/>
    </p>
    <p>In the example above the search at first will be made in the local folder /home/Danyil/public, but if not found, it will be forwarded to the server 
       http://localhost:3000 </p>
@@ -120,10 +120,11 @@ MicroCore can be used as a library for various purposes:
           hosts <span class="dv_subinfo_extra">(a list of host names comma(or space or semicolon)-separated for which this block is related. This field is ignored if it is in server, not in hostServers</span><br/>
           baseFolder <span class="dv_subinfo_extra">(a root folder to serve local files: should be empty if not used)</span><br/>
           rewrites <span class="dv_subinfo_extra">(primary rewrite rules for url: <a href="#task_rewrite">see rewrite rules</a>)</span><br/>
-          extraServer <span class="dv_subinfo_extra">(server name to forward  the request (starting with http:// or https://), should be empty if not used)</span><br/>
-          extraServerSettings <span class="dv_subinfo_extra">(special settings for the extra Server <a href="#task_extra_server_settings">see configure extra server settings</a> )</span><br/>
-          serverRewrites <span class="dv_subinfo_extra">(secondary rewrite rules for url applied before sending to the extra server <a href="#task_rewrite">see rewrite rules</a>)</span><br/>
-          proxyName <span class="dv_subinfo_extra">(the name on behalf of which server forwards requests to the server specified in extraServer. This name will be used as the Referer and Origin parameters in request headers)</span><br/>
+          defaultProxy <span class="dv_subinfo_extra">(server name to forward  the request (starting with http:// or https://), should be empty if not used)</span><br/>
+          proxyServers <span class="dv_subinfo_extra">(array of list {filter:"","url":"","kind":""} where url is server name to forward  the request (starting with http:// or https://), should be empty if not used)</span><br/>
+          proxyServerSettings <span class="dv_subinfo_extra">(special settings for the proxy Server <a href="#task_extra_server_settings">see configure extra server settings</a> )</span><br/>
+          serverRewrites <span class="dv_subinfo_extra">(secondary rewrite rules for url applied before sending to the proxied server <a href="#task_rewrite">see rewrite rules</a>)</span><br/>
+          proxyName <span class="dv_subinfo_extra">(the name on behalf of which server forwards requests to the server specified in proxyServers. This name will be used as the Referer and Origin parameters in request headers)</span><br/>
           accessControlAllowOrigin <span class="dv_subinfo_extra">(the origin to be allowed in requests from the browser (combined with extraServer origins if extraServer is used), for example: * - for all)</span><br/>
           accessControlAllowMethod <span class="dv_subinfo_extra">(for OPTIONS requests: the methods to be allowed in request from the browser (combined with extraServer methods if extraServer is used), for example: GET,POST,DELETE,PUT</span><br/>
           accessControlAllowHeaders <span class="dv_subinfo_extra">(for OPTIONS requests: the headers to be allowed in request from the browser (combined with extraServer headers if extraServer is used), for example: Authorization</span><br/>
@@ -137,16 +138,16 @@ MicroCore can be used as a library for various purposes:
           directoryIndex <span class="dv_subinfo_extra">(list of file names which are chosen by default, example 1: index.htm, index.html
                       example 2: $.html, index.html, index.htm)</span><br/>
           headersStatic <span class="dv_subinfo_extra">Additional headers for static part of the server (not for OPTIONS method) {"key1":"value1","key2":"value2",...}</span><br/>
-          headersExtraStatic <span class="dv_subinfo_extra">Additional headers for the extra server (not for OPTIONS method) {"key1":"value1","key2":"value2",...}</span><br/>
+          headersProxyStatic <span class="dv_subinfo_extra">Additional headers for the proxy server (not for OPTIONS method) {"key1":"value1","key2":"value2",...}</span><br/>
           headersStaticOptions <span class="dv_subinfo_extra">Additional headers for static part of the server (for OPTIONS method only) {"key1":"value1","key2":"value2",...}</span><br/>
-          headersExtraStaticOptions <span class="dv_subinfo_extra">Additional headers for the extra server (for OPTIONS method only) {"key1":"value1","key2":"value2",...}</span><br/>
+          headersProxyStaticOptions <span class="dv_subinfo_extra">Additional headers for the proxy server (for OPTIONS method only) {"key1":"value1","key2":"value2",...}</span><br/>
           <a href="template.html">templates</a> <span class="dv_subinfo_extra">Templates provide the opportunity to connect the static content 
                 with the environment variables and custom variables with their custom implementation in golang</span>
    </p>  
    <p class="dv_subinfo">
        "listen": ":80", <br/>
-       "hostServers": [{"hosts":"www.example.com www.example1.com","baseFolder":"C:/Users/Danyil/MicroCore/accounts","extraServer":"http://localhost:8080"},
-                       {"hosts":"api.example.com","extraServer":"http://api.mycompany.com","proxyName": "www.mycompany.com","accessControlAllowOrigin":"www.example.com www.example1.com"}], <br/>
+       "hostServers": [{"hosts":"www.example.com www.example1.com","baseFolder":"C:/Users/Danyil/MicroCore/accounts","defaultProxy":"http://localhost:8080"},
+                       {"hosts":"api.example.com","defaultProxy":"http://api.mycompany.com","proxyName": "www.mycompany.com","accessControlAllowOrigin":"www.example.com www.example1.com"}], <br/>
        "server": {"baseFolder": "."}
    </p>
    <p> 
@@ -184,7 +185,7 @@ MicroCore can be used as a library for various purposes:
    <p>Example</p>  
    <p class="dv_subinfo">
        "listen": ":80", <br/>
-       "hostServers": [{"hosts":"www.example.com","serverRewrites":[{"from":"/login*","to":"/"}],"baseFolder":"C:/Users/Danyil/MicroCore/accounts","extraServer":"http://localhost:8080"}], <br/>
+       "hostServers": [{"hosts":"www.example.com","serverRewrites":[{"from":"/login*","to":"/"}],"baseFolder":"C:/Users/Danyil/MicroCore/accounts","defaultProxy":"http://localhost:8080"}], <br/>
        "server": {"baseFolder": ".", "rewrites": [{"from":"/login*","to":"/"},{"from":"/accounts/*","to":"/"}]}
    </p>
 </div>
@@ -206,7 +207,7 @@ MicroCore can be used as a library for various purposes:
 </div>
 <h3 id="task_extra_server_settings">Task: configure special settings for the extra server</h3>
 <div>
-  <p>You can configure special settings for the <span class="dv_cmd">extraServer</span> by providing the <span class="dv_cmd">extraServerSettings</span> field in the <span class="dv_cmd">server</span> or <span class="dv_cmd">hostServers</span></p>
+  <p>You can configure special settings for the <span class="dv_cmd">defaultProxy</span> by providing the <span class="dv_cmd">proxyServerSettings</span> field in the <span class="dv_cmd">server</span> or <span class="dv_cmd">hostServers</span></p>
    <p class="dv_subinfo _list">
      maxIdleConnections <span class="dv_subinfo_extra">(integer number (not quoted), maxIdleConnections controls the maximum number of idle (keep-alive) connections across all hosts. Zero (default) means no limit.)</span><br/>
      idleConnectionTimeout <span class="dv_subinfo_extra">(number of seconds (not quoted), is the maximum amount of time in seconds an idle (keep-alive) connection will remain idle before closing
@@ -237,8 +238,8 @@ MicroCore can be used as a library for various purposes:
    <p>Example</p>  
    <p class="dv_subinfo">
        "listen": ":80", <br/>
-       "hostServers": [{"hosts":"www.example.com","extraServer":"http://localhost:8080","extraServerSettings":{"responseHeaderTimeout":60}}], <br/>
-       "server": {"extraServer":"http://localhost:3000","extraServerSettings":{"disableCompression":true,"disableKeepAlives":true}}
+       "hostServers": [{"hosts":"www.example.com","defaultProxy":"http://localhost:8080","proxyServerSettings":{"responseHeaderTimeout":60}}], <br/>
+       "server": {"defaultProxy":"http://localhost:3000","proxyServerSettings":{"disableCompression":true,"disableKeepAlives":true}}
    </p>
 
 </div>

@@ -15,11 +15,14 @@ import (
 )
 
 type ReadFileConfig struct {
-	FileName          string `json:"name"`
-	Kind              string `json:"kind"`
-	Result            string `json:"result"`
-	Path              string `json:"path"`
-	NoReadOfUndefined bool   `json:"noReadOfUndefined"`
+	FileName          string   `json:"name"`
+	Kind              string   `json:"kind"`
+	Result            string   `json:"result"`
+	Path              string   `json:"path"`
+	Filter            string   `json:"filter"`
+	Sort              []string `json:"sort"`
+	NoReadOfUndefined bool     `json:"noReadOfUndefined"`
+	ErrorSignificant  bool     `json:"errorSignificant"`
 }
 
 func readFileActionInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -68,20 +71,26 @@ func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext)
 	switch config.Kind {
 	case "json":
 		var props *dvevaluation.DvObject = nil
-		if ctx!=nil {
+		if ctx != nil {
 			props = ctx.PrimaryContextEnvironment
 		}
 		res, err1 = ReadJsonTrimmed(dat, config.Path, config.NoReadOfUndefined, props)
+		if err1 == nil && config.Filter != "" {
+			res, err1 = dvjson.IterateFilterByExpression(res, config.Filter, ctx.LocalContextEnvironment, config.ErrorSignificant)
+		}
+		if err1 == nil && len(config.Sort) > 0 {
+			res, err1 = dvjson.IterateSortByFields(res, config.Sort, ctx.LocalContextEnvironment)
+		}
 	}
 	return ProcessSavingActionResult(config.Result, res, ctx, err1, "in file ", config.FileName)
 }
 
-func ReadJsonTrimmed(data []byte, path string, noReadOfUndefined bool, props *dvevaluation.DvObject) (interface{}, error) {
-	item, err:=dvjson.ReadJsonChild(data, path, noReadOfUndefined, props)
-	if err!=nil {
+func ReadJsonTrimmed(data []byte, path string, noReadOfUndefined bool, env *dvevaluation.DvObject) (interface{}, error) {
+	item, err := dvjson.ReadJsonChild(data, path, noReadOfUndefined, env)
+	if err != nil {
 		return nil, err
 	}
-	if item==nil {
+	if item == nil {
 		return nil, nil
 	}
 	return item, nil
