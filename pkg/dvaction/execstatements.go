@@ -18,6 +18,15 @@ type ExecCallConfig struct {
 	Result string            `json:"result"`
 }
 
+var execStatementProcessFunctions = map[string]ProcessFunction{
+	CommandCall:        {Init: execCallInit, Run: execCallRun},
+	CommandIf:          {Init: execIfInit, Run: execIfRun},
+	CommandFor:         {Init: execForInit, Run: execForRun},
+	CommandRange:       {Init: execRangeInit, Run: execRangeRun},
+	CommandSwitch:      {Init: execSwitchInit, Run: execSwitchRun},
+	CommandReturn:      {Init: execReturnInit, Run: execReturnRun},
+}
+
 func execCallInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &ExecCallConfig{}
 	if !DefaultInitWithObject(command, config) {
@@ -266,14 +275,6 @@ func ExecReturn(config *ExecReturnConfig, ctx *dvcontext.RequestContext) bool {
 }
 
 func ExecReturnShort(result string, ctx *dvcontext.RequestContext) bool {
-	var res interface{} = nil
-	if result != "" {
-		var err error
-		res, err = ctx.LocalContextEnvironment.EvaluateAnyTypeExpression(result)
-		if err != nil {
-			dvlog.PrintlnError("Error evaluating " + result)
-		}
-	}
-	ExecuteReturnSubsequence(ctx, res)
+	ExecuteReturnSubsequence(ctx, result)
 	return true
 }

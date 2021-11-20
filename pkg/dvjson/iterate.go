@@ -99,31 +99,31 @@ func IterateFilterByExpression(val interface{}, expression string, env *dvevalua
 	res = IterateFilterOnAnyType(val, func(key string, item interface{}, index int, v interface{}) (bool, bool) {
 		env.Set("KEY", key)
 		env.Set("INDEX", index)
-		switch val.(type) {
+		switch item.(type) {
 		case *DvFieldInfo:
-			res, er := val.(*DvFieldInfo).EvaluateDvFieldItem(expression, env)
+			data, er := item.(*DvFieldInfo).EvaluateDvFieldItem(expression, env)
 			if er != nil {
 				if errIsCritical {
 					err = er
 					return false, true
 				}
 			}
-			return res, false
+			return data, false
 		}
 		return false, false
 	})
 	return
 }
 
-func IterateSortByFields(val interface{}, fields []string, env *dvevaluation.DvObject) (res interface{},err error) {
-	res = IterateSortOnAnyType(val, func(d1 *DvFieldInfo,d2 *DvFieldInfo)int{
-		if d1==nil {
-			if d2==nil {
+func IterateSortByFields(val interface{}, fields []string, env *dvevaluation.DvObject) (res interface{}, err error) {
+	res = IterateSortOnAnyType(val, func(d1 *DvFieldInfo, d2 *DvFieldInfo) int {
+		if d1 == nil {
+			if d2 == nil {
 				return 0
 			}
 			return -1
 		}
-		if d2==nil {
+		if d2 == nil {
 			return 1
 		}
 		return d1.CompareDvFieldByFields(d2, fields)

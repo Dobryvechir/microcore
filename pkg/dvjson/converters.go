@@ -219,11 +219,27 @@ func (item *DvFieldInfo) GetStringValue() string {
 	}
 	return string(item.Value)
 }
+func DvFieldArrayToBytes(val []*DvFieldInfo) []byte {
+	buf := make([]byte, 1, 102400)
+	buf[0] = '['
+	n := len(val)
+	for i := 0; i < n; i++ {
+		if i != 0 {
+			buf = append(buf, ',')
+		}
+		b := val[i].PrintToJson(2)
+		buf = append(buf, b...)
+	}
+	buf = append(buf, ']')
+	return buf
+}
 
 func DvFieldInfoToStringConverter(v interface{}) (string, bool) {
 	switch v.(type) {
 	case *DvFieldInfo:
 		return string(v.(*DvFieldInfo).PrintToJson(2)), true
+	case []*DvFieldInfo:
+		return string(DvFieldArrayToBytes(v.([]*DvFieldInfo))), true
 	}
 	return "", false
 }

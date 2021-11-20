@@ -12,6 +12,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"strconv"
 	"strings"
 	"sync"
@@ -51,24 +52,20 @@ var processFunctions = map[string]ProcessFunction{
 	CommandFile:        {Init: readFileActionInit, Run: readFileActionRun},
 	CommandPaging:      {Init: pagingInit, Run: pagingRun},
 	CommandConvert:     {Init: jsonConvertInit, Run: jsonConvertRun},
-	CommandCall:        {Init: execCallInit, Run: execCallRun},
-	CommandIf:          {Init: execIfInit, Run: execIfRun},
-	CommandFor:         {Init: execForInit, Run: execForRun},
-	CommandRange:       {Init: execRangeInit, Run: execRangeRun},
-	CommandSwitch:      {Init: execSwitchInit, Run: execSwitchRun},
-	CommandReturn:      {Init: execReturnInit, Run: execReturnRun},
 	CommandCompareJson: {Init: compareJsonInit, Run: compareJsonRun},
 }
 
 const (
-	ExSeqPrefix              = "EXSEQ_"
-	ExSeqIP                  = "IP"
-	ExSeqActionName          = "ACTION_NAME"
-	ExSeqLevel               = ExSeqPrefix + "LEVEL"
-	ExSeqSuffix              = "_"
-	ExSeqReturn              = "ACTION_RETURN"
-	ExSeqPrimaryActionResult = "ACTION_RESULT"
-	ExSeqCurrentLevel        = ExSeqPrefix + "CURRENT_LEVEL"
+	ExSeqPrefix                = "EXSEQ_"
+	ExSeqIP                    = "IP"
+	ExSeqActionName            = "ACTION_NAME"
+	ExSeqLevel                 = ExSeqPrefix + "LEVEL"
+	ExSeqSuffix                = "_"
+	ExSeqReturn                = "ACTION_RETURN"
+	ExSeqIgnoreReturn          = "_"
+	ExSeqCurrentLevel          = ExSeqPrefix + "CURRENT_LEVEL"
+	ExSeqReturnAllDefaultNames = ""
+	ExSeqReturnSingleDefault   = "RETURN"
 )
 
 func AddProcessFunction(key string, processor ProcessFunction) {
@@ -120,7 +117,6 @@ func ExecuteProcessFunction(fn *ProcessFunction, pauseTime int, totalTime int, c
 	}
 	dvlog.PrintfError("%s command finally failed", command)
 	return false
-
 }
 
 func ExecuteSingleCommand(pauseTime int, totalTime int, prefix string, command string) bool {
@@ -140,13 +136,32 @@ func ExecuteSingleCommand(pauseTime int, totalTime int, prefix string, command s
 	return ExecuteProcessFunction(&waiter, pauseTime, totalTime, command, nil, nil)
 }
 
-func ExecuteReturnSubsequence(ctx *dvcontext.RequestContext, retValue interface{}) {
+func ExecuteReturnSubsequence(ctx *dvcontext.RequestContext, retValue string) {
 	level := ctx.PrimaryContextEnvironment.GetInt(ExSeqLevel)
 	namePref := ExSeqPrefix + strconv.Itoa(level) + ExSeqSuffix
 	param := ctx.LocalContextEnvironment.GetString(namePref + ExSeqReturn)
-	if param != "" {
-		if retValue == nil {
-			retValue = ctx.LocalContextEnvironment.Properties[ExSeqReturn]
+	var returnKeys []string
+	var returnValues []interface{}
+	returnNumber := 0
+	if param != ExSeqIgnoreReturn && retValue != "" {
+		returnKeys = dvtextutils.ConvertToNonEmptyList(retValue)
+		returnNumber = len(returnKeys)
+		returnValues = make([]interface{}, returnNumber)
+		var ok bool
+		for i := 0; i < returnNumber; i++ {
+			returnValues[i], ok = ctx.LocalContextEnvironment.Get(returnKeys[i])
+			if !ok {
+				if returnKeys[i] != ExSeqReturnSingleDefault {
+					dvlog.PrintlnError("Value " + returnKeys[i] + " was not defined")
+				}
+				returnValues[i] = ""
+			}
+		}
+		if param != "" {
+			returnKeys = dvtextutils.ConvertToNonEmptyList(param)
+			if len(returnKeys) < returnNumber {
+				returnNumber = len(returnKeys)
+			}
 		}
 	}
 	level--
@@ -156,8 +171,13 @@ func ExecuteReturnSubsequence(ctx *dvcontext.RequestContext, retValue interface{
 	} else {
 		ctx.LocalContextEnvironment = ctx.LocalContextEnvironment.Prototype
 	}
-	if param != "" {
-		ctx.LocalContextEnvironment.Set(param, retValue)
+	if returnNumber != 0 {
+		for i := 0; i < returnNumber; i++ {
+			key := returnKeys[i]
+			if key != "_" {
+				ctx.LocalContextEnvironment.Set(key, returnValues[i])
+			}
+		}
 	}
 }
 
@@ -201,7 +221,7 @@ func ExecuteSequence(startActionName string, ctx *dvcontext.RequestContext, init
 	if ctx == nil {
 		ctx = &dvcontext.RequestContext{PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject()}
 	}
-	pushSubsequence(ctx, startActionName, ExSeqPrimaryActionResult, initialParams, 0)
+	pushSubsequence(ctx, startActionName, ExSeqReturnAllDefaultNames, initialParams, 0)
 	return ExecuteSequenceCycle(ctx, 0)
 }
 
@@ -218,7 +238,7 @@ func ExecuteSequenceCycle(ctx *dvcontext.RequestContext, cycleLevel int) bool {
 		namePrefix := ExSeqPrefix + strconv.Itoa(level) + ExSeqSuffix
 		ip := ctx.LocalContextEnvironment.GetInt(namePrefix + ExSeqIP)
 		if ip < 0 {
-			ExecuteReturnSubsequence(ctx, nil)
+			ExecuteReturnSubsequence(ctx, ExSeqReturnSingleDefault)
 			continue
 		}
 		ip++
@@ -226,7 +246,7 @@ func ExecuteSequenceCycle(ctx *dvcontext.RequestContext, cycleLevel int) bool {
 		p := ctx.LocalContextEnvironment.GetString(namePrefix+ExSeqActionName) + "_" + strconv.Itoa(ip)
 		waitCommandRaw := strings.TrimSpace(dvparser.GlobalProperties[p])
 		if waitCommandRaw == "" {
-			ExecuteReturnSubsequence(ctx, nil)
+			ExecuteReturnSubsequence(ctx, ExSeqReturnSingleDefault)
 			continue
 		}
 		if ctx == nil {
@@ -352,6 +372,7 @@ var ocExecutorRegistrationConfig = &dvmodules.HookRegistrationConfig{
 }
 
 func RegisterOC() bool {
+	AddProcessFunctions(execStatementProcessFunctions)
 	dvmodules.RegisterActionProcessor("", fireAction, false)
 	dvmodules.RegisterActionProcessor("static", fireStaticAction, false)
 	dvmodules.RegisterActionProcessor("switch", fireSwitchAction, false)

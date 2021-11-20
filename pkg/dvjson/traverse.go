@@ -260,14 +260,14 @@ func (item *DvFieldInfo) EvaluateDvFieldItem(expression string, env *dvevaluatio
 		for i := 0; i < n; i++ {
 			f := item.Fields[i]
 			v = f
-			k := string(item.Name)
+			k := string(f.Name)
 			switch f.Kind {
 			case FIELD_BOOLEAN:
-				v = len(item.Value) == 4 && item.Value[0] == 't'
+				v = len(f.Value) == 4 && f.Value[0] == 't'
 			case FIELD_STRING:
-				v = string(item.Value)
+				v = string(f.Value)
 			case FIELD_NUMBER:
-				v = dvevaluation.StringToNumber(string(item.Value))
+				v = dvevaluation.StringToNumber(string(f.Value))
 			case FIELD_NULL:
 			case FIELD_EMPTY:
 				v = nil
@@ -406,8 +406,8 @@ func CountChildren(val interface{}) int {
 
 func (item *DvFieldInfo) FindDifferenceByQuickMap(other *DvFieldInfo,
 	fillAdded bool, fillRemoved bool, fillUpdated bool, fillUnchanged bool,
-	fillUpdatedCounterpart bool, unchangedAsUpdated bool) (added []*DvFieldInfo, removed []*DvFieldInfo,
-	updated []*DvFieldInfo, unchanged []*DvFieldInfo, counterparts []*DvFieldInfo) {
+	fillUpdatedCounterpart bool, unchangedAsUpdated bool) (added *DvFieldInfo, removed *DvFieldInfo,
+	updated *DvFieldInfo, unchanged *DvFieldInfo, counterparts *DvFieldInfo) {
 	n1 := 0
 	if item != nil {
 		n1 = len(item.Fields)
@@ -424,29 +424,29 @@ func (item *DvFieldInfo) FindDifferenceByQuickMap(other *DvFieldInfo,
 		fillUnchanged = false
 	}
 	if fillAdded {
-		added = make([]*DvFieldInfo, 0, n1)
+		added = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, n1), Kind: FIELD_ARRAY}
 	}
 	if fillRemoved {
-		removed = make([]*DvFieldInfo, 0, n2)
+		removed = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, n2), Kind: FIELD_ARRAY}
 	}
 	if fillUpdated {
-		updated = make([]*DvFieldInfo, 0, m)
+		updated = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, m), Kind: FIELD_ARRAY}
 	}
 	if fillUnchanged {
-		unchanged = make([]*DvFieldInfo, 0, m)
+		unchanged = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, m), Kind: FIELD_ARRAY}
 	}
 	if fillUpdatedCounterpart {
-		counterparts = make([]*DvFieldInfo, 0, m)
+		counterparts = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, m), Kind: FIELD_ARRAY}
 	}
 	if n2 == 0 {
 		if n1 == 0 {
 			return
 		}
-		added = append(added, item.Fields...)
+		added.Fields = append(added.Fields, item.Fields...)
 		return
 	}
 	if n1 == 0 {
-		removed = append(removed, other.Fields...)
+		removed.Fields = append(removed.Fields, other.Fields...)
 		return
 	}
 	for k, v := range item.QuickSearch.Looker {
@@ -458,25 +458,25 @@ func (item *DvFieldInfo) FindDifferenceByQuickMap(other *DvFieldInfo,
 			}
 			if dif == 0 {
 				if fillUnchanged {
-					unchanged = append(unchanged, v)
+					unchanged.Fields = append(unchanged.Fields, v)
 				}
 			} else {
 				if fillUpdated {
-					updated = append(updated, v)
+					updated.Fields = append(updated.Fields, v)
 				}
 				if fillUpdatedCounterpart {
-					counterparts = append(counterparts, v1)
+					counterparts.Fields = append(counterparts.Fields, v1)
 				}
 			}
 		} else if fillAdded {
-			added = append(added, v)
+			added.Fields = append(added.Fields, v)
 		}
 	}
 	if fillRemoved {
 		for k, v := range other.QuickSearch.Looker {
 			_, ok := item.QuickSearch.Looker[k]
 			if !ok {
-				removed = append(removed, v)
+				removed.Fields = append(removed.Fields, v)
 			}
 		}
 	}
@@ -485,8 +485,8 @@ func (item *DvFieldInfo) FindDifferenceByQuickMap(other *DvFieldInfo,
 
 func FindDifferenceForAnyType(itemAny interface{}, otherAny interface{},
 	fillAdded bool, fillRemoved bool, fillUpdated bool, fillUnchanged bool,
-	fillUpdatedCounterpart bool, unchangedAsUpdated bool) (added []*DvFieldInfo, removed []*DvFieldInfo,
-	updated []*DvFieldInfo, unchanged []*DvFieldInfo, counterparts []*DvFieldInfo) {
+	fillUpdatedCounterpart bool, unchangedAsUpdated bool) (added *DvFieldInfo, removed *DvFieldInfo,
+	updated *DvFieldInfo, unchanged *DvFieldInfo, counterparts *DvFieldInfo) {
 	var item, other *DvFieldInfo
 	switch itemAny.(type) {
 	case *DvFieldInfo:
