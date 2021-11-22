@@ -5,6 +5,8 @@ Copyright 2017 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 
 package dvjson
 
+import "github.com/Dobryvechir/microcore/pkg/dvevaluation"
+
 func (dvEntry *DvFieldInfo) PrintToJsonAtLevel(res []byte, level int, indent int, noIndentAtFirst bool) []byte {
 	if dvEntry == nil {
 		return res
@@ -24,9 +26,9 @@ func (dvEntry *DvFieldInfo) PrintToJsonAtLevel(res []byte, level int, indent int
 		}
 	}
 	switch dvEntry.Kind {
-	case FIELD_STRING:
+	case dvevaluation.FIELD_STRING:
 		res = appendJsonEscapedString(res, dvEntry.Value)
-	case FIELD_ARRAY:
+	case dvevaluation.FIELD_ARRAY:
 		arrayAmount := len(dvEntry.Fields)
 		res = append(res, '[')
 		if arrayAmount > 0 {
@@ -54,7 +56,7 @@ func (dvEntry *DvFieldInfo) PrintToJsonAtLevel(res []byte, level int, indent int
 		}
 		res = append(res, ']')
 
-	case FIELD_OBJECT:
+	case dvevaluation.FIELD_OBJECT:
 		mapAmount := len(dvEntry.Fields)
 		res = append(res, '{')
 		if mapAmount > 0 {
@@ -168,12 +170,12 @@ func (dvEntry *DvFieldInfo) PrintToYamlAtLevel(res []byte, level int, indent int
 		indentBuf[i] = ' '
 	}
 	switch dvEntry.Kind {
-	case FIELD_STRING:
+	case dvevaluation.FIELD_STRING:
 		if !noIndentAtFirst {
 			res = append(res, indentBuf...)
 		}
 		res = appendYamlEscapedString(res, dvEntry.Value)
-	case FIELD_ARRAY:
+	case dvevaluation.FIELD_ARRAY:
 		arrayAmount := len(dvEntry.Fields)
 		if arrayAmount > 0 {
 			for i := 0; i < arrayAmount; i++ {
@@ -184,7 +186,7 @@ func (dvEntry *DvFieldInfo) PrintToYamlAtLevel(res []byte, level int, indent int
 		} else {
 			res = append(res, '[', ']')
 		}
-	case FIELD_OBJECT:
+	case dvevaluation.FIELD_OBJECT:
 		mapAmount := len(dvEntry.Fields)
 		if mapAmount > 0 {
 			entryList := dvEntry.Fields

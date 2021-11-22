@@ -152,52 +152,52 @@ func createClientForNetServerInfo(server *NetServerInfo) {
 
 func net_init() {
 	NetMaster = dvevaluation.RegisterMasterVariable("Net", &dvevaluation.DvVariable{
-		Refs: make(map[string]*dvevaluation.DvVariable),
-		Tp:   dvevaluation.JS_TYPE_OBJECT,
+		Fields: make(map[string]*dvevaluation.DvVariable),
+		Kind:   dvevaluation.FIELD_OBJECT,
 		Prototype: &dvevaluation.DvVariable{
-			Refs: map[string]*dvevaluation.DvVariable{
+			Fields: map[string]*dvevaluation.DvVariable{
 				"getText": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_GetText,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_GetText,
 				},
 				"postText": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_PostText,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_PostText,
 				},
 				"putText": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_PutText,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_PutText,
 				},
 				"deleteText": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_DeleteText,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_DeleteText,
 				},
 				"requestText": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_RequestText,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_RequestText,
 				},
 				"get": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_Get,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_Get,
 				},
 				"post": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_Post,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_Post,
 				},
 				"put": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_Put,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_Put,
 				},
 				"delete": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_Delete,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_Delete,
 				},
 				"request": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: Net_Request,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   Net_Request,
 				},
 			},
-			Tp: dvevaluation.JS_TYPE_OBJECT,
+			Kind: dvevaluation.FIELD_OBJECT,
 		},
 	})
 

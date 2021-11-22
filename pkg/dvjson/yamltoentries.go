@@ -8,6 +8,7 @@ package dvjson
 import (
 	"bytes"
 	"fmt"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 )
 
@@ -22,7 +23,7 @@ func readYamlValue(data []byte, pos int, endChar byte, indent int) (res []byte, 
 			return
 		}
 		res = data[pos+1 : nextPos]
-		tp = FIELD_STRING
+		tp = dvevaluation.FIELD_STRING
 		nextPos++
 		return
 	}
@@ -44,7 +45,7 @@ func readYamlValue(data []byte, pos int, endChar byte, indent int) (res []byte, 
 			return
 		}
 		res = buf
-		tp = FIELD_STRING
+		tp = dvevaluation.FIELD_STRING
 		nextPos++
 		return
 	}
@@ -94,9 +95,9 @@ func readYamlValue(data []byte, pos int, endChar byte, indent int) (res []byte, 
 	tp = getSimpleStringType(res)
 	if tp < 0 {
 		if IsJsonNumber(res) {
-			tp = FIELD_NUMBER
+			tp = dvevaluation.FIELD_NUMBER
 		} else {
-			tp = FIELD_STRING
+			tp = dvevaluation.FIELD_STRING
 		}
 	}
 	return
@@ -182,7 +183,7 @@ func readYamlFlowCollectionValue(data []byte, pos int) (obj *DvFieldInfo, nextPo
 	nextPos, _ = readYamlNonEmptyLine(data, pos)
 	n := len(data)
 	if nextPos >= n {
-		return &DvFieldInfo{Kind: FIELD_EMPTY}, nextPos, nil
+		return &DvFieldInfo{Kind: dvevaluation.FIELD_UNDEFINED}, nextPos, nil
 	}
 	switch data[nextPos] {
 	case '{':
@@ -194,11 +195,11 @@ func readYamlFlowCollectionValue(data []byte, pos int) (obj *DvFieldInfo, nextPo
 	if err != nil {
 		return
 	}
-	kind := FIELD_STRING
+	kind := dvevaluation.FIELD_STRING
 	l := len(currentKey)
 	if !quoted && l > 0 {
 		errMes, startPos, endPos, nxtPos, newKind := jsonReadValue(currentKey, 0, l)
-		if startPos == 0 && errMes == "" && endPos == nxtPos && endPos == nextPos && newKind != FIELD_EMPTY {
+		if startPos == 0 && errMes == "" && endPos == nxtPos && endPos == nextPos && newKind != dvevaluation.FIELD_UNDEFINED {
 			kind = newKind
 		}
 	}
@@ -212,7 +213,7 @@ func readYamlFlowCollectionValue(data []byte, pos int) (obj *DvFieldInfo, nextPo
 
 func readYamlFlowCollectionMap(data []byte, pos int, endChar byte) (obj *DvFieldInfo, nextPos int, err error) {
 	n := len(data)
-	obj = &DvFieldInfo{Kind: FIELD_OBJECT, Fields: make([]*DvFieldInfo, 0, 7)}
+	obj = &DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, Fields: make([]*DvFieldInfo, 0, 7)}
 	var currentKey []byte
 	for nextPos = pos + 1; nextPos < n; nextPos++ {
 		pos = nextPos
@@ -240,7 +241,7 @@ func readYamlFlowCollectionMap(data []byte, pos int, endChar byte) (obj *DvField
 		}
 		c := data[nextPos]
 		if c == ',' || c == '}' {
-			item := &DvFieldInfo{Kind: FIELD_STRING, Name: currentKey, Value: currentKey}
+			item := &DvFieldInfo{Kind: dvevaluation.FIELD_STRING, Name: currentKey, Value: currentKey}
 			obj.Fields = append(obj.Fields, item)
 			nextPos++
 			if c == '}' {
@@ -266,7 +267,7 @@ func readYamlFlowCollectionMap(data []byte, pos int, endChar byte) (obj *DvField
 
 func readYamlFlowCollectionArray(data []byte, pos int, endChar byte) (obj *DvFieldInfo, nextPos int, err error) {
 	n := len(data)
-	obj = &DvFieldInfo{Kind: FIELD_OBJECT, Fields: make([]*DvFieldInfo, 0, 7)}
+	obj = &DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, Fields: make([]*DvFieldInfo, 0, 7)}
 	for nextPos = pos + 1; nextPos < n; nextPos++ {
 		pos = nextPos
 		nextPos, _ = readYamlNonEmptyLine(data, pos)
@@ -341,7 +342,7 @@ func readYamlPartMap(data []byte, pos int, indent int, endChar byte, currentKey 
 		}
 		pos++
 	}
-	return &DvFieldInfo{Kind: FIELD_OBJECT, Fields: fields}, pos, nil
+	return &DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, Fields: fields}, pos, nil
 }
 
 func readYamlPartArray(data []byte, pos int, indent int, endChar byte) (*DvFieldInfo, int, error) {
@@ -360,20 +361,20 @@ func readYamlPartArray(data []byte, pos int, indent int, endChar byte) (*DvField
 		}
 		pos = nextPos
 	}
-	return &DvFieldInfo{Kind: FIELD_ARRAY, Fields: fields}, pos, nil
+	return &DvFieldInfo{Kind: dvevaluation.FIELD_ARRAY, Fields: fields}, pos, nil
 }
 
 func readYamlAllFromIndent(data []byte, pos int, indent int, endChar byte) (*DvFieldInfo, int, error) {
 	n := len(data)
 	nxtPos, newIndent := readYamlNonEmptyLine(data, pos)
 	if nxtPos >= n || newIndent < indent {
-		return &DvFieldInfo{Kind: FIELD_STRING, Value: make([]byte, 0)}, nxtPos, nil
+		return &DvFieldInfo{Kind: dvevaluation.FIELD_STRING, Value: make([]byte, 0)}, nxtPos, nil
 	}
 	oldIndent := indent
 	indent = newIndent
 	b := data[nxtPos]
 	if b == endChar && b != 0 {
-		return &DvFieldInfo{Kind: FIELD_STRING, Value: make([]byte, 0)}, nxtPos + 1, nil
+		return &DvFieldInfo{Kind: dvevaluation.FIELD_STRING, Value: make([]byte, 0)}, nxtPos + 1, nil
 	}
 	switch b {
 	case '-':
@@ -410,7 +411,7 @@ func ReadYamlAsDvFieldInfo(data []byte) (*DvFieldInfo, error) {
 		}
 	}
 	if dvEntry == nil {
-		dvEntry = &DvFieldInfo{Kind: FIELD_STRING, Value: make([]byte, 0)}
+		dvEntry = &DvFieldInfo{Kind: dvevaluation.FIELD_STRING, Value: make([]byte, 0)}
 	}
 	return dvEntry, nil
 }

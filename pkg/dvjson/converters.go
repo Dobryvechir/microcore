@@ -7,6 +7,7 @@ package dvjson
 
 import (
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"strconv"
 )
 
@@ -58,15 +59,15 @@ func ConvertByteArrayToIntOrDouble(data []byte) (interface{}, bool) {
 
 func ConvertSimpleKindAndValueToInterface(kind int, data []byte) (interface{}, bool) {
 	switch kind {
-	case FIELD_EMPTY:
+	case dvevaluation.FIELD_UNDEFINED:
 		return nil, true
-	case FIELD_NULL:
+	case dvevaluation.FIELD_NULL:
 		return nil, true
-	case FIELD_NUMBER:
+	case dvevaluation.FIELD_NUMBER:
 		return ConvertByteArrayToIntOrDouble(data)
-	case FIELD_BOOLEAN:
+	case dvevaluation.FIELD_BOOLEAN:
 		return len(data) != 0 && (data[0] == 't' || data[0] == 'T'), true
-	case FIELD_STRING:
+	case dvevaluation.FIELD_STRING:
 		return string(data), true
 	}
 	return nil, false
@@ -81,7 +82,7 @@ func (item *DvFieldInfo) ConvertSimpleValueToInterface() (interface{}, bool) {
 }
 
 func (item *DvFieldInfo) ReadSimpleStringMap(data map[string]string) error {
-	if item.Kind != FIELD_OBJECT {
+	if item.Kind != dvevaluation.FIELD_OBJECT {
 		return errors.New(string(item.Name) + " must be an object { }")
 	}
 	n := len(item.Fields)
@@ -95,7 +96,7 @@ func (item *DvFieldInfo) ReadSimpleStringMap(data map[string]string) error {
 }
 
 func (item *DvFieldInfo) ReadSimpleStringList(data []string) ([]string, error) {
-	if item.Kind != FIELD_ARRAY {
+	if item.Kind != dvevaluation.FIELD_ARRAY {
 		return data, errors.New(string(item.Name) + " must be an object { }")
 	}
 	n := len(item.Fields)
@@ -111,7 +112,7 @@ func (item *DvFieldInfo) ReadSimpleStringList(data []string) ([]string, error) {
 }
 
 func (item *DvFieldInfo) ReadSimpleString() (string, error) {
-	if item.Kind == FIELD_OBJECT || item.Kind == FIELD_ARRAY {
+	if item.Kind == dvevaluation.FIELD_OBJECT || item.Kind == dvevaluation.FIELD_ARRAY {
 		return "[]", errors.New(string(item.Name) + " must be a simple type")
 	}
 	return string(item.Value), nil
@@ -119,7 +120,7 @@ func (item *DvFieldInfo) ReadSimpleString() (string, error) {
 
 func (item *DvFieldInfo) ConvertValueToInterface() (interface{}, bool) {
 	switch item.Kind {
-	case FIELD_ARRAY:
+	case dvevaluation.FIELD_ARRAY:
 		fields := item.Fields
 		n := len(fields)
 		data := make([]interface{}, n)
@@ -131,7 +132,7 @@ func (item *DvFieldInfo) ConvertValueToInterface() (interface{}, bool) {
 			}
 		}
 		return data, true
-	case FIELD_OBJECT:
+	case dvevaluation.FIELD_OBJECT:
 		fields := item.Fields
 		n := len(fields)
 		data := make(map[string]interface{}, n)
@@ -171,7 +172,7 @@ func ConvertDvFieldInfoToProperties(item *DvFieldInfo, index int) map[string]int
 				name = string(current.Name)
 			}
 			var value interface{}
-			if current.Kind == FIELD_ARRAY || current.Kind == FIELD_OBJECT {
+			if current.Kind == dvevaluation.FIELD_ARRAY || current.Kind == dvevaluation.FIELD_OBJECT {
 				value = current
 			} else {
 				value = string(current.Value)
@@ -183,11 +184,11 @@ func ConvertDvFieldInfoToProperties(item *DvFieldInfo, index int) map[string]int
 }
 
 func (item *DvFieldInfo) GetStringValue() string {
-	if item == nil || item.Kind == FIELD_EMPTY {
+	if item == nil || item.Kind == dvevaluation.FIELD_UNDEFINED {
 		return ""
 	}
 	switch item.Kind {
-	case FIELD_OBJECT:
+	case dvevaluation.FIELD_OBJECT:
 		res := "{"
 		subfields := item.Fields
 		n := len(subfields)
@@ -200,7 +201,7 @@ func (item *DvFieldInfo) GetStringValue() string {
 			res += data
 		}
 		return res + "}"
-	case FIELD_ARRAY:
+	case dvevaluation.FIELD_ARRAY:
 		res := "["
 		subfields := item.Fields
 		n := len(subfields)
@@ -212,9 +213,9 @@ func (item *DvFieldInfo) GetStringValue() string {
 			res += data
 		}
 		return res + "]"
-	case FIELD_STRING:
+	case dvevaluation.FIELD_STRING:
 		return QuoteEscapedJsonBytesToString(item.Value)
-	case FIELD_NULL:
+	case dvevaluation.FIELD_NULL:
 		return "null"
 	}
 	return string(item.Value)

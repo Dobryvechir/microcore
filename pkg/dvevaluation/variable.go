@@ -11,44 +11,44 @@ import (
 )
 
 const (
-	JS_TYPE_UNDEFINED = iota
-	JS_TYPE_NULL      = iota
-	JS_TYPE_NUMBER    = iota
-	JS_TYPE_BOOLEAN   = iota
-	JS_TYPE_STRING    = iota
-	JS_TYPE_OBJECT    = iota
-	JS_TYPE_ARRAY     = iota
-	JS_TYPE_FUNCTION  = iota
+	FIELD_UNDEFINED = iota
+	FIELD_NULL
+	FIELD_NUMBER
+	FIELD_BOOLEAN
+	FIELD_STRING
+	FIELD_OBJECT
+	FIELD_ARRAY
+	FIELD_FUNCTION
 )
 
 var typeOfSpecific map[int]string = map[int]string{
-	0: "undefined",
-	1: "null",
-	2: "number",
-	3: "boolean",
-	4: "string",
-	5: "object",
-	6: "array",
-	7: "function",
+	FIELD_UNDEFINED: "undefined",
+	FIELD_NULL:      "null",
+	FIELD_NUMBER:    "number",
+	FIELD_BOOLEAN:   "boolean",
+	FIELD_STRING:    "string",
+	FIELD_OBJECT:    "object",
+	FIELD_ARRAY:     "array",
+	FIELD_FUNCTION:  "function",
 }
 
 var typeOf map[int]string = map[int]string{
-	0: "undefined",
-	1: "object",
-	2: "number",
-	3: "boolean",
-	4: "string",
-	5: "object",
-	6: "object",
-	7: "function",
+	FIELD_UNDEFINED: "undefined",
+	FIELD_NULL:      "object",
+	FIELD_NUMBER:    "number",
+	FIELD_BOOLEAN:   "boolean",
+	FIELD_STRING:    "string",
+	FIELD_OBJECT:    "object",
+	FIELD_ARRAY:     "object",
+	FIELD_FUNCTION:  "function",
 }
 
 type DvvFunction func(*DvContext, *DvVariable, []*DvVariable) (*DvVariable, error)
 
 type DvVariable struct {
-	Refs      map[string]*DvVariable
+	Fields    map[string]*DvVariable
 	Value     string
-	Tp        int
+	Kind      int
 	Fn        DvvFunction
 	Prototype *DvVariable
 }
@@ -59,7 +59,7 @@ type DvVariable_DumpInfo struct {
 }
 
 func DvVariableGetNewObject() *DvVariable {
-	variable := &DvVariable{Tp: JS_TYPE_OBJECT, Refs: make(map[string]*DvVariable)}
+	variable := &DvVariable{Kind: FIELD_OBJECT, Fields: make(map[string]*DvVariable)}
 	return variable
 }
 
@@ -75,19 +75,19 @@ func DeleteVariable(parent *DvVariable, keys []string) error {
 	l--
 	for i := 0; i < l; i++ {
 		key = keys[i]
-		if parent.Refs == nil {
+		if parent.Fields == nil {
 			return errors.New("Cannot delete " + key + " from undefined [keys:" + strings.Join(keys, ", ") + "]")
 		}
-		if child, ok := parent.Refs[key]; ok {
+		if child, ok := parent.Fields[key]; ok {
 			parent = child
 		} else {
 			return errors.New("Cannot delete from undefined " + key + " [keys:" + strings.Join(keys, ", ") + "]")
 		}
 	}
 	key = keys[l]
-	if parent.Refs != nil {
-		if _, ok := parent.Refs[key]; ok {
-			delete(parent.Refs, key)
+	if parent.Fields != nil {
+		if _, ok := parent.Fields[key]; ok {
+			delete(parent.Fields, key)
 		}
 	}
 	return nil
@@ -209,18 +209,18 @@ func (variable *DvVariable) dumpDvVariable(info *DvVariable_DumpInfo) *DvVariabl
 		info.buf = append(info.buf, 'n', 'u', 'l', 'l')
 		return info
 	}
-	if variable.Tp == JS_TYPE_ARRAY || variable.Tp == JS_TYPE_OBJECT {
+	if variable.Kind == FIELD_ARRAY || variable.Kind == FIELD_OBJECT {
 		info.used[variable] = true
 		openQuote := byte('[')
 		closeQuote := byte(']')
-		if variable.Tp == JS_TYPE_OBJECT {
+		if variable.Kind == FIELD_OBJECT {
 			openQuote = byte('{')
 			closeQuote = byte('}')
 		}
 		info.buf = append(info.buf, openQuote)
 		comma := false
 		var vlength *DvVariable = nil
-		for k, v := range variable.Refs {
+		for k, v := range variable.Fields {
 			if k == "length" {
 				vlength = v
 			} else {
@@ -249,12 +249,12 @@ func (variable *DvVariable) dumpDvVariable(info *DvVariable_DumpInfo) *DvVariabl
 		}
 		info.buf = append(info.buf, closeQuote)
 	} else {
-		switch variable.Tp {
-		case JS_TYPE_UNDEFINED, JS_TYPE_NULL:
-			info.buf = append(info.buf, []byte(typeOfSpecific[variable.Tp])...)
-		case JS_TYPE_STRING:
+		switch variable.Kind {
+		case FIELD_UNDEFINED, FIELD_NULL:
+			info.buf = append(info.buf, []byte(typeOfSpecific[variable.Kind])...)
+		case FIELD_STRING:
 			info.buf = append(append(append(info.buf, '"'), getEscapedByteArray([]byte(variable.Value))...), '"')
-		case JS_TYPE_FUNCTION:
+		case FIELD_FUNCTION:
 			info.buf = append(info.buf, []byte("function "+variable.Value)...)
 		default:
 			info.buf = append(info.buf, []byte(variable.Value)...)
@@ -269,14 +269,14 @@ func (variable *DvVariable) JsonStringify() []byte {
 }
 
 func (variable *DvVariable) JsonStringifyNonEmpty() []byte {
-	if variable == nil || variable.Tp == JS_TYPE_UNDEFINED || variable.Tp == JS_TYPE_NULL {
+	if variable == nil || variable.Kind == FIELD_UNDEFINED || variable.Kind == FIELD_NULL {
 		return []byte{}
 	}
 	return variable.JsonStringify()
 }
 
 func (variable *DvVariable) GetStringValueAsBytes() []byte {
-	if variable == nil || variable.Tp == JS_TYPE_UNDEFINED || variable.Tp == JS_TYPE_NULL {
+	if variable == nil || variable.Kind == FIELD_UNDEFINED || variable.Kind == FIELD_NULL {
 		return []byte{}
 	}
 	return []byte(variable.GetStringValue())

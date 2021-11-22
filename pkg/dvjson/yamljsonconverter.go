@@ -8,6 +8,7 @@ package dvjson
 import (
 	"bytes"
 	"fmt"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"strconv"
 )
 
@@ -55,10 +56,10 @@ var falseWord = []byte("false")
 
 func getSimpleStringType(data []byte) int {
 	if bytes.Equal(data, nullWord) {
-		return FIELD_NULL
+		return dvevaluation.FIELD_NULL
 	}
 	if bytes.Equal(data, trueWord) || bytes.Equal(data, falseWord) {
-		return FIELD_BOOLEAN
+		return dvevaluation.FIELD_BOOLEAN
 	}
 	return -1
 }
@@ -76,7 +77,7 @@ func readJsonSimplePart(data []byte, pos int) ([]byte, int, error, int) {
 				break
 			}
 		}
-		return data[start:pos], pos, nil, FIELD_NUMBER
+		return data[start:pos], pos, nil, dvevaluation.FIELD_NUMBER
 	}
 	if isWord {
 		for ; pos < n; pos++ {
@@ -147,7 +148,7 @@ func readJsonPart(data []byte, i int) (*DvFieldInfo, int, error) {
 		if i >= n {
 			return nil, n, fmt.Errorf("Expected } at the end %s", string(data[i:i+1]), getPositionErrorInfo(data, n))
 		}
-		return &DvFieldInfo{Kind: FIELD_OBJECT, Fields: fields}, i + 1, nil
+		return &DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, Fields: fields}, i + 1, nil
 	case '[':
 		fields := make([]*DvFieldInfo, 0, 20)
 		i = readJsonNextNonSpace(data, i+1, n)
@@ -169,13 +170,13 @@ func readJsonPart(data []byte, i int) (*DvFieldInfo, int, error) {
 		if i >= n {
 			return nil, n, fmt.Errorf("Expected ] at the end %s", string(data[i:i+1]), getPositionErrorInfo(data, n))
 		}
-		return &DvFieldInfo{Kind: FIELD_ARRAY, Fields: fields}, i + 1, nil
+		return &DvFieldInfo{Kind: dvevaluation.FIELD_ARRAY, Fields: fields}, i + 1, nil
 	case '"':
 		str, nextPos, err := readJsonStringPart(data, i)
 		if err != nil {
 			return nil, n, err
 		}
-		return &DvFieldInfo{Kind: FIELD_STRING, Value: str}, nextPos, nil
+		return &DvFieldInfo{Kind: dvevaluation.FIELD_STRING, Value: str}, nextPos, nil
 	default:
 		str, nextPos, err, kind := readJsonSimplePart(data, i)
 		if err != nil {

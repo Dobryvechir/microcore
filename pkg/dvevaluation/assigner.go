@@ -10,16 +10,16 @@ import (
 	"strings"
 )
 
-var ObjectMaster *DvVariable = RegisterMasterVariable("Object", &DvVariable{Tp: JS_TYPE_OBJECT})
-var ArrayMaster *DvVariable = RegisterMasterVariable("Array", &DvVariable{Tp: JS_TYPE_OBJECT})
+var ObjectMaster *DvVariable = RegisterMasterVariable("Object", &DvVariable{Kind: FIELD_OBJECT})
+var ArrayMaster *DvVariable = RegisterMasterVariable("Array", &DvVariable{Kind: FIELD_OBJECT})
 
 func AssignVariableDirect(parent *DvVariable, value *DvVariable) error {
 	if value == nil {
 		value = &DvVariable{}
 	}
-	parent.Refs = value.Refs
+	parent.Fields = value.Fields
 	parent.Value = value.Value
-	parent.Tp = value.Tp
+	parent.Kind = value.Kind
 	parent.Fn = value.Fn
 	parent.Prototype = value.Prototype
 	return nil
@@ -41,23 +41,23 @@ func AssignVariable(parent *DvVariable, keys []string, value *DvVariable, force 
 	var child *DvVariable
 	for i := 0; i < l; i++ {
 		key := keys[i]
-		if parent.Tp == JS_TYPE_UNDEFINED || parent.Tp == JS_TYPE_NULL {
+		if parent.Kind == FIELD_UNDEFINED || parent.Kind == FIELD_NULL {
 			if force {
-				parent.Tp = JS_TYPE_OBJECT
+				parent.Kind = FIELD_OBJECT
 			} else {
-				return errors.New("Cannot assign key " + key + " to " + typeOfSpecific[parent.Tp] + " [keys:" + strings.Join(keys, ",") + "]")
+				return errors.New("Cannot assign key " + key + " to " + typeOfSpecific[parent.Kind] + " [keys:" + strings.Join(keys, ",") + "]")
 			}
 		}
-		ok = parent.Refs != nil
+		ok = parent.Fields != nil
 		if ok {
-			child, ok = parent.Refs[key]
+			child, ok = parent.Fields[key]
 		} else if force {
-			parent.Refs = make(map[string]*DvVariable)
+			parent.Fields = make(map[string]*DvVariable)
 		}
 		if !ok {
 			if force {
 				child = &DvVariable{}
-				parent.Refs[key] = child
+				parent.Fields[key] = child
 			} else {
 				return errors.New("Cannot assign key " + key + " to  undefined [keys:" + strings.Join(keys, ",") + "]")
 			}
@@ -65,17 +65,17 @@ func AssignVariable(parent *DvVariable, keys []string, value *DvVariable, force 
 		parent = child
 	}
 	key := keys[l]
-	if parent.Tp == JS_TYPE_UNDEFINED || parent.Tp == JS_TYPE_NULL {
+	if parent.Kind == FIELD_UNDEFINED || parent.Kind == FIELD_NULL {
 		if force {
-			parent.Tp = JS_TYPE_OBJECT
+			parent.Kind = FIELD_OBJECT
 		} else {
-			return errors.New("Cannot assign key " + key + " to " + typeOfSpecific[parent.Tp] + " [keys:" + strings.Join(keys, ",") + "]")
+			return errors.New("Cannot assign key " + key + " to " + typeOfSpecific[parent.Kind] + " [keys:" + strings.Join(keys, ",") + "]")
 		}
 	}
-	if parent.Refs == nil {
-		parent.Refs = make(map[string]*DvVariable)
+	if parent.Fields == nil {
+		parent.Fields = make(map[string]*DvVariable)
 	}
-	parent.Refs[key] = value
+	parent.Fields[key] = value
 	return nil
 }
 
@@ -97,13 +97,13 @@ func GetVariableByKeys(parent *DvVariable, keys []string) (thisValue *DvVariable
 		parent = child
 		key := keys[i]
 		thisValue = parent
-		if parent.Tp == JS_TYPE_UNDEFINED || parent.Tp == JS_TYPE_NULL {
-			err = errors.New("Cannot get key " + key + " from " + typeOfSpecific[parent.Tp])
+		if parent.Kind == FIELD_UNDEFINED || parent.Kind == FIELD_NULL {
+			err = errors.New("Cannot get key " + key + " from " + typeOfSpecific[parent.Kind])
 			return
 		}
-		ok = parent.Refs != nil
+		ok = parent.Fields != nil
 		if ok {
-			child, ok = parent.Refs[key]
+			child, ok = parent.Fields[key]
 		}
 		prototyped = false
 		if !ok && parent.Prototype != nil {
@@ -126,7 +126,7 @@ func DvVariableFromString(parent *DvVariable, data string) *DvVariable {
 		parent = &DvVariable{}
 	}
 	parent.Value = data
-	parent.Tp = JS_TYPE_STRING
+	parent.Kind = FIELD_STRING
 	return parent
 }
 
@@ -135,7 +135,7 @@ func DvVariableFromInt(parent *DvVariable, data int) *DvVariable {
 		parent = &DvVariable{}
 	}
 	parent.Value = strconv.Itoa(data)
-	parent.Tp = JS_TYPE_NUMBER
+	parent.Kind = FIELD_NUMBER
 	return parent
 }
 
@@ -143,12 +143,12 @@ func DvVariableFromArray(parent *DvVariable, data []*DvVariable) *DvVariable {
 	if parent == nil {
 		parent = &DvVariable{Prototype: ArrayMaster}
 	}
-	parent.Refs = make(map[string]*DvVariable)
-	parent.Tp = JS_TYPE_ARRAY
+	parent.Fields = make(map[string]*DvVariable)
+	parent.Kind = FIELD_ARRAY
 	n := len(data)
-	parent.Refs[LENGTH_PROPERTY] = DvVariableFromInt(nil, n)
+	parent.Fields[LENGTH_PROPERTY] = DvVariableFromInt(nil, n)
 	for i := 0; i < n; i++ {
-		parent.Refs[strconv.Itoa(i)] = data[i]
+		parent.Fields[strconv.Itoa(i)] = data[i]
 	}
 	return parent
 }
@@ -161,13 +161,13 @@ func DvVariableFromMap(parent *DvVariable, data map[string]*DvVariable, reuse bo
 		data = make(map[string]*DvVariable)
 		reuse = true
 	}
-	parent.Tp = JS_TYPE_OBJECT
+	parent.Kind = FIELD_OBJECT
 	if reuse {
-		parent.Refs = data
+		parent.Fields = data
 	} else {
-		parent.Refs = make(map[string]*DvVariable)
+		parent.Fields = make(map[string]*DvVariable)
 		for k, v := range data {
-			parent.Refs[k] = v
+			parent.Fields[k] = v
 		}
 	}
 	return parent
@@ -273,14 +273,14 @@ func ModifySimpleValueAfterGet(thisVal *DvVariable, child *DvVariable, prototype
 		if n == 0 {
 			return errors.New("Cannot modify variable with no keys")
 		}
-		if thisVal.Refs == nil {
-			thisVal.Refs = make(map[string]*DvVariable)
+		if thisVal.Fields == nil {
+			thisVal.Fields = make(map[string]*DvVariable)
 		}
-		thisVal.Refs[keys[n-1]] = &DvVariable{Value: value, Tp: tp}
+		thisVal.Fields[keys[n-1]] = &DvVariable{Value: value, Kind: tp}
 		return nil
 	}
 	child.Value = value
-	child.Tp = tp
+	child.Kind = tp
 	return nil
 }
 
@@ -305,7 +305,7 @@ func GetIntFromVariableAndModify(parent *DvVariable, variableDefinition string, 
 	if !after {
 		res = newRes
 	}
-	err = ModifySimpleValueAfterGet(thisVal, v, prototyped, strconv.Itoa(newRes), JS_TYPE_NUMBER, keys)
+	err = ModifySimpleValueAfterGet(thisVal, v, prototyped, strconv.Itoa(newRes), FIELD_NUMBER, keys)
 	if err != nil {
 		err = dvgrammar.EnrichErrorStr(err, "While getting and modifying int from "+variableDefinition+" due to int modification")
 	}

@@ -18,11 +18,9 @@ type JsonConvertModify struct {
 }
 
 type JsonConvertConfig struct {
-	Source      string              `json:"source"`
-	Path        string              `json:"path"`
+	Source      *JsonRead           `json:"source"`
 	Result      string              `json:"result"`
 	StorePrefix string              `json:"prefix"`
-	SortField   string              `json:"sort"`
 	Added       []JsonConvertModify `json:"added"`
 	Removed     []JsonConvertModify `json:"removed"`
 }
@@ -36,7 +34,7 @@ func jsonConvertInit(command string, ctx *dvcontext.RequestContext) ([]interface
 		log.Printf("prefix must be specified in %s", command)
 		return nil, false
 	}
-	if config.Source == "" {
+	if config.Source == nil || config.Source.Place == "" {
 		log.Printf("source must be present in %s", command)
 		return nil, false
 	}

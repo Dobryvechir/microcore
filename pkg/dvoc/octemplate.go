@@ -6,6 +6,7 @@ package dvoc
 
 import (
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"strconv"
 	"strings"
@@ -69,14 +70,14 @@ func ReadTemplateParameters(templateData []byte) (res map[string]string, obj *dv
 	if params == nil {
 		return
 	}
-	if params.Kind != dvjson.FIELD_ARRAY {
+	if params.Kind != dvevaluation.FIELD_ARRAY {
 		err = errors.New("parameters at first level must be an array")
 		return
 	}
 	f := params.Fields
 	n := len(f)
 	for i := 0; i < n; i++ {
-		if f[i] != nil && f[i].Kind == dvjson.FIELD_OBJECT && f[i].Fields != nil {
+		if f[i] != nil && f[i].Kind == dvevaluation.FIELD_OBJECT && f[i].Fields != nil {
 			fld := f[i]
 			fldName := fld.ReadSimpleChild("name")
 			fldValue := fld.ReadSimpleChild("value")

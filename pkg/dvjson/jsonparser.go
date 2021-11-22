@@ -7,6 +7,7 @@ package dvjson
 import (
 	"bytes"
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
 	"strconv"
@@ -65,16 +66,6 @@ const (
 	OPTIONS_FIELDS_DETAILED = iota
 	OPTIONS_ANY_OBJECT      = 1 << 7
 	OPTIONS_LOW_MASK        = 1<<7 - 1
-)
-
-const (
-	FIELD_EMPTY = iota
-	FIELD_NULL
-	FIELD_OBJECT
-	FIELD_NUMBER
-	FIELD_BOOLEAN
-	FIELD_STRING
-	FIELD_ARRAY
 )
 
 const (
@@ -140,9 +131,9 @@ func updateItemOffsets(item *DvCrudItem, startOffset int, dif int) {
 }
 
 func changeItemId(item *DvCrudItem, fieldValue []byte, crudInfo *DvCrudDetails) {
-	knd := FIELD_STRING
+	knd := dvevaluation.FIELD_STRING
 	if crudInfo.userIdInteger {
-		knd = FIELD_NUMBER
+		knd = dvevaluation.FIELD_NUMBER
 	}
 	changeItemField(item, fieldValue, crudInfo.userIdName, knd, true)
 }
@@ -173,7 +164,7 @@ func changeItemField(item *DvCrudItem, fieldValue []byte, fieldName []byte, fiel
 		}
 	}
 	bracket := "\""
-	if fieldKind != FIELD_STRING {
+	if fieldKind != dvevaluation.FIELD_STRING {
 		bracket = ""
 	}
 	insertion := "\"" + string(fieldName) + "\":" + bracket + string(fieldValue) + bracket
@@ -221,7 +212,7 @@ func isObjectNotEmptyFromBack(data []byte, pos int, startByte byte) bool {
 
 func jsonWholeItems(info *DvCrudParsingInfo) []byte {
 	l := len(info.Items)
-	extra := info.Kind == FIELD_ARRAY || l != 1
+	extra := info.Kind == dvevaluation.FIELD_ARRAY || l != 1
 	size := 0
 	if extra {
 		size = l + 1
@@ -272,13 +263,13 @@ func makeIdStatistics(crudInfo *DvCrudDetails) {
 func jsonCheckWord(str []byte, pos int, maxOffset int, sample string, kind int) (string, int, int, int, int) {
 	l := len(sample)
 	if pos+l > maxOffset {
-		return getExpectedButFound(sample, 255, pos, str), maxOffset, maxOffset, maxOffset, FIELD_EMPTY
+		return getExpectedButFound(sample, 255, pos, str), maxOffset, maxOffset, maxOffset, dvevaluation.FIELD_UNDEFINED
 	}
 	for i := 0; i < l; i++ {
 		c1 := str[i+pos]
 		c2 := sample[i]
 		if c1 != c2 && c1 != c2+32 {
-			return getExpectedButFound(sample, c1, pos, str), maxOffset, maxOffset, maxOffset, FIELD_EMPTY
+			return getExpectedButFound(sample, c1, pos, str), maxOffset, maxOffset, maxOffset, dvevaluation.FIELD_UNDEFINED
 		}
 	}
 	return "", pos, pos + l, pos + l, kind
@@ -289,7 +280,7 @@ func jsonReadValue(str []byte, pos int, maxOffset int) (string, int, int, int, i
 		pos++
 	}
 	if pos >= maxOffset {
-		return "", pos, pos, pos, FIELD_EMPTY
+		return "", pos, pos, pos, dvevaluation.FIELD_UNDEFINED
 	}
 	c := str[pos]
 	startPos := pos
@@ -299,20 +290,20 @@ func jsonReadValue(str []byte, pos int, maxOffset int) (string, int, int, int, i
 		for pos < maxOffset {
 			c = str[pos]
 			if c == '"' {
-				return "", startPos, pos, pos + 1, FIELD_STRING
+				return "", startPos, pos, pos + 1, dvevaluation.FIELD_STRING
 			}
 			if c == '\\' {
 				pos++
 			}
 			pos++
 		}
-		return getExpectedButFound("end quote", 255, pos, str), maxOffset, maxOffset, maxOffset, FIELD_EMPTY
+		return getExpectedButFound("end quote", 255, pos, str), maxOffset, maxOffset, maxOffset, dvevaluation.FIELD_UNDEFINED
 	} else if c == 'n' || c == 'N' {
-		return jsonCheckWord(str, pos, maxOffset, "null", FIELD_NULL)
+		return jsonCheckWord(str, pos, maxOffset, "null", dvevaluation.FIELD_NULL)
 	} else if c == 'f' || c == 'F' {
-		return jsonCheckWord(str, pos, maxOffset, "false", FIELD_BOOLEAN)
+		return jsonCheckWord(str, pos, maxOffset, "false", dvevaluation.FIELD_BOOLEAN)
 	} else if c == 't' || c == 'T' {
-		return jsonCheckWord(str, pos, maxOffset, "true", FIELD_BOOLEAN)
+		return jsonCheckWord(str, pos, maxOffset, "true", dvevaluation.FIELD_BOOLEAN)
 	} else if c == '+' || c == '-' || c == '.' || c >= '0' && c <= '9' {
 		for pos < maxOffset {
 			c = str[pos]
@@ -322,9 +313,9 @@ func jsonReadValue(str []byte, pos int, maxOffset int) (string, int, int, int, i
 				break
 			}
 		}
-		return "", startPos, pos, pos, FIELD_NUMBER
+		return "", startPos, pos, pos, dvevaluation.FIELD_NUMBER
 	}
-	return getExpectedButFound("value", c, pos, str), maxOffset, maxOffset, maxOffset, FIELD_EMPTY
+	return getExpectedButFound("value", c, pos, str), maxOffset, maxOffset, maxOffset, dvevaluation.FIELD_UNDEFINED
 }
 
 func getErrorSample(main string, pos int, body []byte) string {
@@ -418,18 +409,18 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 				state = STATE_WAITING_END
 			} else if c == '{' {
 				state = STATE_OBJECT_STARTED
-				currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: FIELD_OBJECT, posStart: i}}
+				currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, posStart: i}}
 				level = 0
-				stackSign[levelDif] = FIELD_OBJECT
+				stackSign[levelDif] = dvevaluation.FIELD_OBJECT
 			} else {
 				if highLevelObject {
 					r.Err = getExpectedButFound("] or { ", c, i, body)
 					return r
 				} else if c == '[' {
 					state = STATE_VALUE_STARTED
-					currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: FIELD_ARRAY, posStart: i}}
+					currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: dvevaluation.FIELD_ARRAY, posStart: i}}
 					level = 0
-					stackSign[levelDif] = FIELD_ARRAY
+					stackSign[levelDif] = dvevaluation.FIELD_ARRAY
 				} else {
 					err, startPos, endPos, nxtPos, kind := jsonReadValue(body, i, l)
 					if err != "" {
@@ -455,7 +446,7 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 			}
 		case STATE_VALUE_STARTED:
 			previousKind := stackSign[level+levelDif]
-			if previousKind == FIELD_ARRAY && c != ']' && (mode >= OPTIONS_FIELDS_DETAILED || mode == OPTIONS_FIELDS_ENTRIES && level == 0) {
+			if previousKind == dvevaluation.FIELD_ARRAY && c != ']' && (mode >= OPTIONS_FIELDS_DETAILED || mode == OPTIONS_FIELDS_ENTRIES && level == 0) {
 				indexCurrent := 0
 				currentField := &DvFieldInfo{posStart: i}
 				if level == 0 {
@@ -474,9 +465,9 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 				var knd int
 				if c == '{' {
 					state = STATE_OBJECT_STARTED
-					knd = FIELD_OBJECT
+					knd = dvevaluation.FIELD_OBJECT
 				} else {
-					knd = FIELD_ARRAY
+					knd = dvevaluation.FIELD_ARRAY
 				}
 				if level+levelDif >= cap(stackSign) {
 					stackSign = append(stackSign, 0)
@@ -494,7 +485,7 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 				level++
 				stack[level] = nil
 				stackSign[level+levelDif] = knd
-			} else if c == ']' && stackSign[level+levelDif] == FIELD_ARRAY {
+			} else if c == ']' && stackSign[level+levelDif] == dvevaluation.FIELD_ARRAY {
 				postState = POST_STATE_ARRAY_CLOSE
 			} else {
 				err, startPos, endPos, nxtPos, kind := jsonReadValue(body, i, l)
@@ -512,7 +503,7 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 					}
 				}
 				i = nxtPos - 1
-				if previousKind == FIELD_OBJECT {
+				if previousKind == dvevaluation.FIELD_OBJECT {
 					state = STATE_OBJECT_COMMA_OR_END_EXPECTED
 				} else {
 					state = STATE_ARRAY_COMMA_OR_END_EXPECTED
@@ -546,16 +537,16 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 		case STATE_INITIAL:
 			if c == '[' {
 				state = STATE_INITIAL_ARRAY_STARTED
-				r.Kind = FIELD_ARRAY
+				r.Kind = dvevaluation.FIELD_ARRAY
 				levelDif = 1
-				stackSign[0] = FIELD_ARRAY
+				stackSign[0] = dvevaluation.FIELD_ARRAY
 			} else if c == '{' {
 				state = STATE_OBJECT_STARTED
-				r.Kind = FIELD_OBJECT
-				currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: FIELD_OBJECT, posStart: i}}
+				r.Kind = dvevaluation.FIELD_OBJECT
+				currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, posStart: i}}
 				level = 0
 				levelDif = 0
-				stackSign[0] = FIELD_OBJECT
+				stackSign[0] = dvevaluation.FIELD_OBJECT
 			} else {
 				if highLevelObject {
 					r.Err = getExpectedButFound("[ or {", c, i, body)
@@ -591,7 +582,7 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 						stack[level].valueEndPos = i + 1
 						stack[level].Value = body[stack[level].valueStartPos:stack[level].valueEndPos]
 					}
-					if stackSign[level+levelDif] == FIELD_OBJECT {
+					if stackSign[level+levelDif] == dvevaluation.FIELD_OBJECT {
 						state = STATE_OBJECT_COMMA_OR_END_EXPECTED
 					} else {
 						state = STATE_ARRAY_COMMA_OR_END_EXPECTED
@@ -615,7 +606,7 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 						stack[level].valueEndPos = i + 1
 						stack[level].Value = body[stack[level].valueStartPos:stack[level].valueEndPos]
 					}
-					if stackSign[level+levelDif] == FIELD_OBJECT {
+					if stackSign[level+levelDif] == dvevaluation.FIELD_OBJECT {
 						state = STATE_OBJECT_COMMA_OR_END_EXPECTED
 					} else {
 						state = STATE_ARRAY_COMMA_OR_END_EXPECTED
@@ -651,13 +642,13 @@ func ConvertDvCrudParsingInfoToDvFieldInfo(crudParsingInfo *DvCrudParsingInfo) *
 		Value: crudParsingInfo.Value,
 	}
 	switch res.Kind {
-	case FIELD_ARRAY:
+	case dvevaluation.FIELD_ARRAY:
 		n := len(crudParsingInfo.Items)
 		res.Fields = make([]*DvFieldInfo, n)
 		for i := 0; i < n; i++ {
 			res.Fields[i] = ConvertDvCrudItemToDvFieldInfo(crudParsingInfo.Items[i])
 		}
-	case FIELD_OBJECT:
+	case dvevaluation.FIELD_OBJECT:
 		res = ConvertDvCrudItemToDvFieldInfo(crudParsingInfo.Items[0])
 	}
 	return res

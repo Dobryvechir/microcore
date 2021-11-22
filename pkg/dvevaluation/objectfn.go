@@ -18,8 +18,8 @@ func (variable *DvVariable) ObjectInPrototypedChain(key string) *DvVariable {
 	if variable == nil {
 		return nil
 	}
-	if variable.Refs != nil {
-		if v, ok := variable.Refs[key]; ok {
+	if variable.Fields != nil {
+		if v, ok := variable.Fields[key]; ok {
 			return v
 		}
 	}
@@ -33,13 +33,13 @@ func (variable *DvVariable) ObjectGet(key string) (*DvVariable, error) {
 	if variable == nil {
 		return nil, errors.New("Cannot get " + key + " from non-existing variable")
 	}
-	if variable.Tp == JS_TYPE_UNDEFINED {
+	if variable.Kind == FIELD_UNDEFINED {
 		return nil, errors.New("Cannot get " + key + " from undefined")
 	}
-	if variable.Tp == JS_TYPE_NULL {
+	if variable.Kind == FIELD_NULL {
 		return nil, errors.New("Cannot get " + key + " from null")
 	}
-	if v, ok := variable.Refs[key]; ok {
+	if v, ok := variable.Fields[key]; ok {
 		return v, nil
 	}
 	if variable.Prototype != nil {
@@ -72,19 +72,19 @@ func (variable *DvVariable) ObjectGetByVariableDefinition(variableDefinition str
 }
 
 func (variable *DvVariable) GetVariableArray(force bool) ([]*DvVariable, error) {
-	if variable == nil || (variable.Tp != JS_TYPE_ARRAY && variable.Tp != JS_TYPE_OBJECT) {
+	if variable == nil || (variable.Kind != FIELD_ARRAY && variable.Kind != FIELD_OBJECT) {
 		if force {
 			return []*DvVariable{variable}, nil
 		}
 		return nil, errors.New("Array is expected")
 	}
-	l, err := variable.Refs[LENGTH_PROPERTY].GetIntValue(force)
+	l, err := variable.Fields[LENGTH_PROPERTY].GetIntValue(force)
 	if err != nil {
 		return nil, err
 	}
 	res := make([]*DvVariable, l)
 	for i := 0; i < l; i++ {
-		res[i] = variable.Refs[strconv.Itoa(i)]
+		res[i] = variable.Fields[strconv.Itoa(i)]
 	}
 	return res, nil
 }
@@ -97,17 +97,17 @@ func (variable *DvVariable) GetIntValue(force bool) (int, error) {
 			return 0, errors.New("Cannot convert no variable to integer")
 		}
 	}
-	if variable.Tp > JS_TYPE_OBJECT {
+	if variable.Kind > FIELD_OBJECT {
 		if force {
 			return 1, nil
 		} else {
 			return 0, errors.New("Cannot convert object to integer")
 		}
 	}
-	if variable.Tp == JS_TYPE_UNDEFINED || variable.Tp == JS_TYPE_NULL || variable.Value == "" {
+	if variable.Kind == FIELD_UNDEFINED || variable.Kind == FIELD_NULL || variable.Value == "" {
 		return 0, nil
 	}
-	if variable.Tp == JS_TYPE_BOOLEAN {
+	if variable.Kind == FIELD_BOOLEAN {
 		if variable.Value == "false" || variable.Value == "FALSE" {
 			return 0, nil
 		}
@@ -117,28 +117,28 @@ func (variable *DvVariable) GetIntValue(force bool) (int, error) {
 }
 
 func (variable *DvVariable) GetStringValue() string {
-	if variable == nil || variable.Tp == JS_TYPE_UNDEFINED {
-		return typeOfSpecific[JS_TYPE_UNDEFINED]
+	if variable == nil || variable.Kind == FIELD_UNDEFINED {
+		return typeOfSpecific[FIELD_UNDEFINED]
 	}
-	if variable.Tp == JS_TYPE_NULL || variable.Tp == JS_TYPE_FUNCTION {
-		return typeOfSpecific[variable.Tp]
+	if variable.Kind == FIELD_NULL || variable.Kind == FIELD_FUNCTION {
+		return typeOfSpecific[variable.Kind]
 	}
-	if variable.Tp >= JS_TYPE_OBJECT {
+	if variable.Kind >= FIELD_OBJECT {
 		return "[object Object]"
 	}
 	return variable.Value
 }
 
 func (variable *DvVariable) GetStringArrayValue() []string {
-	if variable == nil || variable.Tp == JS_TYPE_UNDEFINED {
-		return []string{typeOfSpecific[JS_TYPE_UNDEFINED]}
+	if variable == nil || variable.Kind == FIELD_UNDEFINED {
+		return []string{typeOfSpecific[FIELD_UNDEFINED]}
 	}
-	if variable.Tp == JS_TYPE_NULL || variable.Tp == JS_TYPE_FUNCTION {
-		return []string{typeOfSpecific[variable.Tp]}
+	if variable.Kind == FIELD_NULL || variable.Kind == FIELD_FUNCTION {
+		return []string{typeOfSpecific[variable.Kind]}
 	}
-	if variable.Tp >= JS_TYPE_OBJECT {
+	if variable.Kind >= FIELD_OBJECT {
 		res := make([]string, 0, 8)
-		for _, v := range variable.Refs {
+		for _, v := range variable.Fields {
 			res = append(res, v.GetStringValue())
 		}
 		return res
@@ -148,10 +148,10 @@ func (variable *DvVariable) GetStringArrayValue() []string {
 
 func (variable *DvVariable) GetStringMap() (res map[string]string) {
 	res = make(map[string]string)
-	if variable == nil || variable.Tp == JS_TYPE_UNDEFINED || variable.Refs == nil {
+	if variable == nil || variable.Kind == FIELD_UNDEFINED || variable.Fields == nil {
 		return
 	}
-	for k, v := range variable.Refs {
+	for k, v := range variable.Fields {
 		res[k] = v.GetStringValue()
 	}
 	return
@@ -159,10 +159,10 @@ func (variable *DvVariable) GetStringMap() (res map[string]string) {
 
 func (variable *DvVariable) GetStringArrayMap() (res map[string][]string) {
 	res = make(map[string][]string)
-	if variable == nil || variable.Tp == JS_TYPE_UNDEFINED || variable.Refs == nil {
+	if variable == nil || variable.Kind == FIELD_UNDEFINED || variable.Fields == nil {
 		return
 	}
-	for k, v := range variable.Refs {
+	for k, v := range variable.Fields {
 		res[k] = v.GetStringArrayValue()
 	}
 	return
@@ -173,7 +173,7 @@ func (variable *DvVariable) SetSimpleValue(value string, tp int) error {
 		return errors.New("Cannot assign to null variable")
 	}
 	variable.Value = value
-	variable.Tp = tp
+	variable.Kind = tp
 	return nil
 }
 
@@ -232,10 +232,10 @@ func ValidateNumber(data string) error {
 
 func QuickNumberEvaluation(parent *DvVariable, data string) (res *DvVariable, err error) {
 	if parent == nil {
-		res = &DvVariable{Tp: JS_TYPE_STRING}
+		res = &DvVariable{Kind: FIELD_STRING}
 	} else {
 		res = parent
-		res.Tp = JS_TYPE_NUMBER
+		res.Kind = FIELD_NUMBER
 	}
 	res.Value = data
 	err = ValidateNumber(data)
@@ -244,10 +244,10 @@ func QuickNumberEvaluation(parent *DvVariable, data string) (res *DvVariable, er
 
 func QuickStringEvaluation(parent *DvVariable, data string) (res *DvVariable, err error) {
 	if parent == nil {
-		res = &DvVariable{Tp: JS_TYPE_STRING}
+		res = &DvVariable{Kind: FIELD_STRING}
 	} else {
 		res = parent
-		res.Tp = JS_TYPE_STRING
+		res.Kind = FIELD_STRING
 	}
 	l := len(data)
 	for l > 0 && data[l-1] <= 32 {
@@ -296,10 +296,10 @@ func QuickVariableEvaluation(parent *DvVariable, data string) (res *DvVariable, 
 	case "undefined":
 		return
 	case "null":
-		res.Tp = JS_TYPE_NULL
+		res.Kind = FIELD_NULL
 		return
 	case "true", "false":
-		res.Tp = JS_TYPE_BOOLEAN
+		res.Kind = FIELD_BOOLEAN
 		return
 	}
 	if b >= '0' && b <= '9' || b == '.' && l > 1 && data[1] >= '0' && data[i] <= '9' {

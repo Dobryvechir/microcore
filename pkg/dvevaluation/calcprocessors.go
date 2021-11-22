@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvevaluation
 
@@ -161,6 +161,16 @@ func ProcessorLeftShift(values []*dvgrammar.ExpressionValue, tree *dvgrammar.Bui
 				res = res << uint(f)
 			}
 		}
+	}
+	return &dvgrammar.ExpressionValue{Value: res, DataType: dataType}, nil
+}
+
+func ProcessorContainsIn(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	l := len(values)
+	var res bool = false
+	dataType := dvgrammar.TYPE_BOOLEAN
+	if l >= 2 {
+		res = ContainInProcess(values[0].Value, values[1].Value)
 	}
 	return &dvgrammar.ExpressionValue{Value: res, DataType: dataType}, nil
 }

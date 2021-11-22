@@ -16,7 +16,7 @@ import (
 )
 
 func (item *DvFieldInfo) GetChildrenByRange(startIndex int, count int) *DvFieldInfo {
-	if item == nil || (item.Kind != FIELD_ARRAY && item.Kind != FIELD_OBJECT) {
+	if item == nil || (item.Kind != dvevaluation.FIELD_ARRAY && item.Kind != dvevaluation.FIELD_OBJECT) {
 		return nil
 	}
 	subfields := item.Fields
@@ -33,7 +33,7 @@ func (item *DvFieldInfo) GetChildrenByRange(startIndex int, count int) *DvFieldI
 	if count > n-startIndex {
 		count = n - startIndex
 	}
-	res := &DvFieldInfo{Kind: FIELD_ARRAY, Fields: subfields[startIndex : startIndex+count]}
+	res := &DvFieldInfo{Kind: dvevaluation.FIELD_ARRAY, Fields: subfields[startIndex : startIndex+count]}
 	return res
 }
 
@@ -147,7 +147,7 @@ func MeetItemExpression(expr string, item *DvFieldInfo, resolver ExpressionResol
 }
 
 func FindItemByExpression(expr string, resolver ExpressionResolver, item *DvFieldInfo, strict bool) (*DvFieldInfo, error) {
-	if item == nil || item.Kind != FIELD_OBJECT && item.Kind != FIELD_ARRAY || item.Fields == nil || len(item.Fields) == 0 {
+	if item == nil || item.Kind != dvevaluation.FIELD_OBJECT && item.Kind != dvevaluation.FIELD_ARRAY || item.Fields == nil || len(item.Fields) == 0 {
 		if item == nil && strict {
 			return nil, errors.New(expr + " of undefined")
 		}
@@ -186,14 +186,14 @@ func ExpressionEvaluation(expr string, resolver ExpressionResolver) (string, err
 
 func (item *DvFieldInfo) ReadSimpleChild(fieldName string) *DvFieldInfo {
 	n := len(item.Fields)
-	if item.Kind == FIELD_ARRAY {
+	if item.Kind == dvevaluation.FIELD_ARRAY {
 		k, err := strconv.Atoi(fieldName)
 		if err != nil || k < 0 || k >= n {
 			return nil
 		}
 		return item.Fields[k]
 	}
-	if item.Kind != FIELD_OBJECT {
+	if item.Kind != dvevaluation.FIELD_OBJECT {
 		return nil
 	}
 	name := []byte(fieldName)
@@ -262,14 +262,14 @@ func (item *DvFieldInfo) EvaluateDvFieldItem(expression string, env *dvevaluatio
 			v = f
 			k := string(f.Name)
 			switch f.Kind {
-			case FIELD_BOOLEAN:
+			case dvevaluation.FIELD_BOOLEAN:
 				v = len(f.Value) == 4 && f.Value[0] == 't'
-			case FIELD_STRING:
+			case dvevaluation.FIELD_STRING:
 				v = string(f.Value)
-			case FIELD_NUMBER:
+			case dvevaluation.FIELD_NUMBER:
 				v = dvevaluation.StringToNumber(string(f.Value))
-			case FIELD_NULL:
-			case FIELD_EMPTY:
+			case dvevaluation.FIELD_NULL:
+			case dvevaluation.FIELD_UNDEFINED:
 				v = nil
 			}
 			env.Set(k, v)
@@ -293,7 +293,7 @@ func (item *DvFieldInfo) CompareWholeDvField(other *DvFieldInfo) int {
 		return dif
 	}
 	switch item.Kind {
-	case FIELD_BOOLEAN:
+	case dvevaluation.FIELD_BOOLEAN:
 		n1 := 0
 		if len(item.Value) == 4 && item.Value[0] == 't' {
 			n1 = 1
@@ -303,12 +303,12 @@ func (item *DvFieldInfo) CompareWholeDvField(other *DvFieldInfo) int {
 			n2 = 1
 		}
 		return n1 - n2
-	case FIELD_STRING:
+	case dvevaluation.FIELD_STRING:
 		return strings.Compare(string(item.Value), string(other.Value))
-	case FIELD_EMPTY:
-	case FIELD_NULL:
+	case dvevaluation.FIELD_UNDEFINED:
+	case dvevaluation.FIELD_NULL:
 		return 0
-	case FIELD_NUMBER:
+	case dvevaluation.FIELD_NUMBER:
 		if bytes.Equal(item.Value, other.Value) {
 			return 0
 		}
@@ -321,7 +321,7 @@ func (item *DvFieldInfo) CompareWholeDvField(other *DvFieldInfo) int {
 			return -1
 		}
 		return 1
-	case FIELD_ARRAY:
+	case dvevaluation.FIELD_ARRAY:
 		n := len(item.Fields)
 		dif := n - len(other.Fields)
 		if dif != 0 {
@@ -334,7 +334,7 @@ func (item *DvFieldInfo) CompareWholeDvField(other *DvFieldInfo) int {
 			}
 		}
 		return 0
-	case FIELD_OBJECT:
+	case dvevaluation.FIELD_OBJECT:
 		n := len(item.Fields)
 		dif := n - len(other.Fields)
 		if dif != 0 {
@@ -424,19 +424,19 @@ func (item *DvFieldInfo) FindDifferenceByQuickMap(other *DvFieldInfo,
 		fillUnchanged = false
 	}
 	if fillAdded {
-		added = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, n1), Kind: FIELD_ARRAY}
+		added = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, n1), Kind: dvevaluation.FIELD_ARRAY}
 	}
 	if fillRemoved {
-		removed = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, n2), Kind: FIELD_ARRAY}
+		removed = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, n2), Kind: dvevaluation.FIELD_ARRAY}
 	}
 	if fillUpdated {
-		updated = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, m), Kind: FIELD_ARRAY}
+		updated = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, m), Kind: dvevaluation.FIELD_ARRAY}
 	}
 	if fillUnchanged {
-		unchanged = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, m), Kind: FIELD_ARRAY}
+		unchanged = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, m), Kind: dvevaluation.FIELD_ARRAY}
 	}
 	if fillUpdatedCounterpart {
-		counterparts = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, m), Kind: FIELD_ARRAY}
+		counterparts = &DvFieldInfo{Fields: make([]*DvFieldInfo, 0, m), Kind: dvevaluation.FIELD_ARRAY}
 	}
 	if n2 == 0 {
 		if n1 == 0 {

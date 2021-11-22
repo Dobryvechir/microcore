@@ -27,7 +27,7 @@ var registeredMasterObjects map[string]*DvVariable = make(map[string]*DvVariable
 func ParseScripts(scripts []string) (*DvScript, error) {
 	engine := &DvScript{master: DvVariableGetNewObject()}
 	for k, v := range registeredMasterObjects {
-		engine.master.Refs[k] = v
+		engine.master.Fields[k] = v
 	}
 	return engine, nil
 }
@@ -40,11 +40,11 @@ func RegisterMasterVariable(name string, variable *DvVariable) *DvVariable {
 func RegisterMasterObject(name string, values map[string]*DvVariable, functions map[string]DvvFunction) *DvVariable {
 	masterObject := DvVariableGetNewObject()
 	if values != nil {
-		masterObject.Refs = values
+		masterObject.Fields = values
 	}
 	prototypeObject := DvVariableGetNewObject()
 	for k, v := range functions {
-		prototypeObject.Refs[k] = ConvertDvFunctionToDvVariable(v)
+		prototypeObject.Fields[k] = ConvertDvFunctionToDvVariable(v)
 	}
 	masterObject.Prototype = prototypeObject
 	registeredMasterObjects[name] = masterObject

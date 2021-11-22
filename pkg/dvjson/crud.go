@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
@@ -37,7 +38,7 @@ type DvCrud struct {
 var LogCrud, LogJson, LogProcessors bool
 
 func crudSaveTable(crudInfo *DvCrudDetails) string {
-	crudInfo.table.Kind = FIELD_ARRAY
+	crudInfo.table.Kind = dvevaluation.FIELD_ARRAY
 	data := jsonWholeItems(crudInfo.table)
 	err := ioutil.WriteFile(crudInfo.storeFile, []byte(data), os.ModePerm)
 	if err != nil {

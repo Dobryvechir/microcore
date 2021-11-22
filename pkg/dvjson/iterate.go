@@ -51,7 +51,7 @@ func IterateOnAnyType(val interface{}, processor IterateProcessor, initial inter
 }
 
 func IterateFilterOnAnyType(val interface{}, processor FilterProcessor) interface{} {
-	res := &DvFieldInfo{Kind: FIELD_ARRAY}
+	res := &DvFieldInfo{Kind: dvevaluation.FIELD_ARRAY}
 	index := 0
 	var toAdd, toBreak bool
 	switch val.(type) {

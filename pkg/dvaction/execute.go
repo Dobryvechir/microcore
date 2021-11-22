@@ -41,6 +41,7 @@ const (
 	CommandRange       = "range"
 	CommandReturn      = "return"
 	CommandCompareJson = "compare"
+	CommandVar         = "var"
 )
 
 var processFunctions = map[string]ProcessFunction{
@@ -53,6 +54,7 @@ var processFunctions = map[string]ProcessFunction{
 	CommandPaging:      {Init: pagingInit, Run: pagingRun},
 	CommandConvert:     {Init: jsonConvertInit, Run: jsonConvertRun},
 	CommandCompareJson: {Init: compareJsonInit, Run: compareJsonRun},
+	CommandVar:         {Init: varTransformInit, Run: varTransformRun},
 }
 
 const (

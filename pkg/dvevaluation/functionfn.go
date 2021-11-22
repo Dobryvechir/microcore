@@ -42,7 +42,7 @@ func FunctionBind(context *DvContext, thisVariable *DvVariable, params []*DvVari
 	paramThis := params[0]
 	dvParams := make([]*DvVariable, len(params)-1)
 	copy(dvParams, params[1:])
-	return &DvVariable{Tp: JS_TYPE_FUNCTION, Prototype: FunctionMaster, Fn: func(context *DvContext, thisVar *DvVariable, pars []*DvVariable) (*DvVariable, error) {
+	return &DvVariable{Kind: FIELD_FUNCTION, Prototype: FunctionMaster, Fn: func(context *DvContext, thisVar *DvVariable, pars []*DvVariable) (*DvVariable, error) {
 		newParams := append(dvParams, pars...)
 		return thisVariable.Fn(context, paramThis, newParams)
 	}}, nil
@@ -55,36 +55,36 @@ func FunctionBindLite(context *DvContext, thisVariable *DvVariable, params []*Dv
 	paramThis := params[0]
 	dvParams := make([]*DvVariable, len(params)-1)
 	copy(dvParams, params[1:])
-	return &DvVariable{Tp: JS_TYPE_FUNCTION, Fn: func(context *DvContext, thisVar *DvVariable, pars []*DvVariable) (*DvVariable, error) {
+	return &DvVariable{Kind: FIELD_FUNCTION, Fn: func(context *DvContext, thisVar *DvVariable, pars []*DvVariable) (*DvVariable, error) {
 		newParams := append(dvParams, pars...)
 		return thisVariable.Fn(context, paramThis, newParams)
 	}}, nil
 }
 
 var FunctionMaster *DvVariable = RegisterMasterVariable("Function", &DvVariable{
-	Refs: make(map[string]*DvVariable),
-	Tp:   JS_TYPE_OBJECT,
+	Fields: make(map[string]*DvVariable),
+	Kind:   FIELD_OBJECT,
 	Prototype: &DvVariable{
-		Refs: map[string]*DvVariable{
+		Fields: map[string]*DvVariable{
 			"call": {
-				Tp: JS_TYPE_FUNCTION,
-				Fn: FunctionCall,
+				Kind: FIELD_FUNCTION,
+				Fn:   FunctionCall,
 			},
 			"apply": {
-				Tp: JS_TYPE_FUNCTION,
-				Fn: FunctionApply,
+				Kind: FIELD_FUNCTION,
+				Fn:   FunctionApply,
 			},
 			"bind": {
-				Tp: JS_TYPE_FUNCTION,
-				Fn: FunctionBindLite,
+				Kind: FIELD_FUNCTION,
+				Fn:   FunctionBindLite,
 			},
 		},
-		Tp: JS_TYPE_OBJECT,
+		Kind: FIELD_OBJECT,
 	},
 })
 
 func functionfn_init() {
-	FunctionMaster.Prototype.Refs["bind"].Fn = FunctionBind
+	FunctionMaster.Prototype.Fields["bind"].Fn = FunctionBind
 }
 
 func (context *DvContext) FunctionCallByKeys(variable *DvVariable, keys []string, params []*DvVariable, thisVariable *DvVariable) (*DvVariable, error) {
@@ -101,7 +101,7 @@ func (context *DvContext) FunctionCallByKeys(variable *DvVariable, keys []string
 	if thisVariable == nil {
 		thisVariable = parent
 	}
-	if variable == nil || variable.Tp != JS_TYPE_FUNCTION {
+	if variable == nil || variable.Kind != FIELD_FUNCTION {
 		return nil, errors.New("Cannot call not function:" + strings.Join(keys, "."))
 	}
 	return variable.Fn(context, thisVariable, params)
@@ -121,5 +121,5 @@ func (context *DvContext) FunctionCallByVariableDefinitionWithStringParams(varia
 }
 
 func ConvertDvFunctionToDvVariable(fn DvvFunction) *DvVariable {
-	return &DvVariable{Tp: JS_TYPE_FUNCTION, Fn: fn, Prototype: FunctionMaster}
+	return &DvVariable{Kind: FIELD_FUNCTION, Fn: fn, Prototype: FunctionMaster}
 }

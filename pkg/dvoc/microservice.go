@@ -9,6 +9,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvdir"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
@@ -44,7 +45,7 @@ func MicroServiceUpInit(command string, ctx *dvcontext.RequestContext) ([]interf
 			dvlog.PrintfError("Error in json %s: %v", command, err)
 			return nil, false
 		}
-		if options.Kind != dvjson.FIELD_OBJECT {
+		if options.Kind != dvevaluation.FIELD_OBJECT {
 			dvlog.PrintfError("Expected object {} after microservice name in %s", command)
 			return nil, false
 		}
@@ -554,7 +555,7 @@ func MicroServiceExecInit(command string, ctx *dvcontext.RequestContext) ([]inte
 		dvlog.PrintfError("Error in json %s: %v", command, err)
 		return nil, false
 	}
-	if options.Kind != dvjson.FIELD_ARRAY {
+	if options.Kind != dvevaluation.FIELD_ARRAY {
 		dvlog.PrintfError("Expected object [] after microservice name in %s", command)
 		return nil, false
 	}

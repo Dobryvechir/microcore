@@ -16,20 +16,20 @@ var JSONMaster *dvevaluation.DvVariable
 
 func json_init() {
 	JSONMaster = dvevaluation.RegisterMasterVariable("JSON", &dvevaluation.DvVariable{
-		Refs: make(map[string]*dvevaluation.DvVariable),
-		Tp:   dvevaluation.JS_TYPE_OBJECT,
+		Fields: make(map[string]*dvevaluation.DvVariable),
+		Kind:   dvevaluation.FIELD_OBJECT,
 		Prototype: &dvevaluation.DvVariable{
-			Refs: map[string]*dvevaluation.DvVariable{
+			Fields: map[string]*dvevaluation.DvVariable{
 				"stringify": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: JSON_stringify,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   JSON_stringify,
 				},
 				"parse": {
-					Tp: dvevaluation.JS_TYPE_FUNCTION,
-					Fn: JSON_parse,
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Fn:   JSON_parse,
 				},
 			},
-			Tp: dvevaluation.JS_TYPE_OBJECT,
+			Kind: dvevaluation.FIELD_OBJECT,
 		},
 	})
 
@@ -76,25 +76,25 @@ func convert_Array_DvFieldInfo_to_DvVariableMap(data []*dvjson.DvFieldInfo) (res
 func convert_DvFieldInfo_to_DvVariable(field *dvjson.DvFieldInfo) *dvevaluation.DvVariable {
 	parent := &dvevaluation.DvVariable{}
 	switch field.Kind {
-	case dvjson.FIELD_OBJECT:
-		parent.Tp = dvevaluation.JS_TYPE_OBJECT
+	case dvevaluation.FIELD_OBJECT:
+		parent.Kind = dvevaluation.FIELD_OBJECT
 		parent.Prototype = dvevaluation.ObjectMaster
-		parent.Refs = convert_Object_DvFieldInfo_to_DvVariableMap(field.Fields)
-	case dvjson.FIELD_ARRAY:
-		parent.Refs = convert_Array_DvFieldInfo_to_DvVariableMap(field.Fields)
-		parent.Tp = dvevaluation.JS_TYPE_ARRAY
+		parent.Fields = convert_Object_DvFieldInfo_to_DvVariableMap(field.Fields)
+	case dvevaluation.FIELD_ARRAY:
+		parent.Fields = convert_Array_DvFieldInfo_to_DvVariableMap(field.Fields)
+		parent.Kind = dvevaluation.FIELD_ARRAY
 		parent.Prototype = dvevaluation.ArrayMaster
-	case dvjson.FIELD_STRING:
-		parent.Tp = dvevaluation.JS_TYPE_STRING
+	case dvevaluation.FIELD_STRING:
+		parent.Kind = dvevaluation.FIELD_STRING
 		parent.Value = string(field.Value)
-	case dvjson.FIELD_NUMBER:
-		parent.Tp = dvevaluation.JS_TYPE_NUMBER
+	case dvevaluation.FIELD_NUMBER:
+		parent.Kind = dvevaluation.FIELD_NUMBER
 		parent.Value = string(field.Value)
-	case dvjson.FIELD_BOOLEAN:
-		parent.Tp = dvevaluation.JS_TYPE_BOOLEAN
+	case dvevaluation.FIELD_BOOLEAN:
+		parent.Kind = dvevaluation.FIELD_BOOLEAN
 		parent.Value = string(field.Value)
-	case dvjson.FIELD_NULL:
-		parent.Tp = dvevaluation.JS_TYPE_NULL
+	case dvevaluation.FIELD_NULL:
+		parent.Kind = dvevaluation.FIELD_NULL
 	}
 	return parent
 }
@@ -122,25 +122,25 @@ func convert_Array_DvCrudItem_to_DvVariableMap(data []*dvjson.DvCrudItem) (res m
 func convert_DvCrudItem_to_DvVariable(field *dvjson.DvCrudItem) *dvevaluation.DvVariable {
 	parent := &dvevaluation.DvVariable{}
 	switch field.Kind {
-	case dvjson.FIELD_OBJECT:
-		parent.Tp = dvevaluation.JS_TYPE_OBJECT
+	case dvevaluation.FIELD_OBJECT:
+		parent.Kind = dvevaluation.FIELD_OBJECT
 		parent.Prototype = dvevaluation.ObjectMaster
-		parent.Refs = convert_Object_DvFieldInfo_to_DvVariableMap(field.Fields)
-	case dvjson.FIELD_ARRAY:
-		parent.Refs = convert_Array_DvFieldInfo_to_DvVariableMap(field.Fields)
-		parent.Tp = dvevaluation.JS_TYPE_ARRAY
+		parent.Fields = convert_Object_DvFieldInfo_to_DvVariableMap(field.Fields)
+	case dvevaluation.FIELD_ARRAY:
+		parent.Fields = convert_Array_DvFieldInfo_to_DvVariableMap(field.Fields)
+		parent.Kind = dvevaluation.FIELD_ARRAY
 		parent.Prototype = dvevaluation.ArrayMaster
-	case dvjson.FIELD_STRING:
-		parent.Tp = dvevaluation.JS_TYPE_STRING
+	case dvevaluation.FIELD_STRING:
+		parent.Kind = dvevaluation.FIELD_STRING
 		parent.Value = string(field.Value)
-	case dvjson.FIELD_NUMBER:
-		parent.Tp = dvevaluation.JS_TYPE_NUMBER
+	case dvevaluation.FIELD_NUMBER:
+		parent.Kind = dvevaluation.FIELD_NUMBER
 		parent.Value = string(field.Value)
-	case dvjson.FIELD_BOOLEAN:
-		parent.Tp = dvevaluation.JS_TYPE_BOOLEAN
+	case dvevaluation.FIELD_BOOLEAN:
+		parent.Kind = dvevaluation.FIELD_BOOLEAN
 		parent.Value = string(field.Value)
-	case dvjson.FIELD_NULL:
-		parent.Tp = dvevaluation.JS_TYPE_NULL
+	case dvevaluation.FIELD_NULL:
+		parent.Kind = dvevaluation.FIELD_NULL
 	}
 	return parent
 }
@@ -157,25 +157,25 @@ func JSON_parse_direct(body []byte, info string) (*dvevaluation.DvVariable, erro
 		return nil, errors.New(parsed.Err)
 	}
 	switch parsed.Kind {
-	case dvjson.FIELD_OBJECT:
-		parent.Tp = dvevaluation.JS_TYPE_OBJECT
+	case dvevaluation.FIELD_OBJECT:
+		parent.Kind = dvevaluation.FIELD_OBJECT
 		parent.Prototype = dvevaluation.ObjectMaster
-		parent.Refs = convert_Object_DvCrudItem_to_DvVariableMap(parsed.Items)
-	case dvjson.FIELD_ARRAY:
-		parent.Refs = convert_Array_DvCrudItem_to_DvVariableMap(parsed.Items)
-		parent.Tp = dvevaluation.JS_TYPE_ARRAY
+		parent.Fields = convert_Object_DvCrudItem_to_DvVariableMap(parsed.Items)
+	case dvevaluation.FIELD_ARRAY:
+		parent.Fields = convert_Array_DvCrudItem_to_DvVariableMap(parsed.Items)
+		parent.Kind = dvevaluation.FIELD_ARRAY
 		parent.Prototype = dvevaluation.ArrayMaster
-	case dvjson.FIELD_STRING:
-		parent.Tp = dvevaluation.JS_TYPE_STRING
+	case dvevaluation.FIELD_STRING:
+		parent.Kind = dvevaluation.FIELD_STRING
 		parent.Value = string(parsed.Value)
-	case dvjson.FIELD_NUMBER:
-		parent.Tp = dvevaluation.JS_TYPE_NUMBER
+	case dvevaluation.FIELD_NUMBER:
+		parent.Kind = dvevaluation.FIELD_NUMBER
 		parent.Value = string(parsed.Value)
-	case dvjson.FIELD_BOOLEAN:
-		parent.Tp = dvevaluation.JS_TYPE_BOOLEAN
+	case dvevaluation.FIELD_BOOLEAN:
+		parent.Kind = dvevaluation.FIELD_BOOLEAN
 		parent.Value = string(parsed.Value)
-	case dvjson.FIELD_NULL:
-		parent.Tp = dvevaluation.JS_TYPE_NULL
+	case dvevaluation.FIELD_NULL:
+		parent.Kind = dvevaluation.FIELD_NULL
 	}
 	return parent, nil
 }

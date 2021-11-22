@@ -43,7 +43,7 @@ func MatchDvFieldInfo(model *DvFieldInfo, pattern *DvFieldInfo) bool {
 	}
 	n := len(pattern.Fields)
 	switch pattern.Kind {
-	case FIELD_OBJECT:
+	case dvevaluation.FIELD_OBJECT:
 		for i := 0; i < n; i++ {
 			item := model.ReadSimpleChild(string(pattern.Fields[i].Name))
 			if item == nil {
@@ -54,8 +54,8 @@ func MatchDvFieldInfo(model *DvFieldInfo, pattern *DvFieldInfo) bool {
 			}
 		}
 		return true
-	case FIELD_ARRAY:
-		if model.Kind == FIELD_ARRAY && len(model.Fields) >= n {
+	case dvevaluation.FIELD_ARRAY:
+		if model.Kind == dvevaluation.FIELD_ARRAY && len(model.Fields) >= n {
 			for i := 0; i < n; i++ {
 				if !MatchDvFieldInfo(model.Fields[i], pattern.Fields[i]) {
 					return false
@@ -64,7 +64,7 @@ func MatchDvFieldInfo(model *DvFieldInfo, pattern *DvFieldInfo) bool {
 			return true
 		}
 	default:
-		if model.Kind != FIELD_ARRAY && model.Kind != FIELD_OBJECT && bytes.Equal(model.Value, pattern.Value) {
+		if model.Kind != dvevaluation.FIELD_ARRAY && model.Kind != dvevaluation.FIELD_OBJECT && bytes.Equal(model.Value, pattern.Value) {
 			return true
 		}
 	}
