@@ -12,7 +12,7 @@ import (
 
 type IterateProcessor func(string, interface{}, int, interface{}) (interface{}, bool)
 type FilterProcessor func(string, interface{}, int, interface{}) (bool, bool)
-type SortComparator func(d1 *DvFieldInfo, d2 *DvFieldInfo) int
+type SortComparator func(d1 *dvevaluation.DvVariable, d2 *dvevaluation.DvVariable) int
 
 func IterateOnAnyType(val interface{}, processor IterateProcessor, initial interface{}) interface{} {
 	res := initial
@@ -35,8 +35,8 @@ func IterateOnAnyType(val interface{}, processor IterateProcessor, initial inter
 			}
 			index++
 		}
-	case *DvFieldInfo:
-		fieldInfo := val.(*DvFieldInfo)
+	case *dvevaluation.DvVariable:
+		fieldInfo := val.(*dvevaluation.DvVariable)
 		fields := fieldInfo.Fields
 		n := len(fields)
 		for index = 0; index < n; index++ {
@@ -51,15 +51,15 @@ func IterateOnAnyType(val interface{}, processor IterateProcessor, initial inter
 }
 
 func IterateFilterOnAnyType(val interface{}, processor FilterProcessor) interface{} {
-	res := &DvFieldInfo{Kind: dvevaluation.FIELD_ARRAY}
+	res := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY}
 	index := 0
 	var toAdd, toBreak bool
 	switch val.(type) {
-	case *DvFieldInfo:
-		fieldInfo := val.(*DvFieldInfo)
+	case *dvevaluation.DvVariable:
+		fieldInfo := val.(*dvevaluation.DvVariable)
 		fields := fieldInfo.Fields
 		n := len(fields)
-		res.Fields = make([]*DvFieldInfo, 0, n)
+		res.Fields = make([]*dvevaluation.DvVariable, 0, n)
 		for index = 0; index < n; index++ {
 			f := fields[index]
 			toAdd, toBreak = processor(string(f.Name), f, index, val)
@@ -75,16 +75,16 @@ func IterateFilterOnAnyType(val interface{}, processor FilterProcessor) interfac
 }
 
 func IterateSortOnAnyType(val interface{}, processor SortComparator) interface{} {
-	var res *DvFieldInfo
+	var res *dvevaluation.DvVariable
 	switch val.(type) {
-	case *DvFieldInfo:
-		fieldInfo := val.(*DvFieldInfo)
+	case *dvevaluation.DvVariable:
+		fieldInfo := val.(*dvevaluation.DvVariable)
 		fields := fieldInfo.Fields
 		n := len(fields)
-		res = &DvFieldInfo{
+		res = &dvevaluation.DvVariable{
 			Kind:   fieldInfo.Kind,
 			Name:   fieldInfo.Name,
-			Fields: append(make([]*DvFieldInfo, 0, n), fields...),
+			Fields: append(make([]*dvevaluation.DvVariable, 0, n), fields...),
 			Value:  fieldInfo.Value,
 		}
 		fields = res.Fields
@@ -100,8 +100,8 @@ func IterateFilterByExpression(val interface{}, expression string, env *dvevalua
 		env.Set("KEY", key)
 		env.Set("INDEX", index)
 		switch item.(type) {
-		case *DvFieldInfo:
-			data, er := item.(*DvFieldInfo).EvaluateDvFieldItem(expression, env)
+		case *dvevaluation.DvVariable:
+			data, er := item.(*dvevaluation.DvVariable).EvaluateDvFieldItem(expression, env)
 			if er != nil {
 				if errIsCritical {
 					err = er
@@ -116,7 +116,7 @@ func IterateFilterByExpression(val interface{}, expression string, env *dvevalua
 }
 
 func IterateSortByFields(val interface{}, fields []string, env *dvevaluation.DvObject) (res interface{}, err error) {
-	res = IterateSortOnAnyType(val, func(d1 *DvFieldInfo, d2 *DvFieldInfo) int {
+	res = IterateSortOnAnyType(val, func(d1 *dvevaluation.DvVariable, d2 *dvevaluation.DvVariable) int {
 		if d1 == nil {
 			if d2 == nil {
 				return 0

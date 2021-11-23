@@ -1,18 +1,17 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
-package dvjson
+package dvevaluation
 
 import (
 	"bytes"
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"strings"
 )
 
-func ProcessorFind(parent *DvFieldInfo, params string) (*DvFieldInfo, error) {
+func ProcessorFind(parent *DvVariable, params string) (*DvVariable, error) {
 	pattern, err := JsonFullParser([]byte(params))
 	if err != nil {
 		return nil, err
@@ -20,7 +19,7 @@ func ProcessorFind(parent *DvFieldInfo, params string) (*DvFieldInfo, error) {
 	return FindInArray(parent, pattern, 0)
 }
 
-func FindInArray(parent *DvFieldInfo, pattern *DvFieldInfo, fromIndex int) (*DvFieldInfo, error) {
+func FindInArray(parent *DvVariable, pattern *DvVariable, fromIndex int) (*DvVariable, error) {
 	if parent == nil || len(parent.Fields) <= fromIndex {
 		return nil, nil
 	}
@@ -34,7 +33,7 @@ func FindInArray(parent *DvFieldInfo, pattern *DvFieldInfo, fromIndex int) (*DvF
 	return nil, nil
 }
 
-func MatchDvFieldInfo(model *DvFieldInfo, pattern *DvFieldInfo) bool {
+func MatchDvFieldInfo(model *DvVariable, pattern *DvVariable) bool {
 	if pattern == nil {
 		return true
 	}
@@ -43,7 +42,7 @@ func MatchDvFieldInfo(model *DvFieldInfo, pattern *DvFieldInfo) bool {
 	}
 	n := len(pattern.Fields)
 	switch pattern.Kind {
-	case dvevaluation.FIELD_OBJECT:
+	case FIELD_OBJECT:
 		for i := 0; i < n; i++ {
 			item := model.ReadSimpleChild(string(pattern.Fields[i].Name))
 			if item == nil {
@@ -54,8 +53,8 @@ func MatchDvFieldInfo(model *DvFieldInfo, pattern *DvFieldInfo) bool {
 			}
 		}
 		return true
-	case dvevaluation.FIELD_ARRAY:
-		if model.Kind == dvevaluation.FIELD_ARRAY && len(model.Fields) >= n {
+	case FIELD_ARRAY:
+		if model.Kind == FIELD_ARRAY && len(model.Fields) >= n {
 			for i := 0; i < n; i++ {
 				if !MatchDvFieldInfo(model.Fields[i], pattern.Fields[i]) {
 					return false
@@ -64,14 +63,14 @@ func MatchDvFieldInfo(model *DvFieldInfo, pattern *DvFieldInfo) bool {
 			return true
 		}
 	default:
-		if model.Kind != dvevaluation.FIELD_ARRAY && model.Kind != dvevaluation.FIELD_OBJECT && bytes.Equal(model.Value, pattern.Value) {
+		if model.Kind != FIELD_ARRAY && model.Kind != FIELD_OBJECT && bytes.Equal(model.Value, pattern.Value) {
 			return true
 		}
 	}
 	return false
 }
 
-func CollectValuesByMap(data interface{}, params map[string]string, env *dvevaluation.DvObject) (res map[string]interface{}) {
+func CollectValuesByMap(data interface{}, params map[string]string, env *DvObject) (res map[string]interface{}) {
 	res = make(map[string]interface{})
 	for k, _ := range params {
 		val, err := CollectValueByKey(data, k, env)
@@ -82,10 +81,10 @@ func CollectValuesByMap(data interface{}, params map[string]string, env *dvevalu
 	return res
 }
 
-func CollectValueByKey(data interface{}, key string, env *dvevaluation.DvObject) (interface{}, error) {
+func CollectValueByKey(data interface{}, key string, env *DvObject) (interface{}, error) {
 	switch data.(type) {
-	case *DvFieldInfo:
-		res, err := data.(*DvFieldInfo).ReadChildOfAnyLevel(key, env)
+	case *DvVariable:
+		res, err := data.(*DvVariable).ReadChildOfAnyLevel(key, env)
 		if err != nil {
 			return nil, err
 		}
@@ -94,7 +93,7 @@ func CollectValueByKey(data interface{}, key string, env *dvevaluation.DvObject)
 	return nil, errors.New("Unknown type to extrace " + key)
 }
 
-func CollectJsonVariables(data interface{}, params map[string]string, env *dvevaluation.DvObject, anyway bool) {
+func CollectJsonVariables(data interface{}, params map[string]string, env *DvObject, anyway bool) {
 	if params == nil || (data == nil && !anyway) {
 		return
 	}
@@ -102,7 +101,7 @@ func CollectJsonVariables(data interface{}, params map[string]string, env *dveva
 	CollectVariablesByAnyMap(src, params, env, anyway)
 }
 
-func CollectVariablesByStringMap(src map[string]string, params map[string]string, data *dvevaluation.DvObject, anyway bool) {
+func CollectVariablesByStringMap(src map[string]string, params map[string]string, data *DvObject, anyway bool) {
 	if params == nil || (src == nil && !anyway) {
 		return
 	}
@@ -126,7 +125,7 @@ func CollectVariablesByStringMap(src map[string]string, params map[string]string
 	}
 }
 
-func CollectVariablesByAnyMap(src map[string]interface{}, params map[string]string, data *dvevaluation.DvObject, anyway bool) {
+func CollectVariablesByAnyMap(src map[string]interface{}, params map[string]string, data *DvObject, anyway bool) {
 	if params == nil || (src == nil && !anyway) {
 		return
 	}

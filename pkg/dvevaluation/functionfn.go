@@ -16,7 +16,7 @@ func FunctionCall(context *DvContext, thisVariable *DvVariable, params []*DvVari
 		selfParam = params[0]
 		params = params[1:]
 	}
-	return thisVariable.Fn(context, selfParam, params)
+	return thisVariable.Extra.(DvvFunction)(context, selfParam, params)
 }
 
 func FunctionApply(context *DvContext, thisVariable *DvVariable, params []*DvVariable) (*DvVariable, error) {
@@ -32,7 +32,7 @@ func FunctionApply(context *DvContext, thisVariable *DvVariable, params []*DvVar
 			}
 		}
 	}
-	return thisVariable.Fn(context, selfParam, dvParams)
+	return thisVariable.Extra.(DvvFunction)(context, selfParam, dvParams)
 }
 
 func FunctionBind(context *DvContext, thisVariable *DvVariable, params []*DvVariable) (*DvVariable, error) {
@@ -42,9 +42,9 @@ func FunctionBind(context *DvContext, thisVariable *DvVariable, params []*DvVari
 	paramThis := params[0]
 	dvParams := make([]*DvVariable, len(params)-1)
 	copy(dvParams, params[1:])
-	return &DvVariable{Kind: FIELD_FUNCTION, Prototype: FunctionMaster, Fn: func(context *DvContext, thisVar *DvVariable, pars []*DvVariable) (*DvVariable, error) {
+	return &DvVariable{Kind: FIELD_FUNCTION, Prototype: FunctionMaster, Extra: func(context *DvContext, thisVar *DvVariable, pars []*DvVariable) (*DvVariable, error) {
 		newParams := append(dvParams, pars...)
-		return thisVariable.Fn(context, paramThis, newParams)
+		return thisVariable.Extra.(DvvFunction)(context, paramThis, newParams)
 	}}, nil
 }
 
@@ -55,28 +55,31 @@ func FunctionBindLite(context *DvContext, thisVariable *DvVariable, params []*Dv
 	paramThis := params[0]
 	dvParams := make([]*DvVariable, len(params)-1)
 	copy(dvParams, params[1:])
-	return &DvVariable{Kind: FIELD_FUNCTION, Fn: func(context *DvContext, thisVar *DvVariable, pars []*DvVariable) (*DvVariable, error) {
+	return &DvVariable{Kind: FIELD_FUNCTION, Extra: func(context *DvContext, thisVar *DvVariable, pars []*DvVariable) (*DvVariable, error) {
 		newParams := append(dvParams, pars...)
-		return thisVariable.Fn(context, paramThis, newParams)
+		return thisVariable.Extra.(DvvFunction)(context, paramThis, newParams)
 	}}, nil
 }
 
 var FunctionMaster *DvVariable = RegisterMasterVariable("Function", &DvVariable{
-	Fields: make(map[string]*DvVariable),
+	Fields: make([]*DvVariable,0,7),
 	Kind:   FIELD_OBJECT,
 	Prototype: &DvVariable{
-		Fields: map[string]*DvVariable{
-			"call": {
+		Fields: []*DvVariable{
+			{
+				Name: []byte("call"),
 				Kind: FIELD_FUNCTION,
-				Fn:   FunctionCall,
+				Extra:   FunctionCall,
 			},
-			"apply": {
+			{
+				Name: []byte("apply"),
 				Kind: FIELD_FUNCTION,
-				Fn:   FunctionApply,
+				Extra:   FunctionApply,
 			},
-			"bind": {
+			{
+				Name: []byte("bind"),
 				Kind: FIELD_FUNCTION,
-				Fn:   FunctionBindLite,
+				Extra:   FunctionBindLite,
 			},
 		},
 		Kind: FIELD_OBJECT,
@@ -84,7 +87,7 @@ var FunctionMaster *DvVariable = RegisterMasterVariable("Function", &DvVariable{
 })
 
 func functionfn_init() {
-	FunctionMaster.Prototype.Fields["bind"].Fn = FunctionBind
+	FunctionMaster.Prototype.Fields[2].Extra = FunctionBind
 }
 
 func (context *DvContext) FunctionCallByKeys(variable *DvVariable, keys []string, params []*DvVariable, thisVariable *DvVariable) (*DvVariable, error) {
@@ -104,7 +107,7 @@ func (context *DvContext) FunctionCallByKeys(variable *DvVariable, keys []string
 	if variable == nil || variable.Kind != FIELD_FUNCTION {
 		return nil, errors.New("Cannot call not function:" + strings.Join(keys, "."))
 	}
-	return variable.Fn(context, thisVariable, params)
+	return variable.Extra.(DvvFunction)(context, thisVariable, params)
 }
 
 func (context *DvContext) FunctionCallByVariableDefinition(variable *DvVariable, variableDefinition string, params []*DvVariable, thisVariable *DvVariable) (*DvVariable, error) {
@@ -121,5 +124,5 @@ func (context *DvContext) FunctionCallByVariableDefinitionWithStringParams(varia
 }
 
 func ConvertDvFunctionToDvVariable(fn DvvFunction) *DvVariable {
-	return &DvVariable{Kind: FIELD_FUNCTION, Fn: fn, Prototype: FunctionMaster}
+	return &DvVariable{Kind: FIELD_FUNCTION, Extra: fn, Prototype: FunctionMaster}
 }

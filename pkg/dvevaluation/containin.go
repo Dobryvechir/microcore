@@ -29,6 +29,9 @@ func ContainInProcess(contained interface{}, containing interface{}) bool {
 	case string:
 		v := AnyToString(contained)
 		return strings.Contains(containing.(string), v)
+	case *DvVariable:
+		res := containing.(*DvVariable).ContainsItemIn(contained)
+		return res
 	default:
 		n := len(listContainInProcessors)
 		for i := 0; i < n; i++ {

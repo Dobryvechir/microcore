@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvoc
@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvdir"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
@@ -67,7 +68,7 @@ func GetKubernetesConfigurationPart(cmdLine string, kind string, mode int, fn Co
 		if err != nil {
 			return "", err
 		}
-		info = string(data.PrintToJson(4))
+		info = string(dvjson.PrintToJson(data,4))
 		return info, nil
 	}
 	info = strings.TrimSpace(info[pos+len(kubernetesConfiguration):])
@@ -86,7 +87,7 @@ func GetKubernetesConfigurationPart(cmdLine string, kind string, mode int, fn Co
 	return info, nil
 }
 
-func GetLiveConfiguration(cmdLine string) (*dvjson.DvFieldInfo, error) {
+func GetLiveConfiguration(cmdLine string) (*dvevaluation.DvVariable, error) {
 	info, ok := RunOCCommandWithEditor(cmdLine)
 	if !ok {
 		return nil, errors.New("Failed to execute " + cmdLine)
@@ -94,7 +95,7 @@ func GetLiveConfiguration(cmdLine string) (*dvjson.DvFieldInfo, error) {
 	return dvjson.ReadYamlAsDvFieldInfo([]byte(info))
 }
 
-func GetLiveDeploymentConfiguration(microServiceName string) (*dvjson.DvFieldInfo, error) {
+func GetLiveDeploymentConfiguration(microServiceName string) (*dvevaluation.DvVariable, error) {
 	return GetLiveConfiguration("edit dc " + microServiceName)
 }
 
@@ -118,7 +119,7 @@ func GetShortOpenShiftNameForObjectType(openShiftObjectType string) (string, err
 	return "", fmt.Errorf("unsupported openshift object type: %s", openShiftObjectType)
 }
 
-func GetConfigurationByOpenShiftObjectType(microServiceName string, openShiftObjectType string) (*dvjson.DvFieldInfo, error) {
+func GetConfigurationByOpenShiftObjectType(microServiceName string, openShiftObjectType string) (*dvevaluation.DvVariable, error) {
 	switch openShiftObjectType {
 	case "DeploymentConfig":
 		return GetLiveDeploymentConfiguration(microServiceName)
@@ -132,7 +133,7 @@ func GetConfigurationByOpenShiftObjectType(microServiceName string, openShiftObj
 	return nil, fmt.Errorf("Unimplemented configuration getter for %s in %s", openShiftObjectType, microServiceName)
 }
 
-func GetConfigurationByOpenShiftObjectTypeAndName(objectName string, openShiftObjectType string) (*dvjson.DvFieldInfo, error) {
+func GetConfigurationByOpenShiftObjectTypeAndName(objectName string, openShiftObjectType string) (*dvevaluation.DvVariable, error) {
 	shortName, err := GetShortOpenShiftNameForObjectType(openShiftObjectType)
 	if err != nil {
 		return nil, err
@@ -354,9 +355,9 @@ func GetExistingFullOpenShiftTemplate(microServiceName string, notCritical bool)
 	return
 }
 
-func OrderTemplateObjectsByDependencies(objects []*dvjson.DvFieldInfo, silent bool) (res []*dvjson.DvFieldInfo, err error) {
+func OrderTemplateObjectsByDependencies(objects []*dvevaluation.DvVariable, silent bool) (res []*dvevaluation.DvVariable, err error) {
 	n := len(objects)
-	res = make([]*dvjson.DvFieldInfo, 0, n)
+	res = make([]*dvevaluation.DvVariable, 0, n)
 	for i := 0; i < n; i++ {
 		p := objects[i]
 		if p == nil {
@@ -372,11 +373,11 @@ func OrderTemplateObjectsByDependencies(objects []*dvjson.DvFieldInfo, silent bo
 			}
 			continue
 		}
-		p.FieldStatus = v
+		p.Extra.(*dvjson.DvFieldInfoExtra).FieldStatus = v
 		res = append(res, p)
 	}
 	sort.Slice(res, func(i, j int) bool {
-		return res[i].FieldStatus < res[j].FieldStatus
+		return res[i].Extra.(*dvjson.DvFieldInfoExtra).FieldStatus < res[j].Extra.(*dvjson.DvFieldInfoExtra).FieldStatus
 	})
 	return
 }

@@ -20,17 +20,19 @@ const (
 
 func math_init() {
 	MathMaster = dvevaluation.RegisterMasterVariable("Math", &dvevaluation.DvVariable{
-		Fields: make(map[string]*dvevaluation.DvVariable),
+		Fields: make([]*dvevaluation.DvVariable,0,7),
 		Kind:   dvevaluation.FIELD_OBJECT,
 		Prototype: &dvevaluation.DvVariable{
-			Fields: map[string]*dvevaluation.DvVariable{
-				"compareVersions": {
+			Fields: []*dvevaluation.DvVariable{
+				{
+					Name: []byte("compareVersions"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Math_CompareVersions,
+					Extra:   Math_CompareVersions,
 				},
-				"increaseVersion": {
+				{
+					Name: []byte("increaseVersion"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Math_IncreaseVersion,
+					Extra:   Math_IncreaseVersion,
 				},
 			},
 			Kind: dvevaluation.FIELD_OBJECT,
@@ -45,17 +47,17 @@ func Math_CompareVersions(context *dvevaluation.DvContext, thisVariable *dvevalu
 	s2 := ""
 	defVersion := ""
 	if n >= 1 {
-		s1 = params[0].Value
+		s1 = string(params[0].Value)
 	}
 	if n >= 2 {
-		s2 = params[1].Value
+		s2 = string(params[1].Value)
 	}
 	if n >= 3 {
-		defVersion = params[2].Value
+		defVersion = string(params[2].Value)
 	}
 	comp := MathCompareVersions(s1, s2, defVersion)
 	res := strconv.Itoa(comp)
-	return &dvevaluation.DvVariable{Value: res, Kind: dvevaluation.FIELD_NUMBER}, nil
+	return &dvevaluation.DvVariable{Value: []byte(res), Kind: dvevaluation.FIELD_NUMBER}, nil
 }
 
 func Math_IncreaseVersion(context *dvevaluation.DvContext, thisVariable *dvevaluation.DvVariable, params []*dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
@@ -64,19 +66,19 @@ func Math_IncreaseVersion(context *dvevaluation.DvContext, thisVariable *dvevalu
 	limit := 0
 	defVersion := ""
 	if n >= 1 {
-		s = params[0].Value
+		s = string(params[0].Value)
 	}
 	if n >= 2 {
-		lim, err := strconv.Atoi(params[1].Value)
+		lim, err := strconv.Atoi(string(params[1].Value))
 		if err != nil && lim > 0 {
 			limit = lim
 		}
 	}
 	if n >= 3 {
-		defVersion = params[2].Value
+		defVersion = string(params[2].Value)
 	}
 	version := MathIncreaseVersion(s, limit, defVersion)
-	return &dvevaluation.DvVariable{Value: version, Kind: dvevaluation.FIELD_STRING}, nil
+	return &dvevaluation.DvVariable{Value: []byte(version), Kind: dvevaluation.FIELD_STRING}, nil
 }
 
 func MathSplitVersion(s string, defVersion string) []string {

@@ -152,49 +152,59 @@ func createClientForNetServerInfo(server *NetServerInfo) {
 
 func net_init() {
 	NetMaster = dvevaluation.RegisterMasterVariable("Net", &dvevaluation.DvVariable{
-		Fields: make(map[string]*dvevaluation.DvVariable),
+		Fields: make([]*dvevaluation.DvVariable, 0, 7),
 		Kind:   dvevaluation.FIELD_OBJECT,
 		Prototype: &dvevaluation.DvVariable{
-			Fields: map[string]*dvevaluation.DvVariable{
-				"getText": {
+			Fields: []*dvevaluation.DvVariable{
+				{
+					Name: []byte("getText"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_GetText,
+					Extra:   Net_GetText,
 				},
-				"postText": {
+				{
+					Name: []byte("postText"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_PostText,
+					Extra:   Net_PostText,
 				},
-				"putText": {
+				{
+					Name: []byte("putText"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_PutText,
+					Extra:   Net_PutText,
 				},
-				"deleteText": {
+				{
+					Name: []byte("deleteText"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_DeleteText,
+					Extra:   Net_DeleteText,
 				},
-				"requestText": {
+				{
+					Name: []byte("requestText"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_RequestText,
+					Extra:   Net_RequestText,
 				},
-				"get": {
+				{
+					Name: []byte("get"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_Get,
+					Extra:   Net_Get,
 				},
-				"post": {
+				{
+					Name: []byte("post"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_Post,
+					Extra:   Net_Post,
 				},
-				"put": {
+				{
+					Name: []byte("put"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_Put,
+					Extra:   Net_Put,
 				},
-				"delete": {
+				{
+					Name: []byte("delete"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_Delete,
+					Extra:   Net_Delete,
 				},
-				"request": {
+				{
+					Name: []byte("request"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Fn:   Net_Request,
+					Extra:   Net_Request,
 				},
 			},
 			Kind: dvevaluation.FIELD_OBJECT,

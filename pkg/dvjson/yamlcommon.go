@@ -1,13 +1,13 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvjson
 
 import "github.com/Dobryvechir/microcore/pkg/dvevaluation"
 
-func (dvEntry *DvFieldInfo) PrintToJsonAtLevel(res []byte, level int, indent int, noIndentAtFirst bool) []byte {
+func PrintToJsonAtLevel(dvEntry *dvevaluation.DvVariable, res []byte, level int, indent int, noIndentAtFirst bool) []byte {
 	if dvEntry == nil {
 		return res
 	}
@@ -47,7 +47,7 @@ func (dvEntry *DvFieldInfo) PrintToJsonAtLevel(res []byte, level int, indent int
 				if indent > 0 {
 					res = append(res, nextIndentBuf...)
 				}
-				res = dvEntry.Fields[i].PrintToJsonAtLevel(res, nextLevel, indent, true)
+				res = PrintToJsonAtLevel(dvEntry.Fields[i], res, nextLevel, indent, true)
 			}
 			if indent > 0 {
 				res = append(res, byte(10))
@@ -80,7 +80,7 @@ func (dvEntry *DvFieldInfo) PrintToJsonAtLevel(res []byte, level int, indent int
 				}
 				res = appendJsonEscapedString(res, v.Name)
 				res = append(res, ':', ' ')
-				res = v.PrintToJsonAtLevel(res, nextLevel, indent, true)
+				res = PrintToJsonAtLevel(v, res, nextLevel, indent, true)
 			}
 			if indent > 0 {
 				res = append(res, byte(10))
@@ -157,7 +157,7 @@ func appendYamlEscapedString(res []byte, add []byte) []byte {
 	return res
 }
 
-func (dvEntry *DvFieldInfo) PrintToYamlAtLevel(res []byte, level int, indent int, noIndentAtFirst bool) []byte {
+func PrintToYamlAtLevel(dvEntry *dvevaluation.DvVariable, res []byte, level int, indent int, noIndentAtFirst bool) []byte {
 	if dvEntry == nil {
 		return res
 	}
@@ -181,7 +181,7 @@ func (dvEntry *DvFieldInfo) PrintToYamlAtLevel(res []byte, level int, indent int
 			for i := 0; i < arrayAmount; i++ {
 				res = append(res, indentBuf...)
 				res = append(res, '-', ' ')
-				res = dvEntry.Fields[i].PrintToYamlAtLevel(res, nextLevel, indent, true)
+				res = PrintToYamlAtLevel(dvEntry.Fields[i], res, nextLevel, indent, true)
 			}
 		} else {
 			res = append(res, '[', ']')
@@ -194,7 +194,7 @@ func (dvEntry *DvFieldInfo) PrintToYamlAtLevel(res []byte, level int, indent int
 				res = append(res, indentBuf...)
 				res = appendYamlEscapedString(res, v.Name)
 				res = append(res, ':', ' ')
-				res = v.PrintToYamlAtLevel(res, nextLevel, indent, true)
+				res = PrintToYamlAtLevel(v, res, nextLevel, indent, true)
 			}
 		} else {
 			res = append(res, '{', '}')
@@ -208,17 +208,17 @@ func (dvEntry *DvFieldInfo) PrintToYamlAtLevel(res []byte, level int, indent int
 	return res
 }
 
-func (dvEntry *DvFieldInfo) PrintToJson(indent int) []byte {
+func PrintToJson(dvEntry *dvevaluation.DvVariable, indent int) []byte {
 	res := make([]byte, 0, 64000)
-	return dvEntry.PrintToJsonAtLevel(res, 0, indent, true)
+	return PrintToJsonAtLevel(dvEntry, res, 0, indent, true)
 }
 
-func (dvEntry *DvFieldInfo) PrintToYaml(indent int) []byte {
+func PrintToYaml(dvEntry *dvevaluation.DvVariable, indent int) []byte {
 	if indent < 1 {
 		indent = 2
 	}
 	res := make([]byte, 0, 64000)
-	res = dvEntry.PrintToYamlAtLevel(res, 0, indent, true)
+	res = PrintToYamlAtLevel(dvEntry, res, 0, indent, true)
 	n := len(res)
 	if n > 0 && res[0] == 10 {
 		res = res[1:]

@@ -8,6 +8,7 @@ package dvjson
 import (
 	"errors"
 	"fmt"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"math"
 	"os"
 	"strconv"
@@ -26,76 +27,6 @@ type JsonWriter struct {
 	comma      bool
 	justOpened bool
 	CustomInfo interface{}
-}
-
-var jsonEscapeTable = map[byte]byte{
-	'\\':     '\\',
-	'"':      '"',
-	byte(8):  'b',
-	byte(9):  't',
-	byte(10): 'r',
-	byte(12): 'f',
-	byte(13): 'n',
-}
-
-func IsJsonNumber(d []byte) bool {
-	n := len(d)
-	pnt := 0
-	if n > 0 && (d[0] == '+' || d[0] == '-') {
-		pnt++
-	}
-	if pnt >= n || n >= 24 {
-		return false
-	}
-	b := d[pnt]
-	if !(b >= '0' && b <= '9') {
-		return false
-	}
-	for pnt < n && d[pnt] >= '0' && d[pnt] <= '9' {
-		pnt++
-	}
-	if pnt == n {
-		return true
-	}
-	if d[pnt] == '.' {
-		for pnt++; pnt < n && d[pnt] >= '0' && d[pnt] <= '9'; pnt++ {
-		}
-		if pnt == n {
-			return true
-		}
-	}
-	b = d[pnt]
-	pnt++
-	if b != 'e' && b != 'E' || pnt == n {
-		return false
-	}
-	b = d[pnt]
-	pnt++
-	if b == '+' || b == '-' {
-		if pnt == n {
-			return false
-		}
-		b = d[pnt]
-		pnt++
-	}
-	if !(b >= '0' && b <= '9') || n-pnt > 2 {
-		return false
-	}
-	for ; pnt < n; pnt++ {
-		b = d[pnt]
-		if !(b >= '0' && b <= '9') {
-			return false
-		}
-	}
-	return true
-}
-
-func IsJsonString(str []byte) bool {
-	n := len(str)
-	if n < 2 || str[0] != str[n-1] {
-		return false
-	}
-	return true
 }
 
 func CreateJsonWriter(fileName string, indent int, bufSize int, eol int, customInfo interface{}) (*JsonWriter, error) {
@@ -183,7 +114,7 @@ func (w *JsonWriter) PutEscapedString(data []byte) {
 	j := 1
 	for i := 0; i < n; i++ {
 		d := data[i]
-		if c, ok := jsonEscapeTable[d]; ok {
+		if c, ok := dvtextutils.JsonEscapeTable[d]; ok {
 			b[j] = '\\'
 			j++
 			if j == m {
@@ -462,51 +393,6 @@ func ConvertToUnsignedLong(v interface{}) uint64 {
 	return uint64(0)
 }
 
-func QuoteEscapedJsonBytes(b []byte) []byte {
-	n := len(b)
-	dstLen := n + 2
-	res := make([]byte, dstLen)
-	dst := 1
-	res[0] = '"'
-	for i := 0; i < n; i++ {
-		d := b[i]
-		if c, ok := jsonEscapeTable[d]; ok {
-			if dst < dstLen {
-				res[dst] = '\\'
-				dst++
-			} else {
-				res = append(res, '\\')
-			}
-			d = c
-		} else if d < ' ' {
-			d = ' '
-		}
-		if dst < dstLen {
-			res[dst] = d
-			dst++
-		} else {
-			res = append(res, d)
-		}
-	}
-	if dst < dstLen {
-		res[dst] = '"'
-		dst++
-		if dst != dstLen {
-			res = res[:dst]
-		}
-	} else {
-		res = append(res, '"')
-	}
-	return res
-}
-
-func QuoteEscapedJsonBytesToString(b []byte) string {
-	return string(QuoteEscapedJsonBytes(b))
-}
-
-func QuoteEscapedJsonString(s string) string {
-	return QuoteEscapedJsonBytesToString([]byte(s))
-}
 
 func ConvertSimpleStringMapToJson(data map[string]string, includeBrackets bool) string {
 	if data == nil {
@@ -517,7 +403,7 @@ func ConvertSimpleStringMapToJson(data map[string]string, includeBrackets bool) 
 		if res != "" {
 			res += ","
 		}
-		res += QuoteEscapedJsonString(k) + ":" + QuoteEscapedJsonString(v)
+		res += dvtextutils.QuoteEscapedJsonString(k) + ":" + dvtextutils.QuoteEscapedJsonString(v)
 	}
 	if includeBrackets {
 		res = "{" + res + "}"
@@ -550,5 +436,5 @@ func GetNextPathPartByKey(key string) string {
 	case 1:
 		return "[\"" + key + "\"]"
 	}
-	return "[" + string(QuoteEscapedJsonBytes([]byte(key))) + "]"
+	return "[" + string(dvtextutils.QuoteEscapedJsonBytes([]byte(key))) + "]"
 }

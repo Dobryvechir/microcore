@@ -6,12 +6,13 @@ package dvoc
 
 import (
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 )
 
-type ConfigTransformer func(*dvjson.DvFieldInfo) (*dvjson.DvFieldInfo, error)
+type ConfigTransformer func(*dvevaluation.DvVariable) (*dvevaluation.DvVariable, error)
 
-func ConfigTransformerDc(src *dvjson.DvFieldInfo) (dst *dvjson.DvFieldInfo, err error) {
+func ConfigTransformerDc(src *dvevaluation.DvVariable) (dst *dvevaluation.DvVariable, err error) {
 	dst = dvjson.CreateDvFieldInfoObject()
 	s := dvjson.ConvertDvFieldInfoArrayIntoMap(src.Fields)
 	dst.AddStringField("kind", "DeploymentConfig")
@@ -29,7 +30,7 @@ func ConfigTransformerDc(src *dvjson.DvFieldInfo) (dst *dvjson.DvFieldInfo, err 
 	return
 }
 
-func ConfigTransformerSvc(src *dvjson.DvFieldInfo) (dst *dvjson.DvFieldInfo, err error) {
+func ConfigTransformerSvc(src *dvevaluation.DvVariable) (dst *dvevaluation.DvVariable, err error) {
 	dst = dvjson.CreateDvFieldInfoObject()
 	s := dvjson.ConvertDvFieldInfoArrayIntoMap(src.Fields)
 	dst.AddStringField("kind", "Service")
@@ -47,7 +48,7 @@ func ConfigTransformerSvc(src *dvjson.DvFieldInfo) (dst *dvjson.DvFieldInfo, err
 	return
 }
 
-func ConfigTransformerConfigMap(src *dvjson.DvFieldInfo) (dst *dvjson.DvFieldInfo, err error) {
+func ConfigTransformerConfigMap(src *dvevaluation.DvVariable) (dst *dvevaluation.DvVariable, err error) {
 	dst = dvjson.CreateDvFieldInfoObject()
 	s := dvjson.ConvertDvFieldInfoArrayIntoMap(src.Fields)
 	dst.AddStringField("kind", "ConfigMap")
@@ -65,7 +66,7 @@ func ConfigTransformerConfigMap(src *dvjson.DvFieldInfo) (dst *dvjson.DvFieldInf
 	return
 }
 
-func ConfigTransformerRoute(src *dvjson.DvFieldInfo) (dst *dvjson.DvFieldInfo, err error) {
+func ConfigTransformerRoute(src *dvevaluation.DvVariable) (dst *dvevaluation.DvVariable, err error) {
 	dst = dvjson.CreateDvFieldInfoObject()
 	s := dvjson.ConvertDvFieldInfoArrayIntoMap(src.Fields)
 	dst.AddStringField("kind", "Route")

@@ -11,14 +11,16 @@ import (
 
 func object_init() {
 	dvevaluation.ObjectMaster.Prototype = &dvevaluation.DvVariable{
-		Fields: map[string]*dvevaluation.DvVariable{
-			"keys": {
+		Fields: []*dvevaluation.DvVariable{
+			{
+				Name: []byte("keys"),
 				Kind: dvevaluation.FIELD_FUNCTION,
-				Fn:   Object_keys,
+				Extra:   Object_keys,
 			},
-			"entries": {
+			{
+				Name: []byte("entries"),
 				Kind: dvevaluation.FIELD_FUNCTION,
-				Fn:   Array_slice,
+				Extra:   Array_slice,
 			},
 		},
 		Kind: dvevaluation.FIELD_OBJECT,

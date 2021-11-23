@@ -15,8 +15,8 @@ func logInfoForItem(item *DvCrudItem) (res string) {
 	} else {
 		res = "[" + string(item.itemBody) + "](Id:" + string(item.Id) + " fields:("
 		for _, k := range item.Fields {
-			res += string(k.Name) + ":" + string(k.Value) + " body: " + strconv.Itoa(k.posStart) + " start:" +
-				strconv.Itoa(k.valueStartPos) + " end:" + strconv.Itoa(k.valueEndPos) + ","
+			res += string(k.Name) + ":" + string(k.Value) + " body: " + strconv.Itoa(k.Extra.(*DvFieldInfoExtra).posStart) + " start:" +
+				strconv.Itoa(k.Extra.(*DvFieldInfoExtra).valueStartPos) + " end:" + strconv.Itoa(k.Extra.(*DvFieldInfoExtra).valueEndPos) + ","
 		}
 		res += "))"
 	}

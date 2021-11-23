@@ -1,28 +1,19 @@
-// package dvevaluation manages expressions, functions using agrammar
-// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+// package dvevaluation manages expressions, functions using a grammar
+// MicroCore Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
 package dvevaluation
 
 import (
 	"encoding/json"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
-
-var jsonEscapeTable = map[byte]byte{
-	'"':  '"',
-	'\\': '\\',
-	13:   'n',
-	10:   'r',
-	12:   'f',
-	9:    't',
-	8:    'b',
-}
 
 func placeQuotedStringToJson(buf []byte, s []byte) []byte {
 	buf = append(buf, '"')
 	n := len(s)
 	for i := 0; i < n; i++ {
 		b := s[i]
-		c, ok := jsonEscapeTable[b]
+		c, ok := dvtextutils.JsonEscapeTable[b]
 		if ok {
 			buf = append(buf, '\\', c)
 		} else {

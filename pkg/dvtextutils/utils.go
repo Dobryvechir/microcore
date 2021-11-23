@@ -5,6 +5,16 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 
 package dvtextutils
 
+var JsonEscapeTable = map[byte]byte{
+	'\\':     '\\',
+	'"':      '"',
+	byte(8):  'b',
+	byte(9):  't',
+	byte(10): 'r',
+	byte(12): 'f',
+	byte(13): 'n',
+}
+
 func ReadHexValue(v string) int64 {
 	var r int64 = 0
 	n := len(v)
@@ -184,4 +194,110 @@ func GetKeysFromStringIntMap(data map[string]int) []string {
 		i++
 	}
 	return r
+}
+
+func IsJsonNumber(d []byte) bool {
+	n := len(d)
+	pnt := 0
+	if n > 0 && (d[0] == '+' || d[0] == '-') {
+		pnt++
+	}
+	if pnt >= n || n >= 24 {
+		return false
+	}
+	b := d[pnt]
+	if !(b >= '0' && b <= '9') {
+		return false
+	}
+	for pnt < n && d[pnt] >= '0' && d[pnt] <= '9' {
+		pnt++
+	}
+	if pnt == n {
+		return true
+	}
+	if d[pnt] == '.' {
+		for pnt++; pnt < n && d[pnt] >= '0' && d[pnt] <= '9'; pnt++ {
+		}
+		if pnt == n {
+			return true
+		}
+	}
+	b = d[pnt]
+	pnt++
+	if b != 'e' && b != 'E' || pnt == n {
+		return false
+	}
+	b = d[pnt]
+	pnt++
+	if b == '+' || b == '-' {
+		if pnt == n {
+			return false
+		}
+		b = d[pnt]
+		pnt++
+	}
+	if !(b >= '0' && b <= '9') || n-pnt > 2 {
+		return false
+	}
+	for ; pnt < n; pnt++ {
+		b = d[pnt]
+		if !(b >= '0' && b <= '9') {
+			return false
+		}
+	}
+	return true
+}
+
+func IsJsonString(str []byte) bool {
+	n := len(str)
+	if n < 2 || str[0] != str[n-1] {
+		return false
+	}
+	return true
+}
+
+func QuoteEscapedJsonBytes(b []byte) []byte {
+	n := len(b)
+	dstLen := n + 2
+	res := make([]byte, dstLen)
+	dst := 1
+	res[0] = '"'
+	for i := 0; i < n; i++ {
+		d := b[i]
+		if c, ok := JsonEscapeTable[d]; ok {
+			if dst < dstLen {
+				res[dst] = '\\'
+				dst++
+			} else {
+				res = append(res, '\\')
+			}
+			d = c
+		} else if d < ' ' {
+			d = ' '
+		}
+		if dst < dstLen {
+			res[dst] = d
+			dst++
+		} else {
+			res = append(res, d)
+		}
+	}
+	if dst < dstLen {
+		res[dst] = '"'
+		dst++
+		if dst != dstLen {
+			res = res[:dst]
+		}
+	} else {
+		res = append(res, '"')
+	}
+	return res
+}
+
+func QuoteEscapedJsonBytesToString(b []byte) string {
+	return string(QuoteEscapedJsonBytes(b))
+}
+
+func QuoteEscapedJsonString(s string) string {
+	return QuoteEscapedJsonBytesToString([]byte(s))
 }

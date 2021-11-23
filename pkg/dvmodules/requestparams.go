@@ -7,6 +7,7 @@ package dvmodules
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"io/ioutil"
 	"strings"
@@ -29,11 +30,11 @@ func collectRequestParameters(request *dvcontext.RequestContext) error {
 				request.InputJson, err = dvjson.JsonFullParser(request.Input)
 				if err != nil {
 					request.PrimaryContextEnvironment.Set(dvcontext.BODY_JSON, request.InputJson)
-					dvjson.CollectJsonVariables(request.InputJson, bodyParams, request.PrimaryContextEnvironment, true)
+					dvevaluation.CollectJsonVariables(request.InputJson, bodyParams, request.PrimaryContextEnvironment, true)
 				}
 			}
 		}
 	}
-	dvjson.CollectVariablesByStringMap(request.Queries, action.QueryParams, request.PrimaryContextEnvironment, true)
+	dvevaluation.CollectVariablesByStringMap(request.Queries, action.QueryParams, request.PrimaryContextEnvironment, true)
 	return nil
 }

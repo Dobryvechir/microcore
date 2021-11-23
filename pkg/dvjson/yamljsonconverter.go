@@ -105,7 +105,7 @@ func readJsonNextNonSpace(data []byte, pos int, n int) int {
 	return pos
 }
 
-func readJsonPart(data []byte, i int) (*DvFieldInfo, int, error) {
+func readJsonPart(data []byte, i int) (*dvevaluation.DvVariable, int, error) {
 	n := len(data)
 	for ; i < n && data[i] <= 32; i++ {
 	}
@@ -114,7 +114,7 @@ func readJsonPart(data []byte, i int) (*DvFieldInfo, int, error) {
 	}
 	switch data[i] {
 	case '{':
-		fields := make([]*DvFieldInfo, 0, 20)
+		fields := make([]*dvevaluation.DvVariable, 0, 20)
 		i = readJsonNextNonSpace(data, i+1, n)
 		for i < n && data[i] != '}' {
 			if data[i] == '"' {
@@ -148,9 +148,9 @@ func readJsonPart(data []byte, i int) (*DvFieldInfo, int, error) {
 		if i >= n {
 			return nil, n, fmt.Errorf("Expected } at the end %s", string(data[i:i+1]), getPositionErrorInfo(data, n))
 		}
-		return &DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, Fields: fields}, i + 1, nil
+		return &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_OBJECT, Fields: fields}, i + 1, nil
 	case '[':
-		fields := make([]*DvFieldInfo, 0, 20)
+		fields := make([]*dvevaluation.DvVariable, 0, 20)
 		i = readJsonNextNonSpace(data, i+1, n)
 		for i < n && data[i] != ']' {
 			dvEntry, nextPos, err := readJsonPart(data, i)
@@ -170,24 +170,24 @@ func readJsonPart(data []byte, i int) (*DvFieldInfo, int, error) {
 		if i >= n {
 			return nil, n, fmt.Errorf("Expected ] at the end %s", string(data[i:i+1]), getPositionErrorInfo(data, n))
 		}
-		return &DvFieldInfo{Kind: dvevaluation.FIELD_ARRAY, Fields: fields}, i + 1, nil
+		return &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: fields}, i + 1, nil
 	case '"':
 		str, nextPos, err := readJsonStringPart(data, i)
 		if err != nil {
 			return nil, n, err
 		}
-		return &DvFieldInfo{Kind: dvevaluation.FIELD_STRING, Value: str}, nextPos, nil
+		return &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING, Value: str}, nextPos, nil
 	default:
 		str, nextPos, err, kind := readJsonSimplePart(data, i)
 		if err != nil {
 			return nil, n, err
 		}
-		return &DvFieldInfo{Kind: kind, Value: str}, nextPos, nil
+		return &dvevaluation.DvVariable{Kind: kind, Value: str}, nextPos, nil
 	}
 
 }
 
-func ReadJsonAsDvFieldInfo(data []byte) (*DvFieldInfo, error) {
+func ReadJsonAsDvFieldInfo(data []byte) (*dvevaluation.DvVariable, error) {
 	dvEntry, pos, err := readJsonPart(data, 0)
 	if err != nil {
 		return nil, err

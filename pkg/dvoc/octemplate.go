@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvoc
 
@@ -16,7 +16,7 @@ const (
 	dcEnvironmentVariablesPath = "spec.template.spec.containers[0].env"
 )
 
-func ReadPodEnvironmentAndDC(microServiceName string) (res map[string]string, dc *dvjson.DvFieldInfo, err error) {
+func ReadPodEnvironmentAndDC(microServiceName string) (res map[string]string, dc *dvevaluation.DvVariable, err error) {
 	res = make(map[string]string)
 	dc, err = GetLiveDeploymentConfiguration(microServiceName)
 	if err != nil {
@@ -38,7 +38,7 @@ func GetSpecificVariableAtServer(microServiceName string, key string) (data stri
 	return info, nil
 }
 
-func ReadPodReadyEnvironment(microServiceName string) (res map[string]string, dc *dvjson.DvFieldInfo, err error) {
+func ReadPodReadyEnvironment(microServiceName string) (res map[string]string, dc *dvevaluation.DvVariable, err error) {
 	res, dc, err = ReadPodEnvironmentAndDC(microServiceName)
 	if err != nil {
 		return
@@ -56,7 +56,7 @@ func ReadPodReadyEnvironment(microServiceName string) (res map[string]string, dc
 	return
 }
 
-func ReadTemplateParameters(templateData []byte) (res map[string]string, obj *dvjson.DvFieldInfo, err error) {
+func ReadTemplateParameters(templateData []byte) (res map[string]string, obj *dvevaluation.DvVariable, err error) {
 	obj, err = dvjson.JsonFullParser(templateData)
 	if err != nil {
 		return

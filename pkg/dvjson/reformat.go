@@ -360,7 +360,7 @@ func ConvertStringArrayToByteByteArray(data []string) [][]byte {
 	return res
 }
 
-func ConvertFieldItemArrayIntoMap(info *DvFieldInfo, keyField string, valueField string, defValue string) (res map[string]string, err error) {
+func ConvertFieldItemArrayIntoMap(info *dvevaluation.DvVariable, keyField string, valueField string, defValue string) (res map[string]string, err error) {
 	res = make(map[string]string)
 	if info == nil || info.Kind != dvevaluation.FIELD_ARRAY {
 		return

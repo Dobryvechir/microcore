@@ -29,17 +29,7 @@ type DvCrudDetails struct {
 	nextId         int
 }
 
-type QuickSearchInfo struct {
-	Looker map[string]*DvFieldInfo
-	Key    string
-}
-
-type DvFieldInfo struct {
-	Name          []byte
-	Value         []byte
-	Kind          int
-	Fields        []*DvFieldInfo
-	QuickSearch   *QuickSearchInfo
+type DvFieldInfoExtra struct {
 	valueStartPos int
 	valueEndPos   int
 	FieldStatus   int
@@ -47,7 +37,7 @@ type DvFieldInfo struct {
 }
 
 type DvCrudItem struct {
-	DvFieldInfo
+	dvevaluation.DvVariable
 	itemBody []byte
 	Id       []byte
 	posEnd   int
@@ -91,8 +81,6 @@ const (
 	FIELD_STATUS_IS_ID = 1 << iota
 )
 
-const fnResolvedSign = "_$_"
-
 var _stateDebugInfo = [...]string{"STATE_INITIAL", "STATE_INITIAL_ARRAY_STARTED", "STATE_INITIAL_ARRAY_WAITING_COMMA_OR_END", "STATE_ARRAY_STARTED", "STATE_OBJECT_STARTED", "STATE_OBJECT_COLON", "STATE_VALUE_STARTED",
 	"STATE_WAITING_END", "STATE_OBJECT_COMMA_OR_END_EXPECTED", "STATE_ARRAY_COMMA_OR_END_EXPECTED", "N"}
 
@@ -100,15 +88,15 @@ func jsonConvertToItems(body []byte, crudDetails *DvCrudDetails, options int) *D
 	return JsonQuickParser(body, crudDetails, options&OPTIONS_ANY_OBJECT != 0, options&OPTIONS_LOW_MASK)
 }
 
-func updateGroupOffset(details *DvFieldInfo, startOffset int, dif int) {
-	if details.posStart > startOffset {
-		details.posStart += dif
+func updateGroupOffset(details *dvevaluation.DvVariable, startOffset int, dif int) {
+	if details.Extra.(*DvFieldInfoExtra).posStart > startOffset {
+		details.Extra.(*DvFieldInfoExtra).posStart += dif
 	}
-	if details.valueStartPos > startOffset {
-		details.valueStartPos += dif
+	if details.Extra.(*DvFieldInfoExtra).valueStartPos > startOffset {
+		details.Extra.(*DvFieldInfoExtra).valueStartPos += dif
 	}
-	if details.valueEndPos > startOffset {
-		details.valueEndPos += dif
+	if details.Extra.(*DvFieldInfoExtra).valueEndPos > startOffset {
+		details.Extra.(*DvFieldInfoExtra).valueEndPos += dif
 	}
 	for _, v := range details.Fields {
 		updateGroupOffset(v, startOffset, dif)
@@ -119,8 +107,8 @@ func updateItemOffsets(item *DvCrudItem, startOffset int, dif int) {
 	if dif == 0 {
 		return
 	}
-	if item.posStart > startOffset {
-		item.posStart += dif
+	if item.Extra.(*DvFieldInfoExtra).posStart > startOffset {
+		item.Extra.(*DvFieldInfoExtra).posStart += dif
 	}
 	if item.posEnd > startOffset {
 		item.posEnd += dif
@@ -152,13 +140,13 @@ func changeItemField(item *DvCrudItem, fieldValue []byte, fieldName []byte, fiel
 		for _, v := range item.Fields {
 			if bytes.Equal(v.Name, fieldName) {
 				v.Value = fieldValue
-				dif = v.valueEndPos - v.valueStartPos - fieldValueLen
+				dif = v.Extra.(*DvFieldInfoExtra).valueEndPos - v.Extra.(*DvFieldInfoExtra).valueStartPos - fieldValueLen
 				res := make([]byte, 0, len(item.itemBody)+dif)
-				res = append(res, item.itemBody[:v.valueStartPos]...)
+				res = append(res, item.itemBody[:v.Extra.(*DvFieldInfoExtra).valueStartPos]...)
 				res = append(res, fieldValue...)
-				res = append(res, item.itemBody[v.valueEndPos:]...)
+				res = append(res, item.itemBody[v.Extra.(*DvFieldInfoExtra).valueEndPos:]...)
 				item.itemBody = res
-				updateItemOffsets(item, v.valueStartPos, dif)
+				updateItemOffsets(item, v.Extra.(*DvFieldInfoExtra).valueStartPos, dif)
 				return dif
 			}
 		}
@@ -189,10 +177,18 @@ func changeItemField(item *DvCrudItem, fieldValue []byte, fieldName []byte, fiel
 		res = append(res, item.itemBody[pos:]...)
 		item.itemBody = res
 	}
-	valueStartPos := item.posStart + pos + subPos
+	valueStartPos := item.Extra.(*DvFieldInfoExtra).posStart + pos + subPos
 	updateItemOffsets(item, valueStartPos, dif)
-	newField := &DvFieldInfo{posStart: strings.LastIndex(insertion, "\":\"") + valueStartPos - 1, Name: fieldName, Value: fieldValue,
-		valueStartPos: valueStartPos, valueEndPos: valueStartPos + valueEndOffset, Kind: fieldKind}
+	newField := &dvevaluation.DvVariable{
+		Name:  fieldName,
+		Value: fieldValue,
+		Kind:  fieldKind,
+		Extra: &DvFieldInfoExtra{
+			posStart:      strings.LastIndex(insertion, "\":\"") + valueStartPos - 1,
+			valueStartPos: valueStartPos,
+			valueEndPos:   valueStartPos + valueEndOffset,
+		},
+	}
 	item.Fields = append(item.Fields, newField)
 	return dif
 }
@@ -350,12 +346,12 @@ func getExpectedButFound(expected string, c byte, pos int, body []byte) string {
 	return getErrorSample(mes, pos, body)
 }
 
-func presentCurrentState(place string, stack []*DvFieldInfo, stackSign []int, level int, levelDif int, state int, postState int, i int, c byte, currentItem *DvCrudItem) {
+func presentCurrentState(place string, stack []*dvevaluation.DvVariable, stackSign []int, level int, levelDif int, state int, postState int, i int, c byte, currentItem *DvCrudItem) {
 	log.Printf("%s level: %d dif: %d state: %s postState: %d i:%d c:%c(%d) StackSign: %v Stack: %v %s", place, level, levelDif, _stateDebugInfo[state], postState, i, int(c), int(c), stackSign[:level+levelDif+1], stack[:level+1], logInfoForItem(currentItem))
 }
 
 func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bool, mode int) *DvCrudParsingInfo {
-	stack := make([]*DvFieldInfo, 20, 20)
+	stack := make([]*dvevaluation.DvVariable, 20, 20)
 	stackSign := make([]int, 20, 20)
 	l := len(body)
 	level := -1
@@ -387,9 +383,14 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 					isCurrentFieldId = bytes.Equal(key, crudDetails.userIdName)
 				}
 				if (mode == OPTIONS_FIELDS_ENTRIES || isCurrentFieldId) && level == 0 || mode >= OPTIONS_FIELDS_DETAILED {
-					currentField := &DvFieldInfo{Name: key, posStart: nxtPos}
+					currentField := &dvevaluation.DvVariable{
+						Name: key,
+						Extra: &DvFieldInfoExtra{
+							posStart: nxtPos,
+						},
+					}
 					if isCurrentFieldId {
-						currentField.FieldStatus |= FIELD_STATUS_IS_ID
+						currentField.Extra.(*DvFieldInfoExtra).FieldStatus |= FIELD_STATUS_IS_ID
 					}
 					if level == 0 {
 						currentItem.Fields = append(currentItem.Fields, currentField)
@@ -409,7 +410,13 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 				state = STATE_WAITING_END
 			} else if c == '{' {
 				state = STATE_OBJECT_STARTED
-				currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, posStart: i}}
+				currentItem = &DvCrudItem{
+					DvVariable: dvevaluation.DvVariable{
+						Kind: dvevaluation.FIELD_OBJECT,
+						Extra: &DvFieldInfoExtra{
+							posStart: i,
+						},
+					}}
 				level = 0
 				stackSign[levelDif] = dvevaluation.FIELD_OBJECT
 			} else {
@@ -418,7 +425,13 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 					return r
 				} else if c == '[' {
 					state = STATE_VALUE_STARTED
-					currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: dvevaluation.FIELD_ARRAY, posStart: i}}
+					currentItem = &DvCrudItem{
+						DvVariable: dvevaluation.DvVariable{
+							Kind: dvevaluation.FIELD_ARRAY,
+							Extra: &DvFieldInfoExtra{
+								posStart: i,
+							},
+						}}
 					level = 0
 					stackSign[levelDif] = dvevaluation.FIELD_ARRAY
 				} else {
@@ -427,7 +440,18 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 						r.Err = err
 					} else {
 						val := body[startPos:endPos]
-						currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: kind, posStart: startPos, Value: val}, itemBody: val, Id: val, posEnd: endPos}
+						currentItem = &DvCrudItem{
+							DvVariable: dvevaluation.DvVariable{
+								Kind:  kind,
+								Value: val,
+								Extra: &DvFieldInfoExtra{
+									posStart: startPos,
+								},
+							},
+							itemBody: val,
+							Id:       val,
+							posEnd:   endPos,
+						}
 						state = STATE_INITIAL_ARRAY_WAITING_COMMA_OR_END
 						r.Items = append(r.Items, currentItem)
 						i = nxtPos - 1
@@ -448,7 +472,11 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 			previousKind := stackSign[level+levelDif]
 			if previousKind == dvevaluation.FIELD_ARRAY && c != ']' && (mode >= OPTIONS_FIELDS_DETAILED || mode == OPTIONS_FIELDS_ENTRIES && level == 0) {
 				indexCurrent := 0
-				currentField := &DvFieldInfo{posStart: i}
+				currentField := &dvevaluation.DvVariable{
+					Extra: &DvFieldInfoExtra{
+						posStart: i,
+					},
+				}
 				if level == 0 {
 					indexCurrent = len(currentItem.Fields)
 					currentItem.Fields = append(currentItem.Fields, currentField)
@@ -478,8 +506,8 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 					}
 				}
 				if stack[level] != nil {
-					stack[level].valueStartPos = i
-					stack[level].valueEndPos = i
+					stack[level].Extra.(*DvFieldInfoExtra).valueStartPos = i
+					stack[level].Extra.(*DvFieldInfoExtra).valueEndPos = i
 					stack[level].Kind = knd
 				}
 				level++
@@ -494,8 +522,8 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 					return r
 				}
 				if stack[level] != nil {
-					stack[level].valueStartPos = startPos
-					stack[level].valueEndPos = endPos
+					stack[level].Extra.(*DvFieldInfoExtra).valueStartPos = startPos
+					stack[level].Extra.(*DvFieldInfoExtra).valueEndPos = endPos
 					stack[level].Kind = kind
 					stack[level].Value = body[startPos:endPos]
 					if isCurrentFieldId && level == 0 {
@@ -543,7 +571,14 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 			} else if c == '{' {
 				state = STATE_OBJECT_STARTED
 				r.Kind = dvevaluation.FIELD_OBJECT
-				currentItem = &DvCrudItem{DvFieldInfo: DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, posStart: i}}
+				currentItem = &DvCrudItem{
+					DvVariable: dvevaluation.DvVariable{
+						Kind: dvevaluation.FIELD_OBJECT,
+						Extra: &DvFieldInfoExtra{
+							posStart: i,
+						},
+					},
+				}
 				level = 0
 				levelDif = 0
 				stackSign[0] = dvevaluation.FIELD_OBJECT
@@ -574,13 +609,13 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 				level--
 				if level < 0 {
 					currentItem.posEnd = i + 1
-					currentItem.itemBody = body[currentItem.posStart:currentItem.posEnd]
+					currentItem.itemBody = body[currentItem.Extra.(*DvFieldInfoExtra).posStart:currentItem.posEnd]
 					r.Items = append(r.Items, currentItem)
 					state = STATE_INITIAL_ARRAY_WAITING_COMMA_OR_END
 				} else {
 					if stack[level] != nil {
-						stack[level].valueEndPos = i + 1
-						stack[level].Value = body[stack[level].valueStartPos:stack[level].valueEndPos]
+						stack[level].Extra.(*DvFieldInfoExtra).valueEndPos = i + 1
+						stack[level].Value = body[stack[level].Extra.(*DvFieldInfoExtra).valueStartPos:stack[level].Extra.(*DvFieldInfoExtra).valueEndPos]
 					}
 					if stackSign[level+levelDif] == dvevaluation.FIELD_OBJECT {
 						state = STATE_OBJECT_COMMA_OR_END_EXPECTED
@@ -593,7 +628,7 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 				level--
 				if level < 0 {
 					currentItem.posEnd = i + 1
-					currentItem.itemBody = body[currentItem.posStart:currentItem.posEnd]
+					currentItem.itemBody = body[currentItem.Extra.(*DvFieldInfoExtra).posStart:currentItem.posEnd]
 					r.Items = append(r.Items, currentItem)
 
 					if levelDif == 0 {
@@ -603,8 +638,8 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 					}
 				} else {
 					if stack[level] != nil {
-						stack[level].valueEndPos = i + 1
-						stack[level].Value = body[stack[level].valueStartPos:stack[level].valueEndPos]
+						stack[level].Extra.(*DvFieldInfoExtra).valueEndPos = i + 1
+						stack[level].Value = body[stack[level].Extra.(*DvFieldInfoExtra).valueStartPos:stack[level].Extra.(*DvFieldInfoExtra).valueEndPos]
 					}
 					if stackSign[level+levelDif] == dvevaluation.FIELD_OBJECT {
 						state = STATE_OBJECT_COMMA_OR_END_EXPECTED
@@ -622,29 +657,26 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 	return r
 }
 
-func ConvertDvCrudItemToDvFieldInfo(src *DvCrudItem) (dst *DvFieldInfo) {
-	dst = &DvFieldInfo{
-		Name:          src.Name,
-		Value:         src.Value,
-		Kind:          src.Kind,
-		Fields:        src.Fields,
-		valueStartPos: src.valueStartPos,
-		valueEndPos:   src.valueEndPos,
-		FieldStatus:   src.FieldStatus,
-		posStart:      src.posStart,
+func ConvertDvCrudItemToDvFieldInfo(src *DvCrudItem) (dst *dvevaluation.DvVariable) {
+	dst = &dvevaluation.DvVariable{
+		Name:   src.Name,
+		Value:  src.Value,
+		Kind:   src.Kind,
+		Fields: src.Fields,
+		Extra:  src.Extra,
 	}
 	return
 }
 
-func ConvertDvCrudParsingInfoToDvFieldInfo(crudParsingInfo *DvCrudParsingInfo) *DvFieldInfo {
-	res := &DvFieldInfo{
+func ConvertDvCrudParsingInfoToDvFieldInfo(crudParsingInfo *DvCrudParsingInfo) *dvevaluation.DvVariable {
+	res := &dvevaluation.DvVariable{
 		Kind:  crudParsingInfo.Kind,
 		Value: crudParsingInfo.Value,
 	}
 	switch res.Kind {
 	case dvevaluation.FIELD_ARRAY:
 		n := len(crudParsingInfo.Items)
-		res.Fields = make([]*DvFieldInfo, n)
+		res.Fields = make([]*dvevaluation.DvVariable, n)
 		for i := 0; i < n; i++ {
 			res.Fields[i] = ConvertDvCrudItemToDvFieldInfo(crudParsingInfo.Items[i])
 		}
@@ -654,7 +686,7 @@ func ConvertDvCrudParsingInfoToDvFieldInfo(crudParsingInfo *DvCrudParsingInfo) *
 	return res
 }
 
-func JsonFullParser(body []byte) (*DvFieldInfo, error) {
+func JsonFullParser(body []byte) (*dvevaluation.DvVariable, error) {
 	crudDetails := &DvCrudDetails{}
 	highLevelObject := false
 	parsed := JsonQuickParser(body, crudDetails, highLevelObject, OPTIONS_FIELDS_DETAILED)
@@ -663,3 +695,5 @@ func JsonFullParser(body []byte) (*DvFieldInfo, error) {
 	}
 	return ConvertDvCrudParsingInfoToDvFieldInfo(parsed), nil
 }
+
+var jsonFullParserInited = dvevaluation.RegisterJsonFullParser(JsonFullParser)

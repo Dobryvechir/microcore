@@ -19,7 +19,7 @@ func (variable *DvVariable) ObjectInPrototypedChain(key string) *DvVariable {
 		return nil
 	}
 	if variable.Fields != nil {
-		if v, ok := variable.Fields[key]; ok {
+		if v, ok := variable.FindChildByKey(key); ok {
 			return v
 		}
 	}
@@ -39,7 +39,7 @@ func (variable *DvVariable) ObjectGet(key string) (*DvVariable, error) {
 	if variable.Kind == FIELD_NULL {
 		return nil, errors.New("Cannot get " + key + " from null")
 	}
-	if v, ok := variable.Fields[key]; ok {
+	if v, ok := variable.FindChildByKey(key); ok {
 		return v, nil
 	}
 	if variable.Prototype != nil {
@@ -78,14 +78,10 @@ func (variable *DvVariable) GetVariableArray(force bool) ([]*DvVariable, error) 
 		}
 		return nil, errors.New("Array is expected")
 	}
-	l, err := variable.Fields[LENGTH_PROPERTY].GetIntValue(force)
-	if err != nil {
-		return nil, err
+	if variable.Fields!=nil {
+		return variable.Fields, nil
 	}
-	res := make([]*DvVariable, l)
-	for i := 0; i < l; i++ {
-		res[i] = variable.Fields[strconv.Itoa(i)]
-	}
+	res := make([]*DvVariable, 0,7)
 	return res, nil
 }
 
@@ -104,19 +100,19 @@ func (variable *DvVariable) GetIntValue(force bool) (int, error) {
 			return 0, errors.New("Cannot convert object to integer")
 		}
 	}
-	if variable.Kind == FIELD_UNDEFINED || variable.Kind == FIELD_NULL || variable.Value == "" {
+	if variable.Kind == FIELD_UNDEFINED || variable.Kind == FIELD_NULL || len(variable.Value) == 0 {
 		return 0, nil
 	}
 	if variable.Kind == FIELD_BOOLEAN {
-		if variable.Value == "false" || variable.Value == "FALSE" {
+		if len(variable.Value) == 0 || variable.Value[0] == 'f' || variable.Value[0] == 'F' {
 			return 0, nil
 		}
 		return 1, nil
 	}
-	return strconv.Atoi(variable.Value)
+	return strconv.Atoi(string(variable.Value))
 }
 
-func (variable *DvVariable) GetStringValue() string {
+func (variable *DvVariable) GetStringValueJS() string {
 	if variable == nil || variable.Kind == FIELD_UNDEFINED {
 		return typeOfSpecific[FIELD_UNDEFINED]
 	}
@@ -126,7 +122,7 @@ func (variable *DvVariable) GetStringValue() string {
 	if variable.Kind >= FIELD_OBJECT {
 		return "[object Object]"
 	}
-	return variable.Value
+	return string(variable.Value)
 }
 
 func (variable *DvVariable) GetStringArrayValue() []string {
@@ -143,7 +139,7 @@ func (variable *DvVariable) GetStringArrayValue() []string {
 		}
 		return res
 	}
-	return []string{variable.Value}
+	return []string{string(variable.Value)}
 }
 
 func (variable *DvVariable) GetStringMap() (res map[string]string) {
@@ -152,7 +148,11 @@ func (variable *DvVariable) GetStringMap() (res map[string]string) {
 		return
 	}
 	for k, v := range variable.Fields {
-		res[k] = v.GetStringValue()
+		key:=string(v.Name)
+		if key=="" {
+			key = strconv.Itoa(k)
+		}
+		res[key] = v.GetStringValue()
 	}
 	return
 }
@@ -163,17 +163,21 @@ func (variable *DvVariable) GetStringArrayMap() (res map[string][]string) {
 		return
 	}
 	for k, v := range variable.Fields {
-		res[k] = v.GetStringArrayValue()
+		key:=string(v.Name)
+		if key=="" {
+			key = strconv.Itoa(k)
+		}
+		res[key] = v.GetStringArrayValue()
 	}
 	return
 }
 
-func (variable *DvVariable) SetSimpleValue(value string, tp int) error {
+func (variable *DvVariable) SetSimpleValue(value string, kind int) error {
 	if variable == nil {
 		return errors.New("Cannot assign to null variable")
 	}
-	variable.Value = value
-	variable.Kind = tp
+	variable.Value = []byte(value)
+	variable.Kind = kind
 	return nil
 }
 
@@ -237,7 +241,7 @@ func QuickNumberEvaluation(parent *DvVariable, data string) (res *DvVariable, er
 		res = parent
 		res.Kind = FIELD_NUMBER
 	}
-	res.Value = data
+	res.Value = []byte(data)
 	err = ValidateNumber(data)
 	return
 }
@@ -265,7 +269,7 @@ func QuickStringEvaluation(parent *DvVariable, data string) (res *DvVariable, er
 	if (c != '\'' && c != '"' && c != '`') || data[l-1] != c {
 		err = errors.New("Wrong string: " + data)
 	}
-	res.Value = dvgrammar.GetEscapedString([]byte(data[i+1 : l-1]))
+	res.Value =[]byte(dvgrammar.GetEscapedString([]byte(data[i+1 : l-1])))
 	return
 }
 
@@ -291,7 +295,7 @@ func QuickVariableEvaluation(parent *DvVariable, data string) (res *DvVariable, 
 	case '"', '`', '\'':
 		return QuickStringEvaluation(res, data)
 	}
-	res.Value = data
+	res.Value = []byte(data)
 	switch data {
 	case "undefined":
 		return

@@ -11,14 +11,16 @@ import (
 
 func array_init() {
 	dvevaluation.ArrayMaster.Prototype = &dvevaluation.DvVariable{
-		Fields: map[string]*dvevaluation.DvVariable{
-			"push": {
+		Fields: []*dvevaluation.DvVariable{
+			{
+				Name: []byte("push"),
 				Kind: dvevaluation.FIELD_FUNCTION,
-				Fn:   Array_push,
+				Extra:   Array_push,
 			},
-			"slice": {
+			{
+				Name: []byte("slice"),
 				Kind: dvevaluation.FIELD_FUNCTION,
-				Fn:   Array_slice,
+				Extra:   Array_slice,
 			},
 		},
 		Kind: dvevaluation.FIELD_OBJECT,

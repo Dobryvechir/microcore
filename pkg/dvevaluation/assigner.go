@@ -4,6 +4,7 @@
 package dvevaluation
 
 import (
+	"bytes"
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"strconv"
@@ -15,14 +16,73 @@ var ArrayMaster *DvVariable = RegisterMasterVariable("Array", &DvVariable{Kind: 
 
 func AssignVariableDirect(parent *DvVariable, value *DvVariable) error {
 	if value == nil {
-		value = &DvVariable{}
+		value = &DvVariable{Kind: FIELD_UNDEFINED}
 	}
 	parent.Fields = value.Fields
 	parent.Value = value.Value
 	parent.Kind = value.Kind
-	parent.Fn = value.Fn
+	parent.Extra = value.Extra
 	parent.Prototype = value.Prototype
 	return nil
+}
+
+func (item *DvVariable) FindChildByKey(key string) (*DvVariable, bool) {
+	if item == nil {
+		return nil, false
+	}
+	n := len(item.Fields)
+	k := []byte(key)
+	for i := 0; i < n; i++ {
+		f := item.Fields[i]
+		if f != nil && bytes.Equal(f.Name, k) {
+			return f, true
+		}
+	}
+	return nil, false
+}
+
+func (item *DvVariable) FindChildIndexByKey(key string) int {
+	if item == nil {
+		return -1
+	}
+	n := len(item.Fields)
+	k := []byte(key)
+	for i := 0; i < n; i++ {
+		f := item.Fields[i]
+		if f != nil && bytes.Equal(f.Name, k) {
+			return i
+		}
+	}
+	return -1
+}
+
+func (item *DvVariable) DeleteChildByIndex(ind int) {
+	if item == nil || ind < 0 {
+		return
+	}
+	n := len(item.Fields)
+	if ind < n {
+		if ind == n-1 {
+			item.Fields = item.Fields[:ind:ind]
+		} else {
+			item.Fields = append(item.Fields[:ind], item.Fields[ind+1:]...)
+		}
+	}
+}
+
+func (item *DvVariable) MakeCopyWithNewKey(key string) *DvVariable {
+	k := []byte(key)
+	if item == nil {
+		return &DvVariable{Name: k, Kind: FIELD_NULL}
+	}
+	return &DvVariable{
+		Name:      k,
+		Kind:      item.Kind,
+		Value:     item.Value,
+		Fields:    item.Fields,
+		Extra:     item.Extra,
+		Prototype: item.Prototype,
+	}
 }
 
 func AssignVariable(parent *DvVariable, keys []string, value *DvVariable, force bool) error {
@@ -30,7 +90,7 @@ func AssignVariable(parent *DvVariable, keys []string, value *DvVariable, force 
 		return errors.New("Cannot assign to undefined [keys:" + strings.Join(keys, ",") + "]")
 	}
 	if value == nil {
-		value = &DvVariable{}
+		value = &DvVariable{Kind: FIELD_NULL}
 	}
 	l := len(keys)
 	if l == 0 {
@@ -48,16 +108,18 @@ func AssignVariable(parent *DvVariable, keys []string, value *DvVariable, force 
 				return errors.New("Cannot assign key " + key + " to " + typeOfSpecific[parent.Kind] + " [keys:" + strings.Join(keys, ",") + "]")
 			}
 		}
-		ok = parent.Fields != nil
-		if ok {
-			child, ok = parent.Fields[key]
-		} else if force {
-			parent.Fields = make(map[string]*DvVariable)
+		ok = parent.Fields == nil
+		if !ok {
+			if force {
+				parent.Fields = make([]*DvVariable, 0, 7)
+			}
+		} else {
+			child, ok = parent.FindChildByKey(key)
 		}
 		if !ok {
 			if force {
-				child = &DvVariable{}
-				parent.Fields[key] = child
+				child = &DvVariable{Name: []byte(key), Kind: FIELD_OBJECT, Fields: make([]*DvVariable, 0, 7)}
+				parent.Fields = append(parent.Fields, child)
 			} else {
 				return errors.New("Cannot assign key " + key + " to  undefined [keys:" + strings.Join(keys, ",") + "]")
 			}
@@ -73,13 +135,13 @@ func AssignVariable(parent *DvVariable, keys []string, value *DvVariable, force 
 		}
 	}
 	if parent.Fields == nil {
-		parent.Fields = make(map[string]*DvVariable)
+		parent.Fields = make([]*DvVariable, 0, 7)
 	}
-	parent.Fields[key] = value
+	parent.Fields = append(parent.Fields, value.MakeCopyWithNewKey(key))
 	return nil
 }
 
-func GetVariableByKeys(parent *DvVariable, keys []string) (thisValue *DvVariable, child *DvVariable, prototyped bool, err error) {
+func GetVariableByKeys(parent *DvVariable, keys []string, silent bool) (thisValue *DvVariable, child *DvVariable, prototyped bool, err error) {
 	prototyped = false
 	err = nil
 	thisValue = parent
@@ -89,6 +151,9 @@ func GetVariableByKeys(parent *DvVariable, keys []string) (thisValue *DvVariable
 		return
 	}
 	if parent == nil {
+		if silent {
+			return
+		}
 		err = errors.New("Cannot get object from undefined")
 		return
 	}
@@ -103,7 +168,7 @@ func GetVariableByKeys(parent *DvVariable, keys []string) (thisValue *DvVariable
 		}
 		ok = parent.Fields != nil
 		if ok {
-			child, ok = parent.Fields[key]
+			child, ok = parent.FindChildByKey(key)
 		}
 		prototyped = false
 		if !ok && parent.Prototype != nil {
@@ -125,7 +190,7 @@ func DvVariableFromString(parent *DvVariable, data string) *DvVariable {
 	if parent == nil {
 		parent = &DvVariable{}
 	}
-	parent.Value = data
+	parent.Value = []byte(data)
 	parent.Kind = FIELD_STRING
 	return parent
 }
@@ -134,7 +199,7 @@ func DvVariableFromInt(parent *DvVariable, data int) *DvVariable {
 	if parent == nil {
 		parent = &DvVariable{}
 	}
-	parent.Value = strconv.Itoa(data)
+	parent.Value = []byte(strconv.Itoa(data))
 	parent.Kind = FIELD_NUMBER
 	return parent
 }
@@ -143,33 +208,34 @@ func DvVariableFromArray(parent *DvVariable, data []*DvVariable) *DvVariable {
 	if parent == nil {
 		parent = &DvVariable{Prototype: ArrayMaster}
 	}
-	parent.Fields = make(map[string]*DvVariable)
-	parent.Kind = FIELD_ARRAY
 	n := len(data)
-	parent.Fields[LENGTH_PROPERTY] = DvVariableFromInt(nil, n)
+	parent.Fields = make([]*DvVariable, n)
+	parent.Kind = FIELD_ARRAY
 	for i := 0; i < n; i++ {
-		parent.Fields[strconv.Itoa(i)] = data[i]
+		parent.Fields[i] = data[i]
 	}
 	return parent
 }
 
-func DvVariableFromMap(parent *DvVariable, data map[string]*DvVariable, reuse bool) *DvVariable {
+func DvVariableFromMap(parent *DvVariable, data map[string]*DvVariable) *DvVariable {
 	if parent == nil {
 		parent = &DvVariable{Prototype: ObjectMaster}
 	}
-	if data == nil {
-		data = make(map[string]*DvVariable)
-		reuse = true
-	}
-	parent.Kind = FIELD_OBJECT
-	if reuse {
-		parent.Fields = data
-	} else {
-		parent.Fields = make(map[string]*DvVariable)
+	n := len(data)
+	parent.Fields = make([]*DvVariable, n, n+1)
+	if data != nil {
+		i := 0
 		for k, v := range data {
-			parent.Fields[k] = v
+			item := v.MakeCopyWithNewKey(k)
+			if i < n {
+				parent.Fields[i] = item
+				i++
+			} else {
+				parent.Fields = append(parent.Fields, item)
+			}
 		}
 	}
+	parent.Kind = FIELD_OBJECT
 	return parent
 }
 
@@ -230,7 +296,7 @@ func GetVariableByDefinition(parent *DvVariable, variableDefinition string) (thi
 		err = dvgrammar.EnrichErrorStr(err, "At getting Variable from "+variableDefinition+" due to this name conversion")
 		return
 	}
-	thisValue, child, prototyped, err = GetVariableByKeys(parent, keys)
+	thisValue, child, prototyped, err = GetVariableByKeys(parent, keys, true)
 	if err != nil {
 		err = dvgrammar.EnrichErrorStr(err, "At getting Variable from "+variableDefinition+" due to this operation")
 		return
@@ -274,12 +340,20 @@ func ModifySimpleValueAfterGet(thisVal *DvVariable, child *DvVariable, prototype
 			return errors.New("Cannot modify variable with no keys")
 		}
 		if thisVal.Fields == nil {
-			thisVal.Fields = make(map[string]*DvVariable)
+			thisVal.Fields = make([]*DvVariable, 0, 7)
 		}
-		thisVal.Fields[keys[n-1]] = &DvVariable{Value: value, Kind: tp}
+		key := keys[n-1]
+		f, ok := thisVal.FindChildByKey(key)
+		if ok {
+			f.Value = []byte(value)
+			f.Kind = tp
+		} else {
+			thisVal.Fields = append(thisVal.Fields,
+				&DvVariable{Value: []byte(value), Kind: tp, Name: []byte(key)})
+		}
 		return nil
 	}
-	child.Value = value
+	child.Value = []byte(value)
 	child.Kind = tp
 	return nil
 }

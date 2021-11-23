@@ -8,20 +8,20 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 )
 
-func ConvertDvFieldInfoArrayIntoMap(data []*DvFieldInfo) map[string]*DvFieldInfo {
-	res := make(map[string]*DvFieldInfo)
+func ConvertDvFieldInfoArrayIntoMap(data []*dvevaluation.DvVariable) map[string]*dvevaluation.DvVariable {
+	res := make(map[string]*dvevaluation.DvVariable)
 	for _, v := range data {
 		res[string(v.Name)] = v
 	}
 	return res
 }
 
-func GetIntValueFromFieldMap(data map[string]*DvFieldInfo, fieldName string) (int, bool) {
+func GetIntValueFromFieldMap(data map[string]*dvevaluation.DvVariable, fieldName string) (int, bool) {
 	item, ok := data[fieldName]
 	if !ok || item.Kind != dvevaluation.FIELD_NUMBER {
 		return 0, false
 	}
-	val, ok1 := ConvertByteArrayToIntOrDouble(item.Value)
+	val, ok1 := dvevaluation.ConvertByteArrayToIntOrDouble(item.Value)
 	if !ok1 {
 		return 0, false
 	}
@@ -32,7 +32,7 @@ func GetIntValueFromFieldMap(data map[string]*DvFieldInfo, fieldName string) (in
 	return res, true
 }
 
-func GetStringValueFromFieldMap(data map[string]*DvFieldInfo, fieldName string) (string, bool) {
+func GetStringValueFromFieldMap(data map[string]*dvevaluation.DvVariable, fieldName string) (string, bool) {
 	item, ok := data[fieldName]
 	if !ok || item.Kind != dvevaluation.FIELD_STRING {
 		return "", false
@@ -40,22 +40,7 @@ func GetStringValueFromFieldMap(data map[string]*DvFieldInfo, fieldName string) 
 	return string(item.Value), true
 }
 
-func CreateDvFieldInfoObject() *DvFieldInfo {
-	return &DvFieldInfo{Kind: dvevaluation.FIELD_OBJECT, Fields: make([]*DvFieldInfo, 0, 7)}
+func CreateDvFieldInfoObject() *dvevaluation.DvVariable {
+	return &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_OBJECT, Fields: make([]*dvevaluation.DvVariable, 0, 7)}
 }
 
-func (field *DvFieldInfo) AddStringField(key string, value string) bool {
-	if field.Fields == nil {
-		field.Fields = make([]*DvFieldInfo, 0, 7)
-	}
-	field.Fields = append(field.Fields, &DvFieldInfo{Kind: dvevaluation.FIELD_STRING, Name: []byte(key), Value: []byte(value)})
-	return true
-}
-
-func (field *DvFieldInfo) AddField(item *DvFieldInfo) bool {
-	if field.Fields == nil {
-		field.Fields = make([]*DvFieldInfo, 0, 7)
-	}
-	field.Fields = append(field.Fields, item)
-	return true
-}

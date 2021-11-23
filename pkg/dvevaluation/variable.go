@@ -45,12 +45,19 @@ var typeOf map[int]string = map[int]string{
 
 type DvvFunction func(*DvContext, *DvVariable, []*DvVariable) (*DvVariable, error)
 
+type QuickSearchInfo struct {
+	Looker map[string]*DvVariable
+	Key    string
+}
+
 type DvVariable struct {
-	Fields    map[string]*DvVariable
-	Value     string
-	Kind      int
-	Fn        DvvFunction
-	Prototype *DvVariable
+	Name          []byte
+	Value         []byte
+	Kind          int
+	Fields        []*DvVariable
+	Extra         interface{}
+	Prototype     *DvVariable
+	QuickSearch   *QuickSearchInfo
 }
 
 type DvVariable_DumpInfo struct {
@@ -59,11 +66,15 @@ type DvVariable_DumpInfo struct {
 }
 
 func DvVariableGetNewObject() *DvVariable {
-	variable := &DvVariable{Kind: FIELD_OBJECT, Fields: make(map[string]*DvVariable)}
+	variable := &DvVariable{
+		Kind:      FIELD_OBJECT,
+		Fields:    make([]*DvVariable, 0, 7),
+		Prototype: ObjectMaster,
+	}
 	return variable
 }
 
-func DeleteVariable(parent *DvVariable, keys []string) error {
+func DeleteVariable(parent *DvVariable, keys []string, silent bool) error {
 	l := len(keys)
 	if l == 0 {
 		return nil
@@ -76,18 +87,25 @@ func DeleteVariable(parent *DvVariable, keys []string) error {
 	for i := 0; i < l; i++ {
 		key = keys[i]
 		if parent.Fields == nil {
+			if silent {
+				return nil
+			}
 			return errors.New("Cannot delete " + key + " from undefined [keys:" + strings.Join(keys, ", ") + "]")
 		}
-		if child, ok := parent.Fields[key]; ok {
+		if child, ok := parent.FindChildByKey(key); ok {
 			parent = child
 		} else {
+			if silent {
+				return nil
+			}
 			return errors.New("Cannot delete from undefined " + key + " [keys:" + strings.Join(keys, ", ") + "]")
 		}
 	}
 	key = keys[l]
 	if parent.Fields != nil {
-		if _, ok := parent.Fields[key]; ok {
-			delete(parent.Fields, key)
+		ind := parent.FindChildIndexByKey(key)
+		if ind >= 0 {
+			parent.DeleteChildByIndex(ind)
 		}
 	}
 	return nil
@@ -117,7 +135,7 @@ func DvVariableFromStringArray(parent *DvVariable, data []string) *DvVariable {
 }
 
 func DvVariableFromStringMap(parent *DvVariable, data map[string]string) *DvVariable {
-	return DvVariableFromMap(parent, ConvertStringMapToDvVariableMap(data), true)
+	return DvVariableFromMap(parent, ConvertStringMapToDvVariableMap(data))
 }
 
 func GetEscapedString(s string) string {
@@ -219,32 +237,16 @@ func (variable *DvVariable) dumpDvVariable(info *DvVariable_DumpInfo) *DvVariabl
 		}
 		info.buf = append(info.buf, openQuote)
 		comma := false
-		var vlength *DvVariable = nil
-		for k, v := range variable.Fields {
-			if k == "length" {
-				vlength = v
-			} else {
-				if comma {
-					info.buf = append(info.buf, ',')
-				}
-				comma = true
-				info.buf = append(append(append(info.buf, byte('"')), []byte(k)...), '"', ':')
-				if _, ok := info.used[v]; ok {
-					info.buf = append(info.buf, '*')
-				} else {
-					v.dumpDvVariable(info)
-				}
-			}
-		}
-		if vlength != nil {
+		for _, v := range variable.Fields {
 			if comma {
 				info.buf = append(info.buf, ',')
 			}
-			info.buf = append(info.buf, []byte(`"length":`)...)
-			if _, ok := info.used[vlength]; ok {
+			comma = true
+			info.buf = append(append(append(info.buf, byte('"')), v.Name...), '"', ':')
+			if _, ok := info.used[v]; ok {
 				info.buf = append(info.buf, '*')
 			} else {
-				vlength.dumpDvVariable(info)
+				v.dumpDvVariable(info)
 			}
 		}
 		info.buf = append(info.buf, closeQuote)
@@ -255,7 +257,7 @@ func (variable *DvVariable) dumpDvVariable(info *DvVariable_DumpInfo) *DvVariabl
 		case FIELD_STRING:
 			info.buf = append(append(append(info.buf, '"'), getEscapedByteArray([]byte(variable.Value))...), '"')
 		case FIELD_FUNCTION:
-			info.buf = append(info.buf, []byte("function "+variable.Value)...)
+			info.buf = append(info.buf, []byte("function "+string(variable.Value))...)
 		default:
 			info.buf = append(info.buf, []byte(variable.Value)...)
 		}
@@ -280,4 +282,15 @@ func (variable *DvVariable) GetStringValueAsBytes() []byte {
 		return []byte{}
 	}
 	return []byte(variable.GetStringValue())
+}
+
+func ConvertMapDvVariableToList(varMap map[string]*DvVariable) []*DvVariable {
+	n := len(varMap)
+	res := make([]*DvVariable, n)
+	i := 0
+	for k, v := range varMap {
+		res[i] = v.MakeCopyWithNewKey(k)
+		i++
+	}
+	return res
 }
