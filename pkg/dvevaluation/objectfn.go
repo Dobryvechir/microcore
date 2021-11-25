@@ -157,6 +157,21 @@ func (variable *DvVariable) GetStringMap() (res map[string]string) {
 	return
 }
 
+func (variable *DvVariable) GetStringInterfaceMap() (res map[string]interface{}) {
+	res = make(map[string]interface{})
+	if variable == nil || variable.Kind == FIELD_UNDEFINED || variable.Fields == nil {
+		return
+	}
+	for k, v := range variable.Fields {
+		key:=string(v.Name)
+		if key=="" {
+			key = strconv.Itoa(k)
+		}
+		res[key] = v
+	}
+	return
+}
+
 func (variable *DvVariable) GetStringArrayMap() (res map[string][]string) {
 	res = make(map[string][]string)
 	if variable == nil || variable.Kind == FIELD_UNDEFINED || variable.Fields == nil {

@@ -12,7 +12,8 @@ import (
 )
 
 type VarTransformConfig struct {
-	Transform map[string]string `json:"transform"`
+	Transform map[string]string    `json:"transform"`
+	Read      map[string]*JsonRead `json:"read"`
 }
 
 func varTransformInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -20,8 +21,8 @@ func varTransformInit(command string, ctx *dvcontext.RequestContext) ([]interfac
 	if !DefaultInitWithObject(command, config) {
 		return nil, false
 	}
-	if config.Transform == nil {
-		log.Printf("transform must be specified in %s", command)
+	if config.Transform == nil && config.Read == nil {
+		log.Printf("transform or read must be specified in %s", command)
 		return nil, false
 	}
 	return []interface{}{config, ctx}, true
@@ -37,12 +38,24 @@ func varTransformRun(data []interface{}) bool {
 }
 
 func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestContext) bool {
-	for k, v := range config.Transform {
-		r, err := ctx.LocalContextEnvironment.EvaluateAnyTypeExpression(v)
-		if err != nil {
-			dvlog.PrintlnError("Error in expression " + v + ":" + err.Error())
-		} else {
-			ctx.LocalContextEnvironment.Set(k, r)
+	if config.Read != nil {
+		for k, v := range config.Read {
+			r, err := JsonExtract(v, ctx.LocalContextEnvironment)
+			if err != nil {
+				dvlog.PrintlnError("Error in expression " + k + ":" + err.Error())
+			} else {
+				ctx.LocalContextEnvironment.Set(k, r)
+			}
+		}
+	}
+	if config.Transform != nil {
+		for k, v := range config.Transform {
+			r, err := ctx.LocalContextEnvironment.EvaluateAnyTypeExpression(v)
+			if err != nil {
+				dvlog.PrintlnError("Error in expression " + v + ":" + err.Error())
+			} else {
+				ctx.LocalContextEnvironment.Set(k, r)
+			}
 		}
 	}
 	return true

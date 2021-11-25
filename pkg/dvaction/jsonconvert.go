@@ -21,8 +21,8 @@ type JsonConvertConfig struct {
 	Source      *JsonRead           `json:"source"`
 	Result      string              `json:"result"`
 	StorePrefix string              `json:"prefix"`
-	Added       []JsonConvertModify `json:"added"`
-	Removed     []JsonConvertModify `json:"removed"`
+	Add       []JsonConvertModify `json:"add"`
+	Remove     []JsonConvertModify `json:"remove"`
 }
 
 func jsonConvertInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {

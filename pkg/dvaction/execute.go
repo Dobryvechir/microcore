@@ -219,6 +219,12 @@ func ExecuteAddSubsequence(ctx *dvcontext.RequestContext, actionName string,
 	pushSubsequence(ctx, actionName, returnKey, paramStr, level)
 }
 
+func ExecuteAddSubsequenceShort(ctx *dvcontext.RequestContext, actionName string) {
+	if actionName!="" {
+		ExecuteAddSubsequence(ctx, actionName, nil, "")
+	}
+}
+
 func ExecuteSequence(startActionName string, ctx *dvcontext.RequestContext, initialParams map[string]string) bool {
 	if ctx == nil {
 		ctx = &dvcontext.RequestContext{PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject()}

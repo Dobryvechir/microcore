@@ -47,7 +47,7 @@ var CalculatorOperators = map[string]dvgrammar.InterOperatorVisitor{
 	">=":  ProcessorGreaterEqual,
 	"<":   ProcessorLessThan,
 	"<=":  ProcessorLessEqual,
-	"in":  ProcessorContainsIn,
+	"IN":  ProcessorContainsIn,
 }
 
 func CalculatorEvaluator(data []byte, scope dvgrammar.ScopeInterface, reference *dvgrammar.SourceReference, visitorOptions int) (*dvgrammar.ExpressionValue, error) {
