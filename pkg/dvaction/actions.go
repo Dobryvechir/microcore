@@ -9,6 +9,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
+	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvsecurity"
 	"io/ioutil"
 	"log"
@@ -135,4 +136,14 @@ func securityEndPointHandler(ctx *dvcontext.RequestContext) bool {
 		ActionContextResult(ctx)
 	}
 	return res
+}
+
+func GetEnvironment(ctx *dvcontext.RequestContext) *dvevaluation.DvObject {
+	if ctx==nil || ctx.PrimaryContextEnvironment==nil {
+		return dvparser.GetGlobalPropertiesAsDvObject()
+	}
+	if ctx.LocalContextEnvironment!=nil {
+		return ctx.LocalContextEnvironment
+	}
+	return ctx.PrimaryContextEnvironment
 }

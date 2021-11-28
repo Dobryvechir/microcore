@@ -36,12 +36,15 @@ const (
 	CommandConvert     = "convert"
 	CommandCall        = "call"
 	CommandIf          = "if"
+	CommandIfEmpty     = "ifempty"
 	CommandFor         = "for"
 	CommandSwitch      = "switch"
 	CommandRange       = "range"
 	CommandReturn      = "return"
 	CommandCompareJson = "compare"
 	CommandVar         = "var"
+	CommandStore       = "store"
+	CommandVersion     = "version"
 )
 
 var processFunctions = map[string]ProcessFunction{
@@ -51,10 +54,15 @@ var processFunctions = map[string]ProcessFunction{
 	CommandNet:         {Init: SmartNetInit, Run: SmartNetRun},
 	CommandSql:         {Init: dvdbdata.SqlInit, Run: dvdbdata.SqlRun},
 	CommandFile:        {Init: readFileActionInit, Run: readFileActionRun},
-	CommandPaging:      {Init: pagingInit, Run: pagingRun},
 	CommandConvert:     {Init: jsonConvertInit, Run: jsonConvertRun},
 	CommandCompareJson: {Init: compareJsonInit, Run: compareJsonRun},
 	CommandVar:         {Init: varTransformInit, Run: varTransformRun},
+	CommandStore:       {Init: storeInit, Run: storeRun},
+}
+
+var logicProcessFunctions = map[string]ProcessFunction{
+	CommandPaging:  {Init: pagingInit, Run: pagingRun},
+	CommandVersion: {Init: versionInit, Run: versionRun},
 }
 
 const (
@@ -79,6 +87,8 @@ func AddProcessFunctions(pf map[string]ProcessFunction) {
 		processFunctions[key] = processor
 	}
 }
+
+var ActionLog bool = false
 
 func getWaitKeys() string {
 	res := ""
@@ -220,14 +230,22 @@ func ExecuteAddSubsequence(ctx *dvcontext.RequestContext, actionName string,
 }
 
 func ExecuteAddSubsequenceShort(ctx *dvcontext.RequestContext, actionName string) {
-	if actionName!="" {
+	if actionName != "" {
 		ExecuteAddSubsequence(ctx, actionName, nil, "")
+		ExecuteSequenceCycle(ctx, -1)
 	}
 }
 
 func ExecuteSequence(startActionName string, ctx *dvcontext.RequestContext, initialParams map[string]string) bool {
 	if ctx == nil {
 		ctx = &dvcontext.RequestContext{PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject()}
+	}
+	_, ok := ctx.PrimaryContextEnvironment.Get(startActionName + "_LOG")
+	if ok {
+		ActionLog = true
+	}
+	if ActionLog {
+		dvlog.Printf(startActionName, "ExecuteSequence %s\n", startActionName)
 	}
 	pushSubsequence(ctx, startActionName, ExSeqReturnAllDefaultNames, initialParams, 0)
 	return ExecuteSequenceCycle(ctx, 0)
@@ -237,6 +255,9 @@ func ExecuteSequenceCycle(ctx *dvcontext.RequestContext, cycleLevel int) bool {
 	var wg sync.WaitGroup
 	var waitCommand string
 	var err error
+	if cycleLevel < 0 {
+		cycleLevel = ctx.PrimaryContextEnvironment.GetInt(ExSeqLevel)
+	}
 	for true {
 		level := ctx.PrimaryContextEnvironment.GetInt(ExSeqLevel)
 		if level < cycleLevel {
@@ -257,10 +278,13 @@ func ExecuteSequenceCycle(ctx *dvcontext.RequestContext, cycleLevel int) bool {
 			ExecuteReturnSubsequence(ctx, ExSeqReturnSingleDefault)
 			continue
 		}
+		if ActionLog {
+			dvlog.Printf(p, "Executing %s %s\n", p, waitCommandRaw)
+		}
 		if ctx == nil {
 			waitCommand, err = dvparser.ConvertByteArrayByGlobalProperties([]byte(waitCommandRaw), waitCommandRaw)
 		} else {
-			waitCommand, err = ctx.PrimaryContextEnvironment.CalculateString(waitCommandRaw)
+			waitCommand, err = ctx.LocalContextEnvironment.CalculateString(waitCommandRaw)
 		}
 		if err != nil {
 			dvlog.PrintfError("Make sure you specified all constants in %s .properties file: %v", waitCommandRaw, err)
@@ -381,6 +405,7 @@ var ocExecutorRegistrationConfig = &dvmodules.HookRegistrationConfig{
 
 func RegisterOC() bool {
 	AddProcessFunctions(execStatementProcessFunctions)
+	AddProcessFunctions(logicProcessFunctions)
 	dvmodules.RegisterActionProcessor("", fireAction, false)
 	dvmodules.RegisterActionProcessor("static", fireStaticAction, false)
 	dvmodules.RegisterActionProcessor("switch", fireSwitchAction, false)

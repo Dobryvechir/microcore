@@ -158,3 +158,4 @@ func ConvertSimpleTypeToString(v interface{}) (string, bool) {
 	buf, ok := ConvertSimpleTypeToBuf(make([]byte, 0, 100), v)
 	return string(buf), ok
 }
+

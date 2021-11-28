@@ -38,6 +38,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjsmaster"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
 	"strings"
 )
@@ -45,6 +46,8 @@ import (
 type VersionConfig struct {
 	Source         string `json:"src"`
 	Destination    string `json:"dst"`
+	SourcePath     string `json:"srcPath"`
+	DstPath        string `json:"dstPath"`
 	Mode           string `json:"mode"`
 	MainUpdate     string `json:"mainUpdate"`
 	VersionUpdate  string `json:"versionUpdate"`
@@ -91,26 +94,51 @@ func versionRun(data []interface{}) bool {
 func VersionRunByConfig(config *VersionConfig, ctx *dvcontext.RequestContext) bool {
 	src, ok := ctx.LocalContextEnvironment.Get(config.Source)
 	if !ok || src == nil {
+		if ActionLog {
+			dvlog.PrintfError("Empty version source %s", config.Source)
+		}
 		return true
+	}
+	srcVersion := src
+	var err error
+	if config.SourcePath != "" {
+		srcVersion, err = dvjson.ReadPathOfAny(src, config.SourcePath, false, ctx.LocalContextEnvironment)
+		if err != nil {
+			dvlog.PrintfError("Failed to read %s %v", config.SourcePath, err)
+			return true
+		}
 	}
 	dst, ok := ctx.LocalContextEnvironment.Get(config.Destination)
 	if !ok {
 		dst = nil
 	}
-	srcMap, ok := dvjson.ConvertInterfaceIntoStringMap(src)
+	dstVersion := dst
+	if dst != nil && config.DstPath != "" {
+		dstVersion, err = dvjson.ReadPathOfAny(dst, config.DstPath, false, ctx.LocalContextEnvironment)
+		if err != nil {
+			dstVersion = nil
+			dst=nil
+			if ActionLog {
+				dvlog.PrintfError("Warning reading %s %v", config.SourcePath, err)
+			}
+		}
+	}
+	srcMap, ok := dvjson.ConvertInterfaceIntoStringMap(srcVersion)
 	if !ok {
 		srcMap = nil
 	}
 	ctx.LocalContextEnvironment.Set(config.KeyVarName, "")
+	ctx.LocalContextEnvironment.Set("VERSION_SRC_OBJ", src)
+	ctx.LocalContextEnvironment.Set("VERSION_DST_OBJ", dst)
 	if srcMap != nil {
-		dstMap, ok := dvjson.ConvertInterfaceIntoStringMap(dst)
+		dstMap, ok := dvjson.ConvertInterfaceIntoStringMap(dstVersion)
 		if !ok {
 			dstMap = nil
 		}
 		VersionKeyValueExecution(srcMap, dstMap, config, ctx)
 	} else {
-		s := dvevaluation.AnyToString(src)
-		d := dvevaluation.AnyToString(dst)
+		s := dvevaluation.AnyToString(srcVersion)
+		d := dvevaluation.AnyToString(dstVersion)
 		VersionStringExecution(s, d, config, ctx)
 	}
 	return true
@@ -126,7 +154,7 @@ func VersionKeyValueExecution(src map[string]string, dst map[string]string, conf
 	var ok bool = false
 	for k, vsrc := range src {
 		vdst, ok = dst[k]
-		if !ok || vdst == "" || dvjsmaster.MathCompareVersions(vsrc, vdst, "") <= 0 {
+		if ok && vdst != "" && dvjsmaster.MathCompareVersions(vsrc, vdst, "") <= 0 {
 			continue
 		}
 		found = true

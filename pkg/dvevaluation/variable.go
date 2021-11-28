@@ -51,13 +51,13 @@ type QuickSearchInfo struct {
 }
 
 type DvVariable struct {
-	Name          []byte
-	Value         []byte
-	Kind          int
-	Fields        []*DvVariable
-	Extra         interface{}
-	Prototype     *DvVariable
-	QuickSearch   *QuickSearchInfo
+	Name        []byte
+	Value       []byte
+	Kind        int
+	Fields      []*DvVariable
+	Extra       interface{}
+	Prototype   *DvVariable
+	QuickSearch *QuickSearchInfo
 }
 
 type DvVariable_DumpInfo struct {
@@ -293,4 +293,21 @@ func ConvertMapDvVariableToList(varMap map[string]*DvVariable) []*DvVariable {
 		i++
 	}
 	return res
+}
+
+func (variable *DvVariable) IsEmpty() bool {
+	if variable == nil {
+		return true
+	}
+	switch variable.Kind {
+	case FIELD_UNDEFINED:
+	case FIELD_NULL:
+		return true
+	case FIELD_OBJECT:
+	case FIELD_ARRAY:
+		return len(variable.Fields) == 0
+	default:
+		return len(variable.Value) == 0
+	}
+	return false
 }

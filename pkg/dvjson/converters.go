@@ -103,3 +103,22 @@ func ConvertInterfaceIntoStringMap(v interface{}) (map[string]string, bool) {
 	}
 	return nil, false
 }
+
+func IsEmptyAny(v interface{}) bool {
+	if v==nil {
+		return true
+	}
+	switch v.(type) {
+	case string:
+		return v.(string)==""
+	case map[string]string:
+		return len(v.(map[string]string))==0
+	case map[string]interface{}:
+		return len(v.(map[string]interface{}))==0
+	case []string:
+		return len(v.([]string))==0
+	case *dvevaluation.DvVariable:
+		return v.(*dvevaluation.DvVariable).IsEmpty()
+	}
+	return false
+}

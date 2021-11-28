@@ -7,6 +7,7 @@ package dvaction
 import (
 	"encoding/json"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
@@ -68,12 +69,13 @@ type SmartNetConfigTemplate struct {
 }
 
 type SmartNetConfig struct {
-	Url      string                 `json:"url"`
-	Method   string                 `json:"method"`
-	Headers  string                 `json:"headers"`
-	Template SmartNetConfigTemplate `json:"template"`
-	Result   string                 `json:"result"`
-	Body     string                 `json:"body"`
+	Url         string                 `json:"url"`
+	Method      string                 `json:"method"`
+	Headers     string                 `json:"headers"`
+	Template    SmartNetConfigTemplate `json:"template"`
+	ContentType string                 `json:"type"`
+	Result      string                 `json:"result"`
+	Body        string                 `json:"body"`
 }
 
 func DefaultInitWithObject(command string, result interface{}) bool {
@@ -151,13 +153,56 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 		microServiceName := headers[Authorization][4:]
 		options[M2MAuthorizationRequest] = microServiceName
 	}
+	body := config.Body
+	if len(body) > 2 && body[0] == '@' && body[1] == '@' {
+		k := body[2:]
+		n := len(k)
+		strict := true
+		filled := false
+		if n > 1 && k[n-1] == '?' {
+			strict = false
+			if k[n-2] == '?' {
+				filled = true
+				k = k[:n-2]
+			} else {
+				k = k[:n-1]
+			}
+		}
+		env := GetEnvironment(ctx)
+		v, ok := env.Get(k)
+		if !ok {
+			if strict {
+				log.Printf("Empty #{k} in net request")
+				if ctx != nil {
+					ctx.SetHttpErrorCode(400, "Unset "+k)
+				}
+				return true
+			}
+			v = nil
+		}
+		if filled {
+			if dvjson.IsEmptyAny(v) {
+				return true
+			}
+		}
+	}
 	res, err := NetRequest(config.Method, config.Url, config.Body, headers, options)
 	if err != nil {
 		log.Println(res)
 		log.Printf("%s %s failed: %v", config.Method, config.Url, err)
 		return false
 	}
-	SaveActionResult(config.Result, string(res), ctx)
+	var result interface{}
+	switch config.ContentType {
+	case "json":
+		result, err = dvjson.JsonFullParser(res)
+		if err != nil {
+			result = string(res)
+		}
+	default:
+		result = string(res)
+	}
+	SaveActionResult(config.Result, result, ctx)
 	if config.Template.Dst != "" {
 		if config.Template.Src != "" {
 			s, err := dvparser.ConvertByteArrayByGlobalPropertiesRuntime([]byte(config.Template.Src), "net step")
