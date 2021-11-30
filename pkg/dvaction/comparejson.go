@@ -36,7 +36,7 @@ type CompareJsonConfig struct {
 
 func compareJsonInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &CompareJsonConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	if config.Sample == nil || config.Sample.Place == "" {

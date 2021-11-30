@@ -5,8 +5,10 @@ Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvaction
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
@@ -78,13 +80,32 @@ type SmartNetConfig struct {
 	Body        string                 `json:"body"`
 }
 
-func DefaultInitWithObject(command string, result interface{}) bool {
+func DefaultInitWithObject(command string, result interface{}, env *dvevaluation.DvObject) bool {
 	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
-	if cmd == "" || cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
+	if cmd == "" {
 		log.Printf("Empty parameters in %s", command)
 		return false
 	}
-	err := json.Unmarshal([]byte(cmd), result)
+	cmdDat := []byte(cmd)
+	if cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
+		if cmd[0] == '@' && len(cmd) > 1 {
+			dat, err := ioutil.ReadFile(cmd[1:])
+			if err != nil {
+				log.Printf("Wrong file name in %s %v", command, err)
+				return false
+			}
+			dat = bytes.TrimSpace(dat)
+			if len(dat) < 2 || dat[0] != '{' || dat[len(dat)-1] != '}' {
+				log.Printf("Empty file in %s", command)
+				return false
+			}
+			cmdDat = dat
+		} else {
+			log.Printf("Empty parameters in %s", command)
+			return false
+		}
+	}
+	err := json.Unmarshal(cmdDat, result)
 	if err != nil {
 		log.Printf("Error converting parameters: %v in %s", err, command)
 		return false
@@ -94,7 +115,7 @@ func DefaultInitWithObject(command string, result interface{}) bool {
 
 func SmartNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &SmartNetConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	if config.Url == "" {

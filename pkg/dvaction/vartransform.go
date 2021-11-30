@@ -18,7 +18,7 @@ type VarTransformConfig struct {
 
 func varTransformInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &VarTransformConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	if config.Transform == nil && config.Read == nil {

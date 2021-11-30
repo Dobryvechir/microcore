@@ -57,7 +57,7 @@ type VersionConfig struct {
 
 func versionInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &VersionConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	if config.Source == "" {
@@ -117,7 +117,7 @@ func VersionRunByConfig(config *VersionConfig, ctx *dvcontext.RequestContext) bo
 		dstVersion, err = dvjson.ReadPathOfAny(dst, config.DstPath, false, ctx.LocalContextEnvironment)
 		if err != nil {
 			dstVersion = nil
-			dst=nil
+			dst = nil
 			if ActionLog {
 				dvlog.PrintfError("Warning reading %s %v", config.SourcePath, err)
 			}

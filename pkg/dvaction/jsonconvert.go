@@ -27,7 +27,7 @@ type JsonConvertConfig struct {
 
 func jsonConvertInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &JsonConvertConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	if config.StorePrefix == "" {

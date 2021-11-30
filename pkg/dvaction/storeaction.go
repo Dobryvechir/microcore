@@ -20,7 +20,7 @@ type StoreConfig struct {
 
 func storeInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &StoreConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	if config.Storage == "" {

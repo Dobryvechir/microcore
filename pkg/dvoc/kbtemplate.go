@@ -18,7 +18,7 @@ type MicroServiceSearch struct {
 
 func MicroServiceTemplateInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &MicroServiceSearch{}
-	if !dvaction.DefaultInitWithObject(command, config) {
+	if !dvaction.DefaultInitWithObject(command, config, dvaction.GetEnvironment(ctx)) {
 		return nil, false
 	}
 	return nil, false

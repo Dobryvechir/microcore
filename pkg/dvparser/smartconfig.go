@@ -38,6 +38,7 @@ type internalParseInfo struct {
 
 type ConfigInfo struct {
 	NumberOfBrackets int
+	ParamMap		*dvevaluation.DvObject
 	InputMap         map[string]string
 	Options          int
 	OutputMap        map[string]string

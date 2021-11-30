@@ -29,7 +29,7 @@ var debugActionList = map[string]DebugActionFn{
 func debugInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &DebugConfig{}
 	key, okay := dvparser.GlobalProperties["DEBUG_KEY"]
-	if !okay || key == "" || !DefaultInitWithObject(command, config) {
+	if !okay || key == "" || !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	currentKey, okey := ctx.PrimaryContextEnvironment.Properties["URL_PARAM_KEY"]

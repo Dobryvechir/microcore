@@ -30,7 +30,7 @@ var execStatementProcessFunctions = map[string]ProcessFunction{
 
 func execCallInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &ExecCallConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	if config.Action == "" {
@@ -64,7 +64,7 @@ type ExecIfConfig struct {
 
 func execIfInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &ExecIfConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	if config.Condition == "" {
@@ -105,7 +105,7 @@ type ExecIfEmptyConfig struct {
 
 func execIfEmptyInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &ExecIfEmptyConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	if config.Source == "" {
@@ -144,7 +144,7 @@ type ExecForConfig struct {
 
 func execForInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &ExecForConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	return []interface{}{config, ctx}, true
@@ -207,7 +207,7 @@ type ExecRangeConfig struct {
 
 func execRangeInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &ExecRangeConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	return []interface{}{config, ctx}, true
@@ -252,7 +252,7 @@ type ExecSwitchConfig struct {
 
 func execSwitchInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &ExecSwitchConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	return []interface{}{config, ctx}, true
@@ -293,7 +293,7 @@ type ExecReturnConfig struct {
 
 func execReturnInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &ExecReturnConfig{}
-	if !DefaultInitWithObject(command, config) {
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
 	return []interface{}{config, ctx}, true
