@@ -38,10 +38,8 @@ type internalParseInfo struct {
 
 type ConfigInfo struct {
 	NumberOfBrackets int
-	ParamMap		*dvevaluation.DvObject
-	InputMap         map[string]string
+	ParamMap         *dvevaluation.DvObject
 	Options          int
-	OutputMap        map[string]string
 	OutputLines      [][]byte
 	Err              error
 	FilePaths        []string
@@ -220,7 +218,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 						configInfo.Err = errors.New("Unclosed expression at (" + strconv.Itoa(row) + "," + strconv.Itoa(col+currentLinePos) + ")")
 						return
 					}
-					expr := dvevaluation.Parse(data[k:i-sequence], configInfo.InputMap, configInfo.OutputMap, row, col+colBasis-k, place)
+					expr := dvevaluation.ParseForDvObject(data[k:i-sequence], configInfo.ParamMap, row, col+colBasis-k, place)
 					if expr.Err != nil {
 						if replacementMandatory {
 							configInfo.Err = expr.Err
@@ -298,7 +296,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 			if b1 == 'i' {
 				if b2 == 'f' {
 					if b3 <= 32 { //if
-						res := dvevaluation.EvalAsBoolean(subBlock[subStart:subBlockLen], configInfo.InputMap, configInfo.OutputMap, internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place)
+						res := dvevaluation.EvalAsBoolean(subBlock[subStart:subBlockLen], configInfo.ParamMap, internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place)
 						if res.Err != nil {
 							configInfo.Err = res.Err
 							return
@@ -312,8 +310,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 						if subStart+1 < subBlockLen && subBlock[subStart] == 'e' && subBlock[subStart+1] == 'f' && (subStart+2 >= subBlockLen || subBlock[subStart+2] <= 32) {
 							subStart += 2
 							var err error
-							scope := dvevaluation.NewDvObjectFrom2Maps(configInfo.OutputMap, configInfo.InputMap)
-							bIfCondition, err = dvevaluation.IsDefined(subBlock[subStart:subBlockLen], scope, internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, 0)
+							bIfCondition, err = dvevaluation.IsDefined(subBlock[subStart:subBlockLen], configInfo.ParamMap, internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, 0)
 							if err != nil {
 								configInfo.Err = err
 								return
@@ -322,8 +319,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 					} else if b3 == 'n' { //ifndef
 						if subStart+2 < subBlockLen && subBlock[subStart] == 'd' && subBlock[subStart+1] == 'e' && subBlock[subStart+2] == 'f' && (subStart+3 >= subBlockLen || subBlock[subStart+3] <= 32) {
 							subStart += 3
-							scope := dvevaluation.NewDvObjectFrom2Maps(configInfo.OutputMap, configInfo.InputMap)
-							v, err := dvevaluation.IsDefined(subBlock[subStart:subBlockLen], scope, internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
+							v, err := dvevaluation.IsDefined(subBlock[subStart:subBlockLen], configInfo.ParamMap, internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
 							if err != nil {
 								configInfo.Err = err
 							}
@@ -386,7 +382,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 								bIfCondition = -bIfCondition
 								if bIfCondition == IFELSE_NONEWIF+IFELSE_ELSE_RUN {
 
-									res := dvevaluation.EvalAsBoolean(subBlock[subStart+1:subBlockLen], configInfo.InputMap, configInfo.OutputMap, internalParsingInfo[0].row, internalParsingInfo[0].column, place)
+									res := dvevaluation.EvalAsBoolean(subBlock[subStart+1:subBlockLen], configInfo.ParamMap, internalParsingInfo[0].row, internalParsingInfo[0].column, place)
 									if res.Err != nil {
 										configInfo.Err = res.Err
 										return
@@ -400,8 +396,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 								//elifdef
 								bIfCondition = -bIfCondition
 								if bIfCondition == IFELSE_NONEWIF+IFELSE_ELSE_RUN {
-									scope := dvevaluation.NewDvObjectFrom2Maps(configInfo.OutputMap, configInfo.InputMap)
-									v, err := dvevaluation.IsDefined(subBlock[subStart+4:subBlockLen], scope, row, col, place, 0)
+									v, err := dvevaluation.IsDefined(subBlock[subStart+4:subBlockLen], configInfo.ParamMap, row, col, place, 0)
 									if err != nil {
 										configInfo.Err = err
 										return
@@ -415,8 +410,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 								//elifndef
 								bIfCondition = -bIfCondition
 								if bIfCondition == IFELSE_NONEWIF+IFELSE_ELSE_RUN {
-									scope := dvevaluation.NewDvObjectFrom2Maps(configInfo.OutputMap, configInfo.InputMap)
-									v, err := dvevaluation.IsDefined(subBlock[subStart+5:subBlockLen], scope, row, col, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
+									v, err := dvevaluation.IsDefined(subBlock[subStart+5:subBlockLen], configInfo.ParamMap, row, col, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
 									if err != nil {
 										configInfo.Err = err
 										return
@@ -482,7 +476,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 					if subStart < pos1 {
 						keyDefined := string(subBlock[subStart:pos1])
 						valueDefined := string(subBlock[pos2:subBlockLen])
-						configInfo.OutputMap[keyDefined] = valueDefined
+						configInfo.ParamMap.Set(keyDefined, valueDefined)
 					}
 				}
 			} else if b1 == 'u' { //undef
@@ -494,8 +488,8 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 					}
 					if subStart < subBlockLen {
 						keyUndefined := string(subBlock[subStart:subBlockLen])
-						if _, keyOk := configInfo.OutputMap[keyUndefined]; keyOk {
-							delete(configInfo.OutputMap, keyUndefined)
+						if _, keyOk := configInfo.ParamMap.Properties[keyUndefined]; keyOk {
+							delete(configInfo.ParamMap.Properties, keyUndefined)
 						}
 					}
 				}
@@ -597,7 +591,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 						pnt = 0
 						if pos < subBlockLen-1 && subBlock[pos] == bEnd && bEnd == '`' {
 							val := string(subBlock[pos+1 : subBlockLen-1])
-							configInfo.OutputMap[key] = val
+							configInfo.ParamMap.Set(key, val)
 						} else {
 							if pos < subBlockLen-1 && subBlock[pos] == bEnd && bEnd == '"' {
 								pos++
@@ -618,7 +612,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 								}
 							}
 							val := string(subBlock[:pnt])
-							configInfo.OutputMap[key] = val
+							configInfo.ParamMap.Set(key, val)
 						}
 					}
 				} else {
@@ -643,7 +637,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 							subBlockLen--
 						}
 						val := string(subBlock[pnt:subBlockLen])
-						configInfo.OutputMap[key] = val
+						configInfo.ParamMap.Set(key, val)
 					}
 				}
 			} else {
@@ -668,13 +662,19 @@ func LinearSmartConfigParse(data []byte, configInfo *ConfigInfo, sourceName stri
 		if configInfo.NumberOfBrackets <= 0 {
 			configInfo.NumberOfBrackets = 3
 		}
-		if (configInfo.Options&CONFIG_DISABLE_INITIAL_MAP_FROM_ENVIRONMENT) == 0 && configInfo.InputMap == nil {
-			configInfo.InputMap = LinearSmartConfigFromEnvironment()
-		}
-		if (configInfo.Options & CONFIG_RESULT_NOT_CONTAINING_PREMAP) == 0 {
-			configInfo.OutputMap = configInfo.InputMap
-		} else {
-			configInfo.OutputMap = make(map[string]string)
+		if configInfo.ParamMap == nil {
+			var inputMap, outputMap map[string]string
+			if (configInfo.Options & CONFIG_DISABLE_INITIAL_MAP_FROM_ENVIRONMENT) == 0 {
+				inputMap = LinearSmartConfigFromEnvironment()
+			} else {
+				inputMap = make(map[string]string)
+			}
+			if (configInfo.Options & CONFIG_RESULT_NOT_CONTAINING_PREMAP) == 0 {
+				outputMap = inputMap
+			} else {
+				outputMap = make(map[string]string)
+			}
+			configInfo.ParamMap = dvevaluation.NewDvObjectFrom2Maps(outputMap, inputMap)
 		}
 		if (configInfo.Options & CONFIG_IS_NOT_VARIABLES) != 0 {
 			configInfo.OutputLines = make([][]byte, 0, 1024)
@@ -729,12 +729,25 @@ func ReadPropertiesFileWithEnvironmentVariables(currentDir string, propertiesNam
 	if filename == "" {
 		return nil
 	}
-	configInfo := ConfigInfo{InputMap: GlobalProperties, FilePaths: GeneralFilePaths}
+	GlobalPropertiesAsDvObject = dvevaluation.NewDvObjectFrom2Maps(nil, GlobalProperties)
+	configInfo := ConfigInfo{ParamMap: GlobalPropertiesAsDvObject, FilePaths: GeneralFilePaths}
 	LinearSmartConfigFromFile(filename, &configInfo, -1)
 	if configInfo.Err != nil {
 		return errors.New("Error: cannot read properties " + filename + ": " + configInfo.Err.Error())
 	}
+	CopyInterfaceMapToStringMap(GlobalPropertiesAsDvObject.Properties, GlobalProperties)
 	return setFilePaths()
+}
+
+func CopyInterfaceMapToStringMap(src map[string]interface{}, dst map[string]string) {
+	for k, v := range src {
+		switch v.(type) {
+		case string:
+			dst[k] = v.(string)
+		default:
+			dst[k] = dvevaluation.AnyToString(v)
+		}
+	}
 }
 
 func defaultSetFilePath() error {
@@ -758,12 +771,11 @@ func ConvertByteArrayByGlobalPropertiesRuntime(data []byte, sourceName string) (
 }
 
 func ConvertByteArrayBySpecificPropertiesInLines(data []byte, sourceName string, properties map[string]string, numberOfBrackets int, configOptions int) ([][]byte, error) {
-
+	params := dvevaluation.NewDvObjectFrom2Maps(make(map[string]string), properties)
 	configInfo := &ConfigInfo{
 		NumberOfBrackets: numberOfBrackets,
-		InputMap:         properties,
+		ParamMap:         params,
 		Options:          CONFIG_IS_NOT_VARIABLES | configOptions,
-		OutputMap:        make(map[string]string),
 		OutputLines:      nil,
 		Err:              nil,
 		FilePaths:        []string{"."},

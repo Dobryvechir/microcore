@@ -89,9 +89,9 @@ func DefaultInitWithObject(command string, result interface{}, env *dvevaluation
 	cmdDat := []byte(cmd)
 	if cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
 		if cmd[0] == '@' && len(cmd) > 1 {
-			dat, err := ioutil.ReadFile(cmd[1:])
+			dat, err := dvparser.SmartReadJsonTemplate(cmd[1:], 3, env)
 			if err != nil {
-				log.Printf("Wrong file name in %s %v", command, err)
+				log.Printf("Bad file in %s %v", command, err)
 				return false
 			}
 			dat = bytes.TrimSpace(dat)
@@ -164,16 +164,14 @@ func ProcessSavingActionResult(result string, data interface{}, ctx *dvcontext.R
 	return true
 }
 
+func IsLikeJson(s string) bool {
+	t := strings.TrimSpace(s)
+	n := len(t)
+	return n >= 2 && (t[0] == '{' && t[n-1] == '}' || t[0] == '[' && t[n-1] == ']')
+}
+
 func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) bool {
 	options := dvnet.GetAveragePersistentOptions()
-	headers := make(map[string]string)
-	if config.Headers != "" {
-		dvtextutils.PutDescribedAttributesToMapFromCommaSeparatedList(dvparser.GlobalProperties, headers, config.Headers)
-	}
-	if strings.HasPrefix(headers[Authorization], "M2M_") {
-		microServiceName := headers[Authorization][4:]
-		options[M2MAuthorizationRequest] = microServiceName
-	}
 	body := config.Body
 	if len(body) > 2 && body[0] == '@' && body[1] == '@' {
 		k := body[2:]
@@ -206,8 +204,22 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 				return true
 			}
 		}
+		body = dvevaluation.AnyToString(v)
 	}
-	res, err := NetRequest(config.Method, config.Url, config.Body, headers, options)
+	headers := make(map[string]string)
+	if config.Headers != "" {
+		dvtextutils.PutDescribedAttributesToMapFromCommaSeparatedList(dvparser.GlobalProperties, headers, config.Headers)
+	} else {
+		headers["accept"] = "application/json"
+		if config.Method != "GET" && IsLikeJson(body) {
+			headers["Content-Type"] = "application/json"
+		}
+	}
+	if strings.HasPrefix(headers[Authorization], "M2M_") {
+		microServiceName := headers[Authorization][4:]
+		options[M2MAuthorizationRequest] = microServiceName
+	}
+	res, err := NetRequest(config.Method, config.Url, body, headers, options)
 	if err != nil {
 		log.Println(res)
 		log.Printf("%s %s failed: %v", config.Method, config.Url, err)

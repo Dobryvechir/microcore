@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvparser
 
@@ -38,10 +38,10 @@ func FindInGeneralPaths(name string) string {
 	return ""
 }
 
-func SmartReadTemplateLines(fileName string, numberOfBrackets int, properties map[string]string) (lines [][]byte, err error, lastOutputMap map[string]string) {
+func SmartReadTemplateLines(fileName string, numberOfBrackets int, properties *dvevaluation.DvObject) (lines [][]byte, err error, lastOutputMap map[string]string) {
 	lastOutputMap = make(map[string]string, 0)
-	configInfo := ConfigInfo{InputMap: properties,
-		OutputMap:        lastOutputMap,
+	configInfo := ConfigInfo{
+		ParamMap:         properties,
 		NumberOfBrackets: numberOfBrackets,
 		Options:          CONFIG_IS_NOT_VARIABLES,
 		FilePaths:        GeneralFilePaths}
@@ -51,8 +51,8 @@ func SmartReadTemplateLines(fileName string, numberOfBrackets int, properties ma
 	return
 }
 
-func SmartReadFileAsString(fileName string, properties map[string]string) (string, error) {
-	res, err, _ := SmartReadTemplateLines(fileName, 3, properties)
+func SmartReadFileAsString(fileName string) (string, error) {
+	res, err, _ := SmartReadTemplateLines(fileName, 3, GlobalPropertiesAsDvObject)
 	if err != nil {
 		return "", err
 	}
@@ -60,11 +60,22 @@ func SmartReadFileAsString(fileName string, properties map[string]string) (strin
 }
 
 func SmartReadTemplate(filename string, numberOfBrackets int, joiner byte) ([]byte, error) {
-	res, err, _ := SmartReadTemplateLines(filename, numberOfBrackets, GlobalProperties)
+	res, err, _ := SmartReadTemplateLines(filename, numberOfBrackets, GlobalPropertiesAsDvObject)
 	if err != nil {
 		return nil, err
 	}
 	return bytes.Join(res, []byte{joiner}), nil
+}
+
+func SmartReadJsonTemplate(filename string, numberOfBrackets int, params *dvevaluation.DvObject) ([]byte, error) {
+	if params == nil {
+		params = GlobalPropertiesAsDvObject
+	}
+	res, err, _ := SmartReadTemplateLines(filename, numberOfBrackets, params)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.Join(res, []byte{' '}), nil
 }
 
 func CloneGlobalProperties() map[string]string {
@@ -77,10 +88,12 @@ func CloneGlobalProperties() map[string]string {
 
 func SetGlobalPropertiesValue(key string, value string) {
 	GlobalProperties[key] = value
+	GlobalPropertiesAsDvObject.Set(key, value)
 }
 
 func RemoveGlobalPropertiesValue(key string) {
 	delete(GlobalProperties, key)
+	delete(GlobalPropertiesAsDvObject.Properties, key)
 }
 
 func GetGlobalPropertiesAsDvObject() *dvevaluation.DvObject {
@@ -91,7 +104,7 @@ func GetGlobalPropertiesAsDvObject() *dvevaluation.DvObject {
 }
 
 func GetPropertiesPrototypedToGlobalProperties(localMap map[string]interface{}) *dvevaluation.DvObject {
-	return dvevaluation.NewObjectWithPrototype(localMap, GetGlobalPropertiesAsDvObject())
+	return dvevaluation.NewObjectWithPrototype(localMap, GlobalPropertiesAsDvObject)
 }
 
 func FindEol(data []byte) int {

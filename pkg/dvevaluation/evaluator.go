@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-var complexEvaluationSupported = true
-
 type EvaluateResult struct {
 	FinalResult interface{}
 	Err         error
@@ -52,40 +50,8 @@ func NewDvObjectFrom2Maps(localMap map[string]string, globalMap map[string]strin
 }
 
 func Parse(data []byte, globalMap map[string]string, localMap map[string]string, row int, column int, place string) (r *EvaluateResult) {
-	l := len(data)
-	pos := 0
-	for pos < l && data[pos] <= 32 {
-		if data[pos] == 10 {
-			row++
-			column = 1
-		} else {
-			column++
-		}
-		pos++
-	}
-	for l > pos && data[l-1] <= 32 {
-		l--
-	}
-	data = data[pos:l]
-	if len(data) == 0 {
-		r = &EvaluateResult{FinalResult: ""}
-		return r
-	}
-	key := string(data)
-	if localMap != nil {
-		if v1, ok := localMap[key]; ok {
-			return &EvaluateResult{FinalResult: v1}
-		}
-	}
-	if v2, ok := globalMap[key]; ok {
-		r = &EvaluateResult{FinalResult: v2}
-		return r
-	}
-	if !complexEvaluationSupported {
-		r = &EvaluateResult{Err: makeErrorMessage("Complex expressions are not parsed yet", row, column, place)}
-	} else {
-		r = ParseForDvObject(data, NewDvObjectFrom2Maps(localMap, globalMap), row, column, place)
-	}
+	params:=NewDvObjectFrom2Maps(localMap, globalMap)
+	r = ParseForDvObject(data, params, row, column, place)
 	return r
 }
 
@@ -103,6 +69,29 @@ func ParseForDvObjectString(data string, params *DvObject) (string, error) {
 }
 
 func ParseForDvObject(data []byte, params *DvObject, row int, column int, place string) *EvaluateResult {
+	l := len(data)
+	pos := 0
+	for pos < l && data[pos] <= 32 {
+		if data[pos] == 10 {
+			row++
+			column = 1
+		} else {
+			column++
+		}
+		pos++
+	}
+	for l > pos && data[l-1] <= 32 {
+		l--
+	}
+	data = data[pos:l]
+	if len(data) == 0 {
+		return &EvaluateResult{FinalResult: ""}
+	}
+	key := string(data)
+	val, ok := params.Get(key)
+	if ok {
+		return &EvaluateResult{FinalResult: val}
+	}
 	visitorOptions := 0
 	ref := &dvgrammar.SourceReference{
 		Row:    row,
@@ -117,8 +106,8 @@ func ParseForDvObject(data []byte, params *DvObject, row int, column int, place 
 	return &EvaluateResult{FinalResult: res, Err: err}
 }
 
-func EvalAsBoolean(data []byte, globalMap map[string]string, localMap map[string]string, row int, column int, place string) (r EvaluateBoolean) {
-	eval := Parse(data, globalMap, localMap, row, column, place)
+func EvalAsBoolean(data []byte, paramMap *DvObject, row int, column int, place string) (r EvaluateBoolean) {
+	eval := ParseForDvObject(data, paramMap, row, column, place)
 	if eval.Err != nil {
 		r = EvaluateBoolean{Err: eval.Err}
 		return
