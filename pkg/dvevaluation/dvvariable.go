@@ -78,35 +78,42 @@ func (item *DvVariable) FindDifferenceByQuickMap(other *DvVariable,
 	fillAdded bool, fillRemoved bool, fillUpdated bool, fillUnchanged bool,
 	fillUpdatedCounterpart bool, unchangedAsUpdated bool) (added *DvVariable, removed *DvVariable,
 	updated *DvVariable, unchanged *DvVariable, counterparts *DvVariable) {
+	if unchangedAsUpdated {
+		fillUnchanged = false
+	}
+	kind := FIELD_ARRAY
 	n1 := 0
 	if item != nil {
 		n1 = len(item.Fields)
+		if item.Kind==FIELD_ARRAY || item.Kind==FIELD_OBJECT {
+			kind = item.Kind
+		}
 	}
 	n2 := 0
 	if other != nil {
 		n2 = len(other.Fields)
+		if (other.Kind==FIELD_ARRAY || other.Kind==FIELD_OBJECT) && n1==0 {
+			kind = other.Kind
+		}
 	}
 	m := n1
 	if m > n2 {
 		m = n2
 	}
-	if unchangedAsUpdated {
-		fillUnchanged = false
-	}
 	if fillAdded {
-		added = &DvVariable{Fields: make([]*DvVariable, 0, n1), Kind: FIELD_ARRAY}
+		added = &DvVariable{Fields: make([]*DvVariable, 0, n1), Kind: kind}
 	}
 	if fillRemoved {
-		removed = &DvVariable{Fields: make([]*DvVariable, 0, n2), Kind: FIELD_ARRAY}
+		removed = &DvVariable{Fields: make([]*DvVariable, 0, n2), Kind: kind}
 	}
 	if fillUpdated {
-		updated = &DvVariable{Fields: make([]*DvVariable, 0, m), Kind: FIELD_ARRAY}
+		updated = &DvVariable{Fields: make([]*DvVariable, 0, m), Kind: kind}
 	}
 	if fillUnchanged {
-		unchanged = &DvVariable{Fields: make([]*DvVariable, 0, m), Kind: FIELD_ARRAY}
+		unchanged = &DvVariable{Fields: make([]*DvVariable, 0, m), Kind: kind}
 	}
 	if fillUpdatedCounterpart {
-		counterparts = &DvVariable{Fields: make([]*DvVariable, 0, m), Kind: FIELD_ARRAY}
+		counterparts = &DvVariable{Fields: make([]*DvVariable, 0, m), Kind: kind}
 	}
 	if n2 == 0 {
 		if n1 == 0 {
@@ -179,6 +186,7 @@ func (item *DvVariable) EvaluateDvFieldItem(expression string, env *DvObject) (b
 	res, err := env.EvaluateBooleanExpression(expression)
 	return res, err
 }
+
 func (item *DvVariable) CompareWholeDvField(other *DvVariable) int {
 	if item == nil {
 		if other == nil {
@@ -459,6 +467,44 @@ func (item *DvVariable) GetChildrenByRange(startIndex int, count int) *DvVariabl
 }
 
 func (item *DvVariable) GetStringValue() string {
+	if item == nil || item.Kind == FIELD_UNDEFINED {
+		return ""
+	}
+	switch item.Kind {
+	case FIELD_OBJECT:
+		res := "{"
+		subfields := item.Fields
+		n := len(subfields)
+		for i := 0; i < n; i++ {
+			if i != 0 {
+				res += ","
+			}
+			res += "\"" + string(subfields[i].Name) + "\":"
+			data := subfields[i].GetStringValueJson()
+			res += data
+		}
+		return res + "}"
+	case FIELD_ARRAY:
+		res := "["
+		subfields := item.Fields
+		n := len(subfields)
+		for i := 0; i < n; i++ {
+			if i != 0 {
+				res += ","
+			}
+			data := subfields[i].GetStringValueJson()
+			res += data
+		}
+		return res + "]"
+	case FIELD_STRING:
+		return string(item.Value)
+	case FIELD_NULL:
+		return "null"
+	}
+	return string(item.Value)
+}
+
+func (item *DvVariable) GetStringValueJson() string {
 	if item == nil || item.Kind == FIELD_UNDEFINED {
 		return ""
 	}

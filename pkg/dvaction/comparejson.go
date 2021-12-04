@@ -44,7 +44,7 @@ func compareJsonInit(command string, ctx *dvcontext.RequestContext) ([]interface
 		return nil, false
 	}
 	if config.Ref == nil || config.Ref.Place == "" {
-		log.Printf("etalon.place must be present and positive in %s", command)
+		log.Printf("reference.place must be present in %s", command)
 		return nil, false
 	}
 	return []interface{}{config, ctx}, true
