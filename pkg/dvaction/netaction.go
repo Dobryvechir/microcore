@@ -145,7 +145,11 @@ func SmartNetRun(data []interface{}) bool {
 func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestContext) {
 	if result != "" {
 		if ctx != nil {
-			ctx.PrimaryContextEnvironment.SetProperty(result, data)
+			if ctx.LocalContextEnvironment!=nil {
+				ctx.LocalContextEnvironment.Set(result, data)
+			} else {
+				ctx.PrimaryContextEnvironment.Set(result, data)
+			}
 		} else {
 			switch data.(type) {
 			case string:

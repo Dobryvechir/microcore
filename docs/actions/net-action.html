@@ -1,0 +1,25 @@
+<h1>net</h1>
+<pre>
+Net command has the following parameters:
+{
+     "url"   string, the URL to be requested, starting with http: or https:
+     "method" string, one of the http methods: GET, POST, PUT, DELETE,OPTIONS, HEAD, CONNECT, TRACE, PATCH
+            the default is GET
+     "headers" string, the headers of the request, semicolon-separated
+     "template" Object (SmartNetConfigTemplate) "template", use it only if you need to insert 
+             the response into some template file
+     "type" the Content-Type of the response. By default it is application/json
+     "result" the name of the variable where to store the response
+     "body" the body of the request. If it starts with @@, then the body will be taken from 
+           the variable, the name of each is specified after @@. For example, in case of "body": "@@MY_SOURCE", the body
+            will be taken from the variable MY_SOURCE. If the variable does not exists, the
+           action will fire 400 error (Bad parameters). If you need to ignore this error, use ? at the end.
+           So, if "body":"@@MY_SOURCE?", if MY_SOURCE is not defined, the http request will be made with
+          empty body and the error will not be fired. If you do not need http requests with the empty body,
+           use double ? at the end. For example, in case of "body":"@@MY_SOURCE??", the http request
+          will be executed only if the MY_SOURCE variable exists and it is not empty (not "", not [], not {})
+}
+Example:
+UPDATE_SAVE_1=net:{"url":"{{{MY_URL}}}","method":"PUT","body":"@@MY_SOURCE??"}
+
+</pre>

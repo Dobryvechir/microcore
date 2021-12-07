@@ -64,6 +64,7 @@ type DvHostServer struct {
 	ProxyServerSettings           dvcontext.ServerSettings       `json:"proxyServerSettings"`
 	ServerRewrites                []DvRewrite                    `json:"serverRewrites"`
 	ProxyName                     string                         `json:"proxyName"`
+	DomainName                    string                         `json:"domain"`
 	CacheControl                  string                         `json:"cacheControl"`
 	DirectoryIndex                string                         `json:"directoryIndex"`
 	HeadersStatic                 map[string]string              `json:"headersStatic"`

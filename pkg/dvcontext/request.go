@@ -62,6 +62,7 @@ type MicroCoreInfo struct {
 	ProxyServerUrl            string
 	ProxyServerSettings       ServerSettings
 	ProxyName                 string
+	DomainName				  string
 	ProxyServers              []*ProxyServerBlock
 	HeadersStatic             map[string][]string
 	HeadersProxyServer        map[string][]string

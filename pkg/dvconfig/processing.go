@@ -99,6 +99,7 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 		ProxyServerUrl:            dvcontext.GetPurePath(server.DefaultProxyServer),
 		ProxyServerSettings:       server.ProxyServerSettings,
 		ProxyName:                 dvcom.PrepareProxyName(server.ProxyName),
+		DomainName:                dvcom.PrepareProxyName(server.DomainName),
 		ProxyServers:              prepareProxyInfo(server.ProxyServers),
 		BaseRewrite:               prepareComRewriteMap(server.Rewrites),
 		ServerRewrite:             prepareComRewriteMap(server.ServerRewrites),

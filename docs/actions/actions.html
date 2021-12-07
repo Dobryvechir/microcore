@@ -1,3 +1,4 @@
+<pre>
 Actions are supposed to implement the backend functionality
 Actions are described in the configuration as follows:
 {
@@ -27,3 +28,26 @@ Actions are described in the configuration as follows:
                (the default action is provided by "name" itself )
    "validations": validations of input parameters
 } 
+</pre>
+<p>You can add your own custom actions. There are some actions available in the microcore:</p>
+<ol>
+ <li><a href="http-action.html">http</a> executes simple http(s) requests </li>
+ <li><a href="net-action.html">net</a> executes advanced http(s) requests </li>
+ <li><a href="os-action.html">os</a> executes openshift operations </li>
+ <li><a href="forward-action.html">forward</a> port forwarding </li>
+ <li><a href="sql-action.html">sql</a> executes sql queries </li>
+ <li><a href="file-action.html">file</a> read a file from the local system</li>
+ <li><a href="store-action.html">store</a> store to a file </li>
+ <li><a href="paging-action.html">paging</a> paging functionality </li>
+ <li><a href="convert-action.html">convert</a> convert json or object </li>
+ <li><a href="version-action.html">version</a> compares versions, execute calls based on versions, updates version</li>
+ <li><a href="compare-action.html">compare</a> compare 2 json objects and finds added, removed, updated and unchanged blocks </li>
+ <li><a href="var-action.html">var</a> assignment variables from other variables or expressions </li>
+ <li><a href="call-action.html">call</a> calls another series of actions </li>
+ <li><a href="if-action.html">if</a> verifies conditions and calls one of 2 series of actions based on the condition</li>
+ <li><a href="ifempty-action.html">ifempty</a> verifies the variable (array,object) is not empty and calls one of 2 series of actions based on this verification </li>
+ <li><a href="for-action.html">for</a> executes a cycle upon a series of actions(body) based on object or array </li>
+ <li><a href="switch-action.html">switch</a> calls one of many series based on the conditions </li>
+ <li><a href="range-action.html">range</a> executes a cycle based on the range </li>
+ <li><a href="return-action.html">return</a> returns parameters from the call</li>
+</ol>

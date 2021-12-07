@@ -350,3 +350,15 @@ func CopyStringMap(src map[string]string) map[string]string {
 	}
 	return dst
 }
+
+func ReplaceWordBySpaceOrSemicolonOrEnd(src string, repl string, pos int) string {
+	endPos := pos
+	n := len(src)
+	for ; endPos < n; endPos++ {
+		c := src[endPos]
+		if c <= 32 || c == ';' {
+			break
+		}
+	}
+	return src[:pos] + repl + src[endPos:]
+}

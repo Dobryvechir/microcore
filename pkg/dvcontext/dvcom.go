@@ -90,7 +90,7 @@ func Send(w http.ResponseWriter, r *http.Request, message []byte) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
 	w.Header().Set("Access-Control-Max-Age", "3600")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, Tenant")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if message != nil {
 		w.Write(message)
 	}

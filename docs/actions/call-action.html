@@ -1,0 +1,12 @@
+<h1>call</h1>
+<pre>
+call executes another action, optionally with parameters, optionally returns some values
+It has the parameters as follows:
+{
+   "action" string, name of the another action to be executed
+   "params" map[string]string, optional parameters to be set for the execution of those actions
+   "result" string, optional the names of variables to be returned to the higher level
+}
+Example:
+FIRST_ACTION_1=call:{"action":"SECOND_ACTION", "params":{"A1":"5","A2":"6"},"return":"A3"}
+</pre>

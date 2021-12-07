@@ -236,6 +236,22 @@ func extractHostFromUrl(url string) string {
 	return url
 }
 
+func postCookDomain(domain string, w http.ResponseWriter) {
+	setcookie := w.Header().Values("Set-Cookie")
+	n := len(setcookie)
+	if n > 0 {
+		w.Header().Del("Set-Cookie")
+		for i := 0; i < n; i++ {
+			s := setcookie[i]
+			p := strings.Index(s, "domain=")
+			if p >= 0 {
+				s = dvtextutils.ReplaceWordBySpaceOrSemicolonOrEnd(s, domain, p+7)
+			}
+			w.Header().Add("Set-Cookie", s)
+		}
+	}
+}
+
 func tryHttpForward(request *dvcontext.RequestContext, url string) bool {
 	if request.Server.Client == nil {
 		createClientForMicroCoreInfo(request.Server)
@@ -357,6 +373,9 @@ func tryHttpForward(request *dvcontext.RequestContext, url string) bool {
 		if len(request.Output) != oldLen {
 			request.Writer.Header().Del("Content-Length")
 		}
+	}
+	if request.Server.DomainName != "" {
+		postCookDomain(request.Server.DomainName, request.Writer)
 	}
 	HandlerWriteDirect(request)
 	return true
