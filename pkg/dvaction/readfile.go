@@ -9,9 +9,11 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
+	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 )
 
 type ReadFileConfig struct {
@@ -23,6 +25,7 @@ type ReadFileConfig struct {
 	Sort              []string `json:"sort"`
 	NoReadOfUndefined bool     `json:"noReadOfUndefined"`
 	ErrorSignificant  bool     `json:"errorSignificant"`
+	IsTemplate        bool     `json:"template"`
 }
 
 func readFileActionInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -37,7 +40,7 @@ func readFileActionInit(command string, ctx *dvcontext.RequestContext) ([]interf
 	if config.Kind == "" {
 		config.Kind = "json"
 	}
-	if config.Kind != "json" {
+	if config.Kind != "json" && config.Kind != "string" && config.Kind != "text" {
 		log.Printf("Supported file kind is not supported %s (available kind options: json)", command)
 		return nil, false
 	}
@@ -58,31 +61,38 @@ func readFileActionRun(data []interface{}) bool {
 }
 
 func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext) bool {
-	if _, err := os.Stat(config.FileName); err != nil {
+	_, err := os.Stat(config.FileName)
+	if err != nil {
 		log.Printf("File not found %s", config.FileName)
 		return false
 	}
-	dat, err1 := ioutil.ReadFile(config.FileName)
-	if err1 != nil {
-		log.Printf("Error reading file %s %v", config.FileName, err1)
+	var dat []byte
+	env := GetEnvironment(ctx)
+	if config.IsTemplate {
+		dat, err = dvparser.SmartReadLikeJsonTemplate(config.FileName, 3, env)
+	} else {
+		dat, err = ioutil.ReadFile(config.FileName)
+	}
+	if err != nil {
+		log.Printf("Error reading file %s %v", config.FileName, err)
 		return false
 	}
 	var res interface{}
 	switch config.Kind {
 	case "json":
-		var props *dvevaluation.DvObject = nil
-		if ctx != nil {
-			props = ctx.PrimaryContextEnvironment
+		res, err = ReadJsonTrimmed(dat, config.Path, config.NoReadOfUndefined, env)
+		if err == nil && config.Filter != "" {
+			res, err = dvjson.IterateFilterByExpression(res, config.Filter, env, config.ErrorSignificant)
 		}
-		res, err1 = ReadJsonTrimmed(dat, config.Path, config.NoReadOfUndefined, props)
-		if err1 == nil && config.Filter != "" {
-			res, err1 = dvjson.IterateFilterByExpression(res, config.Filter, ctx.LocalContextEnvironment, config.ErrorSignificant)
+		if err == nil && len(config.Sort) > 0 {
+			res, err = dvjson.IterateSortByFields(res, config.Sort, env)
 		}
-		if err1 == nil && len(config.Sort) > 0 {
-			res, err1 = dvjson.IterateSortByFields(res, config.Sort, ctx.LocalContextEnvironment)
-		}
+	case "text":
+		res = string(dat)
+	case "string":
+		res = strings.TrimSpace(string(dat))
 	}
-	return ProcessSavingActionResult(config.Result, res, ctx, err1, "in file ", config.FileName)
+	return ProcessSavingActionResult(config.Result, res, ctx, err, "in file ", config.FileName)
 }
 
 func ReadJsonTrimmed(data []byte, path string, noReadOfUndefined bool, env *dvevaluation.DvObject) (interface{}, error) {

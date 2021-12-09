@@ -89,7 +89,7 @@ func DefaultInitWithObject(command string, result interface{}, env *dvevaluation
 	cmdDat := []byte(cmd)
 	if cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
 		if cmd[0] == '@' && len(cmd) > 1 {
-			dat, err := dvparser.SmartReadJsonTemplate(cmd[1:], 3, env)
+			dat, err := dvparser.SmartReadLikeJsonTemplate(cmd[1:], 3, env)
 			if err != nil {
 				log.Printf("Bad file in %s %v", command, err)
 				return false

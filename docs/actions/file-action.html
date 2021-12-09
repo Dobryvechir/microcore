@@ -1,0 +1,34 @@
+<h1>file</h1>
+<pre>
+file reads data from the local system and optionally makes some preliminary conversions
+It has the parameters as follows:
+{
+   "name" string, the file name, it is possible to use relative paths
+   "template" bool, true or false, optional, the default is false
+      if the default is true, the file is considered as the template where
+      all {{{ expression }}} are evaluated and inserted
+   "kind" string, one of the values as follows: (optional, the default is "json")
+          "json" - the content of the file is automatically converted into json objects
+          "text" - the whole content of the file as a string
+          "string" - the same as the "text", but the final string is trimmed by all
+                    spaces at both sides
+   "path" string, optional, used for json only, the path inside json
+            (for example: "path": "0.value")
+   "filter" string, optional, used for json of array type at the first level (after applying
+          the "path"),
+          it allows to filter out items in the array
+            (for example: "filter": "name=='key'")
+   "sort" []string, optional, used for json of array type at the first level
+          (after applying "path" and "filter")
+          it allows to sort the final array by some fields.
+          (for example "sort": ["name","kind"]
+   "noReadOfUndefined" bool, true or false (optional, the default is false)
+          if it is true, an error is raised in case the path requires
+          reading of undefined.
+   "errorSignificant" bool, true or false, (optional, the default is false)
+          if it is true, the error of path is promoted as a result of the action
+   "result" string, the name of the variable to store the result
+}
+Example:
+READ_ACTION_1=file:{"name":"{{{DATA_PATH}}}/data.txt", "kind":"string","return":"A3"}
+</pre>

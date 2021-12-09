@@ -67,7 +67,7 @@ func SmartReadTemplate(filename string, numberOfBrackets int, joiner byte) ([]by
 	return bytes.Join(res, []byte{joiner}), nil
 }
 
-func SmartReadJsonTemplate(filename string, numberOfBrackets int, params *dvevaluation.DvObject) ([]byte, error) {
+func SmartReadLikeJsonTemplate(filename string, numberOfBrackets int, params *dvevaluation.DvObject) ([]byte, error) {
 	if params == nil {
 		params = GlobalPropertiesAsDvObject
 	}
