@@ -33,6 +33,7 @@ Actions are described in the configuration as follows:
 <ol>
     <li><a href="http-action.html">http</a> executes simple http(s) requests</li>
     <li><a href="net-action.html">net</a> executes advanced http(s) requests</li>
+    <li><a href="proxy-action.html">proxy</a> executes proxied http(s) requests based on the original request</li>
     <li><a href="os-action.html">os</a> executes openshift operations</li>
     <li><a href="forward-action.html">forward</a> port forwarding</li>
     <li><a href="sql-action.html">sql</a> executes sql queries</li>
@@ -57,3 +58,37 @@ Actions are described in the configuration as follows:
     <li><a href="range-action.html">range</a> executes a cycle based on the range</li>
     <li><a href="return-action.html">return</a> returns parameters from the call</li>
 </ol>
+<pre>
+    Many of the actions have a "result" field to store the result of the execution.
+    The result is the variable name which must consist of latin letters (A-Z,a-z),
+    the underscore (_), and digits (0-9).
+    When call (if, switch, for ...) are executed, a new stack of variables is created,
+    which refers to the stack of the higher level.
+    The result is normally saved only on the current level. So, when you return from
+    a subroutine to a higher level, this value will be abandoned.
+    At the same time this value will be automatically available inside subroutines
+    of all depth for the current level.
+    If you wish to save the result at a higher level, you must provide the prefix with
+    a colon as follows:
+    1,2,3, ... saving at the higher level by this number of steps.
+    request - saving at the level of the whole request
+    global  - saving at the level of the global variables (this value
+    will be available even in the next http requests to the server)
+    Example:
+      Suppose your requests calls ACTION_A, ACTION_A calls ACTION_B,
+             ACTION_B calls ACTION_C, ACTION_C calls ACTION_D
+      Suppose your current action step is in ACTION_C, and you set the result as follows:
+         "result": "MY_RESULT"
+             The value will be set as MY_RESULT and will be available for all
+             action steps in ACTION_C and ACTION_D
+         "result": "1:MY_RESULT"
+              ACTION_B, ACTION_C, ACTION_D
+         "result": "2:MY_RESULT"
+              ACTION_A,ACTION_B,ACTION_C,ACTION_D
+         "result": "request:MY_RESULT"
+              for all in this request, that is, also
+              ACTION_A,ACTION_B,ACTION_C,ACTION_D
+         "result": "global:MY_RESULT"
+              value will be available for all action steps and not only in this
+              http request, but in all further work of the server
+</pre>

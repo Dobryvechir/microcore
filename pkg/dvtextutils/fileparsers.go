@@ -108,6 +108,9 @@ func SeparateToKeyValue(line string) (key string, value string) {
 	if pos > 0 {
 		key = strings.TrimSpace(line[:pos])
 		value = strings.TrimSpace(line[pos+1:])
+	} else {
+		key = line
+		value = ""
 	}
 	return
 }

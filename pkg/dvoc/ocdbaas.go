@@ -66,7 +66,7 @@ func GetDbaasProperties(microServiceName string, m2mToken string, database strin
 		headers["Tenant"] = tenantId
 	}
 	method := dvparser.GetByGlobalPropertiesOrDefault(DbaaSRequestMethodProperty, DbaaSRequestMethod)
-	res, err := dvnet.NewJsonRequest(method, url, body, headers, dvnet.AveragePersistentOptions)
+	res, err, _ := dvnet.NewJsonRequest(method, url, body, headers, dvnet.AveragePersistentOptions)
 	if err != nil {
 		return nil, err
 	}

@@ -84,6 +84,20 @@ func (obj *DvObject) Set(key string, value interface{}) {
 	obj.Properties[key] = value
 }
 
+func (obj *DvObject) SetAtParent(key string, value interface{}, level int) {
+	place := obj
+	for ; level > 0 && place != nil; level-- {
+		place = place.Prototype
+	}
+	if place == nil {
+		return
+	}
+	if place.Properties == nil {
+		place.Properties = make(map[string]interface{})
+	}
+	place.Properties[key] = value
+}
+
 func NewDvObjectWithSpecialValues(value interface{}, kind int, proto *DvObject, properties map[string]interface{}) *DvObject {
 	return &DvObject{Value: value, Options: kind, Prototype: proto, Properties: properties}
 }

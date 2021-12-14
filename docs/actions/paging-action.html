@@ -1,0 +1,16 @@
+<h1>paging</h1>
+<pre>
+Paging command has the following parameters:
+{
+     "source"   string, the variable name where the json source is stored
+     "path" string, the path inside the json to find the part related to paging
+     "result" the name of the variable where to store the response
+     "prefix" string, the prefix to store the paging data
+     "sort" string, the list of columns to sort the data
+     "pageSize" int, the page size in the number of items per page
+     "currentPage" int, one-based number of the current page
+}
+Example:
+PAGING_CARDS_1=paging:{"source":"PAGING_SOURCE","prefix":"PAGE","result":"PAGING_RESULT"}
+
+</pre>

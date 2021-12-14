@@ -5,6 +5,7 @@ package dvaction
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
@@ -13,6 +14,8 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvsecurity"
 	"io/ioutil"
 	"log"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -79,7 +82,42 @@ func ActionContextResult(ctx *dvcontext.RequestContext) {
 		}
 		ctx.Output = []byte(res)
 	}
+	setHeadersName := ctx.PrimaryContextEnvironment.GetString(dvcontext.AUTO_HEADER_SET_BY)
+	if setHeadersName != "" {
+		provideResponseHeaders(setHeadersName+"_", ctx)
+	}
 	ctx.HandleCommunication()
+}
+
+func provideResponseHeaders(pref string, ctx *dvcontext.RequestContext) {
+	if ctx.Headers == nil {
+		ctx.Headers = make(map[string][]string)
+	}
+	n := len(pref)
+	var res []string
+	for k, v := range ctx.PrimaryContextEnvironment.Properties {
+		if strings.HasPrefix(k, pref) {
+			key := k[n:]
+			if key != "" {
+				switch v.(type) {
+				case string:
+					res = []string{v.(string)}
+				case []string:
+					res = v.([]string)
+				default:
+					sv := dvevaluation.AnyToString(v)
+					if sv == "" {
+						res = nil
+					} else {
+						res = []string{sv}
+					}
+				}
+				if res != nil {
+					ctx.Headers[key] = res
+				}
+			}
+		}
+	}
 }
 
 func GetContextVarResult(ctx *dvcontext.RequestContext, varName string) ([]byte, error) {
@@ -139,11 +177,82 @@ func securityEndPointHandler(ctx *dvcontext.RequestContext) bool {
 }
 
 func GetEnvironment(ctx *dvcontext.RequestContext) *dvevaluation.DvObject {
-	if ctx==nil || ctx.PrimaryContextEnvironment==nil {
+	if ctx == nil || ctx.PrimaryContextEnvironment == nil {
 		return dvparser.GetGlobalPropertiesAsDvObject()
 	}
-	if ctx.LocalContextEnvironment!=nil {
+	if ctx.LocalContextEnvironment != nil {
 		return ctx.LocalContextEnvironment
 	}
 	return ctx.PrimaryContextEnvironment
+}
+
+func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestContext) {
+	if result != "" {
+		p := strings.Index(result, ":")
+		level := ""
+		if p >= 0 {
+			level = strings.ToLower(result[:p])
+			result = result[p+1:]
+		}
+		if ctx != nil && level != "global" {
+			if ctx.LocalContextEnvironment != nil && level != "request" {
+				if level != "" && level[0] >= '1' && level[0] <= '9' {
+					levelVal, err := strconv.Atoi(level)
+					if err == nil {
+						ctx.LocalContextEnvironment.SetAtParent(result, data, levelVal)
+					} else {
+						dvlog.PrintfError("Unknown level %s", level)
+					}
+				} else {
+					ctx.LocalContextEnvironment.Set(result, data)
+				}
+			} else {
+				ctx.PrimaryContextEnvironment.Set(result, data)
+			}
+		} else {
+			switch data.(type) {
+			case string:
+				dvparser.SetGlobalPropertiesValue(result, data.(string))
+			}
+		}
+	}
+}
+
+func IsLikeJson(s string) bool {
+	t := strings.TrimSpace(s)
+	n := len(t)
+	return n >= 2 && (t[0] == '{' && t[n-1] == '}' || t[0] == '[' && t[n-1] == ']')
+}
+
+func DefaultInitWithObject(command string, result interface{}, env *dvevaluation.DvObject) bool {
+	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
+	if cmd == "" {
+		log.Printf("Empty parameters in %s", command)
+		return false
+	}
+	cmdDat := []byte(cmd)
+	if cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
+		if cmd[0] == '@' && len(cmd) > 1 {
+			dat, err := dvparser.SmartReadLikeJsonTemplate(cmd[1:], 3, env)
+			if err != nil {
+				log.Printf("Bad file in %s %v", command, err)
+				return false
+			}
+			dat = bytes.TrimSpace(dat)
+			if len(dat) < 2 || dat[0] != '{' || dat[len(dat)-1] != '}' {
+				log.Printf("Empty file in %s", command)
+				return false
+			}
+			cmdDat = dat
+		} else {
+			log.Printf("Empty parameters in %s", command)
+			return false
+		}
+	}
+	err := json.Unmarshal(cmdDat, result)
+	if err != nil {
+		log.Printf("Error converting parameters: %v in %s", err, command)
+		return false
+	}
+	return true
 }

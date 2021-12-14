@@ -1,0 +1,41 @@
+<h1>proxy</h1>
+<pre>
+Proxy command has the following parameters:
+{
+     "url"   string, the URL (or start of URL) to be requested, starting with http: or https:
+     "method" string, optional, one of the http methods: GET, POST, PUT, DELETE,OPTIONS, HEAD, CONNECT, TRACE, PATCH
+            the default is "", which means it is taken from the original request
+     "headers" string, the headers of the request, semicolon-separated, optionally
+          together with the headers from the original request
+     "type" the Content-Type of the response. By default it is application/json
+     "result" the name of the variable where to store the response
+     "body" the body of the request in case is set to true. If it starts with @@, then the body will be taken from
+           the variable, the name of each is specified after @@. For example, in case of "body": "@@MY_SOURCE", the body
+            will be taken from the variable MY_SOURCE. If the variable does not exists, the
+           action will fire 400 error (Bad parameters). If you need to ignore this error, use ? at the end.
+           So, if "body":"@@MY_SOURCE?", if MY_SOURCE is not defined, the http request will be made with
+          empty body and the error will not be fired. If you do not need http requests with the empty body,
+           use double ? at the end. For example, in case of "body":"@@MY_SOURCE??", the http request
+          will be executed only if the MY_SOURCE variable exists and it is not empty (not "", not [], not {})
+    "not_proxy_body" bool, true or false (default), in case of true, the body is taken from "body" above,
+          otherwise it is taken from the original request.
+    "not_proxy_headers"  bool, true or false (default), in case of true, only headers
+         specified in the "headers" above are used in the request, otherwise
+         the headers from the original request are taken and
+         if "headers" key-value pairs are defined and they overwrite the headers
+         from the original request
+    "not_proxy_url_params"  bool, true or false (default), in case of false
+       the url parameters from the original request are added
+    "not_add_url_path"  bool, true or false (default), in case of true the
+       "url" above is the final url of the request, otherwise
+       "url" above is used as the basis, to which the url path from the original
+       request is added, and optionally (depending on "not_proxy_url_params")
+       the parameters from the original request are added to the url.
+    "not_return_headers"  bool, true or false (default), in case of true, the
+       headers from this request are not returned back upon action execution end,
+      otherwise they are returned at the end of the action execution.
+}
+Example:
+UPDATE_STEP_1=proxy:{"url":"{{{MY_URL}}}","method":"PUT","body":"@@MY_SOURCE??"}
+
+</pre>

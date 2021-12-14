@@ -476,10 +476,10 @@ func calculateRequestContextParameters(r *http.Request) (res map[string]interfac
 	res["HTTP_HOST"] = headers.Get("Host")
 	res["HTTP_REFERER"] = headers.Get("Referer")
 	res["HTTP_USER_AGENT"] = headers.Get("User-Agent")
-	res["REQUEST_METHOD"] = r.Method
-	res["REQUEST_URI"] = r.URL.Path
+	res[dvcontext.REQUEST_METHOD] = r.Method
+	res[dvcontext.REQUEST_URI] = r.URL.Path
 	res["REQUEST_SCHEME"] = "http"
-	res["REQUEST_URL_PARAMS"] = r.URL.RawQuery
+	res[dvcontext.REQUEST_URL_PARAMS] = r.URL.RawQuery
 	if r.TLS != nil {
 		res["REQUEST_SCHEME"] = "https"
 	}
@@ -501,7 +501,7 @@ func calculateRequestContextParameters(r *http.Request) (res map[string]interfac
 }
 
 func logRequest(request *dvcontext.RequestContext, place string) {
-	log.Printf("[%v %v] %s", request.Extra["REQUEST_METHOD"], request.Extra["REQUEST_URI"], place)
+	log.Printf("[%v %v] %s", request.Extra[dvcontext.REQUEST_METHOD], request.Extra["REQUEST_URI"], place)
 }
 
 func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerInfo map[string]*dvcontext.MicroCoreInfo) http.HandlerFunc {

@@ -102,6 +102,7 @@ type RequestContext struct {
 	InputStr                  string
 	InputJson                 interface{}
 	Output                    []byte
+	Headers					  map[string][]string
 	Error                     error
 	Action                    *DvAction
 	StatusCode                int
@@ -112,4 +113,9 @@ type HandlerFunc func(request *RequestContext) bool
 const (
 	BODY_STRING = "BODY_STRING"
 	BODY_JSON   = "BODY_JSON"
+	REQUEST_METHOD = "REQUEST_METHOD"
+	REQUEST_URI = "REQUEST_URI"
+	REQUEST_URL_PARAMS = "REQUEST_URL_PARAMS"
+	AUTO_HEADER_SET_BY = "AUTO_HEADER_SET_BY"
+	HEADERS_RESPONSE = "HEADERS_RESPONSE"
 )

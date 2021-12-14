@@ -5,8 +5,6 @@ Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvaction
 
 import (
-	"bytes"
-	"encoding/json"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
@@ -16,8 +14,8 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
-	"os/exec"
 	"strings"
 )
 
@@ -26,10 +24,42 @@ const (
 )
 
 const (
-	M2MTokenPrefix          = "M2M_TOKEN_"
-	M2MTokenPath            = "M2MTOKEN_PATH"
-	M2MAuthorizationRequest = "AuthorizationM2MService"
+	M2MTokenPrefix = "M2M_TOKEN_"
+	M2MTokenPath   = "M2MTOKEN_PATH"
+	M2M            = "M2M"
+	M2M_USERNAME   = "M2M_USERNAME"
+	M2M_PASSWORD   = "M2M_PASSWORD"
+	M2M_           = "M2M_"
 )
+
+type SmartNetConfigTemplate struct {
+	Src string `json:"src"`
+	Dst string `json:"dst"`
+}
+
+type SmartNetConfig struct {
+	Url         string                 `json:"url"`
+	Method      string                 `json:"method"`
+	Headers     string                 `json:"headers"`
+	Template    SmartNetConfigTemplate `json:"template"`
+	ContentType string                 `json:"type"`
+	Result      string                 `json:"result"`
+	Body        string                 `json:"body"`
+}
+
+type ProxyNetConfig struct {
+	Url               string `json:"url"`
+	Method            string `json:"method"`
+	Headers           string `json:"headers"`
+	ContentType       string `json:"type"`
+	Result            string `json:"result"`
+	Body              string `json:"body"`
+	NotProxyHeaders   bool   `json:"not_proxy_headers"`
+	NotProxyUrlParams bool   `json:"not_proxy_url_params"`
+	NotAddUrlPath     bool   `json:"not_add_url_path"`
+	NotProxyBody      bool   `json:"not_proxy_body"`
+	NotReturnHeaders  bool   `json:"not_return_headers"`
+}
 
 func convertToHeader(list []string) (res map[string]string) {
 	n := len(list)
@@ -61,56 +91,8 @@ func processNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{
 func processNetRun(data []interface{}) bool {
 	url := data[0].(string)
 	headers := data[1].(map[string]string)
-	_, err := dvnet.NewRequest("GET", url, "", headers, dvnet.AveragePersistentOptions)
+	_, err, _ := dvnet.NewRequest("GET", url, "", headers, dvnet.AveragePersistentOptions)
 	return err == nil
-}
-
-type SmartNetConfigTemplate struct {
-	Src string `json:"src"`
-	Dst string `json:"dst"`
-}
-
-type SmartNetConfig struct {
-	Url         string                 `json:"url"`
-	Method      string                 `json:"method"`
-	Headers     string                 `json:"headers"`
-	Template    SmartNetConfigTemplate `json:"template"`
-	ContentType string                 `json:"type"`
-	Result      string                 `json:"result"`
-	Body        string                 `json:"body"`
-}
-
-func DefaultInitWithObject(command string, result interface{}, env *dvevaluation.DvObject) bool {
-	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
-	if cmd == "" {
-		log.Printf("Empty parameters in %s", command)
-		return false
-	}
-	cmdDat := []byte(cmd)
-	if cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
-		if cmd[0] == '@' && len(cmd) > 1 {
-			dat, err := dvparser.SmartReadLikeJsonTemplate(cmd[1:], 3, env)
-			if err != nil {
-				log.Printf("Bad file in %s %v", command, err)
-				return false
-			}
-			dat = bytes.TrimSpace(dat)
-			if len(dat) < 2 || dat[0] != '{' || dat[len(dat)-1] != '}' {
-				log.Printf("Empty file in %s", command)
-				return false
-			}
-			cmdDat = dat
-		} else {
-			log.Printf("Empty parameters in %s", command)
-			return false
-		}
-	}
-	err := json.Unmarshal(cmdDat, result)
-	if err != nil {
-		log.Printf("Error converting parameters: %v in %s", err, command)
-		return false
-	}
-	return true
 }
 
 func SmartNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -142,23 +124,6 @@ func SmartNetRun(data []interface{}) bool {
 	return SmartNetRunByConfig(config, ctx)
 }
 
-func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestContext) {
-	if result != "" {
-		if ctx != nil {
-			if ctx.LocalContextEnvironment!=nil {
-				ctx.LocalContextEnvironment.Set(result, data)
-			} else {
-				ctx.PrimaryContextEnvironment.Set(result, data)
-			}
-		} else {
-			switch data.(type) {
-			case string:
-				dvparser.SetGlobalPropertiesValue(result, data.(string))
-			}
-		}
-	}
-}
-
 func ProcessSavingActionResult(result string, data interface{}, ctx *dvcontext.RequestContext, err error, message1 string, message2 string) bool {
 	if err != nil {
 		log.Printf("%s %s %v", message1, message2, err)
@@ -168,15 +133,7 @@ func ProcessSavingActionResult(result string, data interface{}, ctx *dvcontext.R
 	return true
 }
 
-func IsLikeJson(s string) bool {
-	t := strings.TrimSpace(s)
-	n := len(t)
-	return n >= 2 && (t[0] == '{' && t[n-1] == '}' || t[0] == '[' && t[n-1] == ']')
-}
-
-func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) bool {
-	options := dvnet.GetAveragePersistentOptions()
-	body := config.Body
+func smartNetProcessBody(body string, ctx *dvcontext.RequestContext) (string, bool) {
 	if len(body) > 2 && body[0] == '@' && body[1] == '@' {
 		k := body[2:]
 		n := len(k)
@@ -199,31 +156,54 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 				if ctx != nil {
 					ctx.SetHttpErrorCode(400, "Unset "+k)
 				}
-				return true
+				return "", false
 			}
 			v = nil
 		}
 		if filled {
 			if dvjson.IsEmptyAny(v) {
-				return true
+				return "", false
 			}
 		}
 		body = dvevaluation.AnyToString(v)
 	}
-	headers := make(map[string]string)
-	if config.Headers != "" {
-		dvtextutils.PutDescribedAttributesToMapFromCommaSeparatedList(dvparser.GlobalProperties, headers, config.Headers)
-	} else {
+	return body, true
+}
+
+func smartNetProcessHeaders(headers map[string]string, newHeaders string, method string, body string) map[string]string {
+	if newHeaders != "" {
+		dvtextutils.PutDescribedAttributesToMapFromCommaSeparatedList(dvparser.GlobalProperties, headers, newHeaders)
+	}
+	if _, ok := headers["accept"]; !ok {
 		headers["accept"] = "application/json"
-		if config.Method != "GET" && IsLikeJson(body) {
-			headers["Content-Type"] = "application/json"
+	}
+	if _, ok := headers["Content-Type"]; !ok && method != "GET" && IsLikeJson(body) {
+		headers["Content-Type"] = "application/json"
+	}
+	return headers
+}
+
+func SaveHeaderResult(result string, heads http.Header, env *dvevaluation.DvObject) {
+	env.Set("MC_NET_RESULT", result)
+	result = "HEADERS_" + result + "_"
+	for k,v:=range heads {
+		key:=result + k
+		if len(v)>0 {
+			env.Set(key, v[0])
 		}
 	}
-	if strings.HasPrefix(headers[Authorization], "M2M_") {
-		microServiceName := headers[Authorization][4:]
-		options[M2MAuthorizationRequest] = microServiceName
+}
+
+func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) bool {
+	options := dvnet.GetAveragePersistentOptions()
+	body, ok := smartNetProcessBody(config.Body, ctx)
+	if !ok {
+		return true
 	}
-	res, err := NetRequest(config.Method, config.Url, body, headers, options)
+	env:=GetEnvironment(ctx)
+	headers := make(map[string]string)
+	headers = smartNetProcessHeaders(headers, config.Headers, config.Method, body)
+	res, err, heads := NetRequest(config.Method, config.Url, body, headers, options)
 	if err != nil {
 		log.Println(res)
 		log.Printf("%s %s failed: %v", config.Method, config.Url, err)
@@ -239,6 +219,7 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 	default:
 		result = string(res)
 	}
+	SaveHeaderResult(config.Result, heads, env)
 	SaveActionResult(config.Result, result, ctx)
 	if config.Template.Dst != "" {
 		if config.Template.Src != "" {
@@ -278,53 +259,112 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 	return true
 }
 
-func processOsInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
-	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
-	if cmd == "" {
-		log.Printf("Empty net parameters", command)
+func ProxyNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+	config := &ProxyNetConfig{}
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
-	s, err := dvparser.ConvertByteArrayByGlobalPropertiesRuntime([]byte(cmd), "os step")
-	if err != nil || s == "" {
-		log.Printf("Error in %s: %v", cmd, err)
+	if config.Url == "" {
+		log.Printf("Url must be specified in %s", command)
 		return nil, false
 	}
-	return []interface{}{s}, true
+	switch config.Method {
+	case "", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "CONNECT", "TRACE":
+	default:
+		log.Printf("Unknown method %s in %s", config.Method, command)
+		return nil, false
+	}
+	return []interface{}{config, ctx}, true
 }
 
-func processOsRun(data []interface{}) bool {
-	command := data[0].(string)
-	cmd := exec.Command("cmd.exe", "/c", command)
-	stdoutStderr, err := cmd.CombinedOutput()
-	res := string(stdoutStderr)
-	if Log >= dvlog.LogInfo || Log >= dvlog.LogError && err != nil {
-		if Log < dvlog.LogInfo {
-			dvlog.Printf("Executed: %s ", command)
+func ProxyNetRun(data []interface{}) bool {
+	config := data[0].(*ProxyNetConfig)
+	var ctx *dvcontext.RequestContext = nil
+	if data[1] != nil {
+		ctx = data[1].(*dvcontext.RequestContext)
+	}
+	return ProxyNetRunByConfig(config, ctx)
+}
+
+func ProxyNetRunByConfig(config *ProxyNetConfig, ctx *dvcontext.RequestContext) bool {
+	options := dvnet.GetAveragePersistentOptions()
+	var body string
+	var ok bool
+	if config.NotProxyBody {
+		body, ok = smartNetProcessBody(config.Body, ctx)
+		if !ok {
+			return true
 		}
-		dvlog.Println("", "-------------------START EXECUTING "+command+"--------------------\n"+res)
-		dvlog.Println("", "____________________END EXECUTING "+command+"______________________")
+	} else {
+		body = ctx.PrimaryContextEnvironment.GetString(dvcontext.BODY_STRING)
 	}
-	return err == nil
-}
-
-func portForwardInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
-	p := strings.Index(command, ":")
-	items := dvtextutils.ConvertToNonEmptyList(command[p+1:])
-	if len(items) != 2 {
-		dvlog.Printf("forward: <host>, <target> expected, but you specified %s", command)
-		return nil, false
+	method := config.Method
+	if method == "" {
+		method = ctx.PrimaryContextEnvironment.GetString(dvcontext.REQUEST_METHOD)
 	}
-	host := items[0]
-	target := items[1]
-	if !dvnet.ValidateHostTargetForPortForwarding(host, target) {
-		return nil, false
+	headers := make(map[string]string)
+	if !config.NotProxyHeaders {
+		smartProvideProxyHeaders(headers, ctx)
 	}
-	return []interface{}{host, target}, true
-}
-
-func portForwardRun(data []interface{}) bool {
-	host := data[0].(string)
-	target := data[1].(string)
-	dvnet.Forward(host, target)
+	headers = smartNetProcessHeaders(headers, config.Headers, method, body)
+	url := config.Url
+	if !config.NotAddUrlPath {
+		url = smartNetProcessUrl(url, ctx)
+	}
+	if !config.NotAddUrlPath {
+		url = smartNetAddUrlParams(url, ctx)
+	}
+	res, err, heads := NetRequest(method, url, body, headers, options)
+	if err != nil {
+		log.Println(res)
+		log.Printf("%s %s failed: %v", method, url, err)
+		return false
+	}
+	var result interface{}
+	switch config.ContentType {
+	case "json":
+		result, err = dvjson.JsonFullParser(res)
+		if err != nil {
+			result = string(res)
+		}
+	default:
+		result = string(res)
+	}
+	if !config.NotReturnHeaders && ctx.PrimaryContextEnvironment!=nil {
+		SaveHeaderResult("RESPONSE",heads,ctx.PrimaryContextEnvironment)
+		ctx.PrimaryContextEnvironment.Set(dvcontext.AUTO_HEADER_SET_BY, dvcontext.HEADERS_RESPONSE)
+	}
+	SaveActionResult(config.Result, result, ctx)
 	return true
+}
+
+func smartProvideProxyHeaders(headers map[string]string, ctx *dvcontext.RequestContext) {
+	origHeaders:=ctx.Reader.Header
+    for k,v:=range origHeaders {
+		if len(v)>0 {
+			headers[k] = v[0]
+		}
+	}
+}
+
+func smartNetProcessUrl(url string, ctx *dvcontext.RequestContext) string {
+	n := len(url) - 1
+	if n >= 0 && (url[n] == '/' || url[n] == '\\') {
+		url = url[:n]
+	}
+	env := GetEnvironment(ctx)
+	s := env.GetString(dvcontext.REQUEST_URI)
+	if s != "" {
+		url += s
+	}
+	return url
+}
+
+func smartNetAddUrlParams(url string, ctx *dvcontext.RequestContext) string {
+	env := GetEnvironment(ctx)
+	s := env.GetString(dvcontext.REQUEST_URL_PARAMS)
+	if s != "" {
+		url += "?" + s
+	}
+	return url
 }

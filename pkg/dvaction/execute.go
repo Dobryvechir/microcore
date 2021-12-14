@@ -28,6 +28,7 @@ type ProcessFunction struct {
 const (
 	CommandHttp        = "http"
 	CommandNet         = "net"
+	CommandProxy       = "proxy"
 	CommandOs          = "os"
 	CommandPortForward = "forward"
 	CommandSql         = "sql"
@@ -52,6 +53,7 @@ var processFunctions = map[string]ProcessFunction{
 	CommandOs:          {Init: processOsInit, Run: processOsRun},
 	CommandPortForward: {Init: portForwardInit, Run: portForwardRun, Async: true},
 	CommandNet:         {Init: SmartNetInit, Run: SmartNetRun},
+	CommandProxy:       {Init: ProxyNetInit, Run: ProxyNetRun},
 	CommandSql:         {Init: dvdbdata.SqlInit, Run: dvdbdata.SqlRun},
 	CommandFile:        {Init: readFileActionInit, Run: readFileActionRun},
 	CommandConvert:     {Init: jsonConvertInit, Run: jsonConvertRun},

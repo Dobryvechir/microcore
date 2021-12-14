@@ -84,9 +84,13 @@ func GetIntegerOption(options map[string]interface{}, name string, defValue int)
 	return defValue
 }
 
-func NewRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error) {
+func NewRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header) {
 	repeats := GetIntegerOption(options, "repeats", 0)
 	pause := GetIntegerOption(options, "pause", 5)
+	return NewRequestRepeatPause(method, url, body, headers, options, repeats, pause)
+}
+
+func NewRequestRepeatPause(method string, url string, body string, headers map[string]string, options map[string]interface{},repeats int, pause int) ([]byte, error, http.Header) {
 	insecureSkipVerify := true
 	if Log >= LogInfo {
 		if Log >= LogDetail {
@@ -117,12 +121,13 @@ func NewRequest(method string, url string, body string, headers map[string]strin
 	var request *http.Request
 	var buf []byte
 	var statusCode int
+	var respHeaders http.Header
 	for ; repeats > 0; repeats-- {
 		bodyIo := ioutil.NopCloser(bytes.NewReader([]byte(body)))
 		request, err = http.NewRequest(method, url, bodyIo)
 		request.Header = httpHeaders
 		if err != nil {
-			return nil, err
+			return nil, err, nil
 		}
 		tr := http.DefaultTransport.(*http.Transport)
 		if tr.TLSClientConfig == nil {
@@ -155,6 +160,7 @@ func NewRequest(method string, url string, body string, headers map[string]strin
 		}
 		if response != nil {
 			response.Body.Close()
+			respHeaders = response.Header
 		}
 	}
 	erroneous := err != nil || statusCode >= 400
@@ -182,12 +188,12 @@ func NewRequest(method string, url string, body string, headers map[string]strin
 		} else if err != nil {
 			message = err.Error()
 		}
-		return nil, errors.New(message + " " + string(buf))
+		return nil, errors.New(message + " " + string(buf)), nil
 	}
-	return buf, nil
+	return buf, nil, respHeaders
 }
 
-func NewJsonRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error) {
+func NewJsonRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header) {
 	if headers == nil {
 		headers = make(map[string]string)
 	}
@@ -226,7 +232,7 @@ func UrlEncodedPart(data interface{}) string {
 }
 
 func LoadStruct(method string, url string, body string, headers map[string]string, v interface{}, options map[string]interface{}) error {
-	buf, err := NewRequest(method, url, body, headers, options)
+	buf, err, _ := NewRequest(method, url, body, headers, options)
 	if err != nil {
 		return err
 	}

@@ -95,7 +95,7 @@ func ResolveUrlRequestByGlobalPropertiesAndDefaults(prefix string, defaultMethod
 			method = strings.ReplaceAll(method, s, v)
 		}
 	}
-	res, err := dvnet.NewJsonRequest(method, url, body, headers, dvnet.AveragePersistentOptions)
+	res, err, _ := dvnet.NewJsonRequest(method, url, body, headers, dvnet.AveragePersistentOptions)
 	if err != nil {
 		return "", err
 	}

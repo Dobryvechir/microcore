@@ -13,6 +13,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -40,7 +41,7 @@ func resolveCredentials(name string) (string, string, bool) {
 func CleanM2MTokenInCache(microserviceName string) {
 	dvparser.RemoveGlobalPropertiesValue(M2MTokenPrefix + GetMicroServicePropertyName(microserviceName))
 	path := dvparser.GlobalProperties[M2MTokenPath]
-	if path == "" {
+	if path == "" || microserviceName == "" {
 		return
 	}
 	if path[len(path)-1] == '/' || path[len(path)-1] == '\\' {
@@ -56,15 +57,29 @@ func CleanM2MTokenInCache(microserviceName string) {
 	os.Remove(path)
 }
 
-func GetM2MTokenFromFileSystem(microserviceName string) (token string, ok bool) {
+func getPathForMicroserviceInfoStorage(microserviceName string) string {
 	path := dvparser.GlobalProperties[M2MTokenPath]
 	if path == "" {
-		return
+		return ""
 	}
 	if path[len(path)-1] == '/' || path[len(path)-1] == '\\' {
-		path += microserviceName
+		if microserviceName != "" {
+			path += microserviceName
+		} else {
+			path = path[:len(path)-1]
+		}
 	} else {
-		path += "/" + microserviceName
+		if microserviceName != "" {
+			path += "/" + microserviceName
+		}
+	}
+	return path
+}
+
+func GetM2MTokenFromFileSystem(microserviceName string) (token string, ok bool) {
+	path := getPathForMicroserviceInfoStorage(microserviceName)
+	if path == "" {
+		return
 	}
 	path += "/token"
 	info, err := os.Stat(path)
@@ -92,14 +107,9 @@ func GetM2MTokenFromFileSystem(microserviceName string) (token string, ok bool) 
 }
 
 func SaveM2MTokenInFileSystem(microserviceName string, accessToken *AccessToken) {
-	path := dvparser.GlobalProperties[M2MTokenPath]
+	path := getPathForMicroserviceInfoStorage(microserviceName)
 	if path == "" {
 		return
-	}
-	if path[len(path)-1] == '/' || path[len(path)-1] == '\\' {
-		path += microserviceName
-	} else {
-		path += "/" + microserviceName
 	}
 	os.MkdirAll(path, 0755)
 	path += "/token"
@@ -111,13 +121,31 @@ func SaveM2MTokenInFileSystem(microserviceName string, accessToken *AccessToken)
 }
 
 func GetM2MToken(microserviceName string) (token string, okFinal bool) {
-	token, okFinal = GetM2MTokenFromFileSystem(microserviceName)
-	if okFinal {
-		return
-	}
-	username, passwrd, ok := resolveCredentials(microserviceName)
-	if !ok {
-		return
+	var username, passwrd string
+	if microserviceName == "" {
+		token, okFinal = dvparser.GlobalProperties[M2MTokenPrefix]
+		if okFinal {
+			return
+		}
+		token, okFinal = GetM2MTokenFromFileSystem(microserviceName)
+		if okFinal {
+			return
+		}
+		username = dvparser.GlobalProperties[M2M_USERNAME]
+		passwrd = dvparser.GlobalProperties[M2M_PASSWORD]
+	} else {
+		token, okFinal = dvparser.GlobalProperties[M2MTokenPrefix+GetMicroServicePropertyName(microserviceName)]
+		if okFinal {
+			return
+		}
+		token, okFinal = GetM2MTokenFromFileSystem(microserviceName)
+		if okFinal {
+			return
+		}
+		username, passwrd, okFinal = resolveCredentials(microserviceName)
+		if !okFinal {
+			return
+		}
 	}
 	m2mTokenUrlRaw := dvparser.GlobalProperties["M2MTOKEN_URL"]
 
@@ -130,7 +158,8 @@ func GetM2MToken(microserviceName string) (token string, okFinal bool) {
 		dvlog.PrintfError("Make sure you specified all constants %s in .properties: %v", m2mTokenUrlRaw, err1)
 		return
 	}
-	body := []string{"grant_type",
+	body := []string{
+		"grant_type",
 		"client_credentials",
 		"client_id",
 		username,
@@ -148,7 +177,11 @@ func GetM2MToken(microserviceName string) (token string, okFinal bool) {
 		}
 	}
 	authorization := accessToken.TokenType + " " + accessToken.AccessToken
-	dvparser.SetGlobalPropertiesValue(M2MTokenPrefix+GetMicroServicePropertyName(microserviceName), authorization)
+	if microserviceName == "" {
+		dvparser.GlobalProperties[M2MTokenPrefix] = authorization
+	} else {
+		dvparser.SetGlobalPropertiesValue(M2MTokenPrefix+GetMicroServicePropertyName(microserviceName), authorization)
+	}
 	SaveM2MTokenInFileSystem(microserviceName, accessToken)
 	return authorization, true
 }
@@ -157,41 +190,43 @@ func GetMicroServicePropertyName(microServiceName string) string {
 	return strings.ToUpper(strings.ReplaceAll(microServiceName, "-", "_"))
 }
 
-func NetRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error) {
-	if options[M2MAuthorizationRequest] == nil || options[M2MAuthorizationRequest] == "" {
+func NetRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header) {
+	_, m2mSimple := headers[M2M]
+	microServiceName, m2mComplex := headers[Authorization]
+	if m2mComplex {
+		if strings.HasPrefix(microServiceName, M2M_) {
+			microServiceName = microServiceName[len(M2M_):]
+		} else {
+			m2mComplex = false
+		}
+	}
+	if !m2mSimple && !m2mComplex {
 		return dvnet.NewRequest(method, url, body, headers, options)
 	}
-	repeatOption := options["repeats"]
-	options["repeats"] = 1
-	microServiceName := options[M2MAuthorizationRequest].(string)
+	if m2mSimple {
+		microServiceName = ""
+		delete(headers, M2M)
+	}
 	m2mToken, ok := GetM2MToken(microServiceName)
 	if !ok {
-		return nil, errors.New("Cannot get M2M token for " + microServiceName)
+		return nil, errors.New("Cannot get M2M token " + microServiceName), nil
 	}
 	headers[Authorization] = m2mToken
-	data, err := dvnet.NewRequest(method, url, body, headers, options)
-	options["repeats"] = repeatOption
+	data, err, heads := dvnet.NewRequestRepeatPause(method, url, body, headers, options, 1, 0)
 	if err == nil {
-		return data, nil
+		return data, nil, heads
 	}
 	message := err.Error()
-	repeatNumber := 0
-	if repeatOption != nil {
-		repeatNumber = repeatOption.(int)
-	}
-	if repeatNumber == 0 && method == "POST" {
-		repeatNumber = 1
-	}
-	if repeatNumber != 1 || (len(message) >= 3 && (message[:3] == "401" || message[:3] == "403")) {
+	if len(message) >= 3 && (message[:3] == "401" || message[:3] == "403") {
 		CleanM2MTokenInCache(microServiceName)
 		m2mToken, ok = GetM2MToken(microServiceName)
 		if !ok {
-			return nil, errors.New("Cannot get M2M token for " + microServiceName)
+			return nil, errors.New("Cannot get M2M token for " + microServiceName), nil
 		}
 		headers[Authorization] = m2mToken
 		return dvnet.NewRequest(method, url, body, headers, options)
 	}
-	return data, err
+	return data, err, heads
 }
 
 func GetIdentityProviderClientCredentials(microServiceName string) (user string, pw string, ok bool) {

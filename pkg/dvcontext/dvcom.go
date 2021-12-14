@@ -38,8 +38,13 @@ func (request *RequestContext) HandleCommunication() {
 	if request.DataType == "" {
 		request.DataType = "application/json"
 	}
-	postHeaders := make(map[string][]string)
-	postHeaders["Content-Type"] = []string{request.DataType}
+	postHeaders := request.Headers
+	if postHeaders == nil {
+		postHeaders = make(map[string][]string)
+	}
+	if _, ok := postHeaders["Content-Type"]; !ok {
+		postHeaders["Content-Type"] = []string{request.DataType}
+	}
 	preHeaders := request.Server.HeadersStatic
 	if request.Reader.Method == "OPTIONS" {
 		preHeaders = request.Server.HeadersStaticOptions
