@@ -102,7 +102,7 @@ func VersionRunByConfig(config *VersionConfig, ctx *dvcontext.RequestContext) bo
 	srcVersion := src
 	var err error
 	if config.SourcePath != "" {
-		srcVersion, err = dvjson.ReadPathOfAny(src, config.SourcePath, false, ctx.LocalContextEnvironment)
+		srcVersion, _, err = dvjson.ReadPathOfAny(src, config.SourcePath, false, ctx.LocalContextEnvironment)
 		if err != nil {
 			dvlog.PrintfError("Failed to read %s %v", config.SourcePath, err)
 			return true
@@ -114,7 +114,7 @@ func VersionRunByConfig(config *VersionConfig, ctx *dvcontext.RequestContext) bo
 	}
 	dstVersion := dst
 	if dst != nil && config.DstPath != "" {
-		dstVersion, err = dvjson.ReadPathOfAny(dst, config.DstPath, false, ctx.LocalContextEnvironment)
+		dstVersion, _, err = dvjson.ReadPathOfAny(dst, config.DstPath, false, ctx.LocalContextEnvironment)
 		if err != nil {
 			dstVersion = nil
 			dst = nil

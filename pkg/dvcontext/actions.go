@@ -18,3 +18,18 @@ type DvAction struct {
 	Conditions  map[string]string  `json:"conditions"`
 	Validations []*ValidatePattern `json:"validations"`
 }
+
+func (action *DvAction) CloneFrom(other *DvAction) {
+	action.Name = other.Name
+	action.Typ = other.Typ
+	action.Url = other.Url
+	action.Method = other.Method
+	action.QueryParams = other.QueryParams
+	action.Body = other.Body
+	action.Result = other.Result
+	action.ResultMode = other.ResultMode
+	action.Definitions = other.Definitions
+	action.InnerParams = other.InnerParams
+	action.Conditions = other.Conditions
+	action.Validations = other.Validations
+}

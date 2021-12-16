@@ -73,7 +73,7 @@ func MatchDvFieldInfo(model *DvVariable, pattern *DvVariable) bool {
 func CollectValuesByMap(data interface{}, params map[string]string, env *DvObject) (res map[string]interface{}) {
 	res = make(map[string]interface{})
 	for k, _ := range params {
-		val, err := CollectValueByKey(data, k, env)
+		val, _, err := CollectValueByKey(data, k, env)
 		if err != nil {
 			res[k] = val
 		}
@@ -81,16 +81,16 @@ func CollectValuesByMap(data interface{}, params map[string]string, env *DvObjec
 	return res
 }
 
-func CollectValueByKey(data interface{}, key string, env *DvObject) (interface{}, error) {
+func CollectValueByKey(data interface{}, key string, env *DvObject) (interface{}, interface{}, error) {
 	switch data.(type) {
 	case *DvVariable:
-		res, err := data.(*DvVariable).ReadChildOfAnyLevel(key, env)
+		res, parent, err := data.(*DvVariable).ReadChildOfAnyLevel(key, env)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return res, nil
+		return res, parent, nil
 	}
-	return nil, errors.New("Unknown type to extrace " + key)
+	return nil, nil, errors.New("Unknown type to extrace " + key)
 }
 
 func CollectJsonVariables(data interface{}, params map[string]string, env *DvObject, anyway bool) {

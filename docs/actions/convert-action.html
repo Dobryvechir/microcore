@@ -1,0 +1,16 @@
+<h1>convert</h1>
+<pre>
+Convert makes modification in the json stored in a variable
+It has the parameters as follows:
+{
+    "source" {<a href="json-source.html">json source</a>}
+    "result" string, the name of the variable to store the result
+    "add" array of {<a href="json-source.html">json source</a>}, adding looks like
+         updating, but depends on ids specified in json-source.html for arrays
+    "replace" array of {<a href="json-source.html">json source</a>}
+    "update" array of {<a href="json-source.html">json source</a>}
+    "remove" array of strings, each string identifies the path to be removed
+}
+Example:
+    CONVERT_ACTION_1=convert:{"source":"JSON_SRC", "remove":["0.value"],"return":"JSON_RESULT"}
+</pre>

@@ -8,6 +8,7 @@ package dvevaluation
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"math"
+	"strconv"
 	"strings"
 )
 
@@ -268,6 +269,21 @@ func ConvertInterfaceListsToStringLists(list [][]interface{}, options int) [][]s
 		r[i] = ConvertInterfaceListToStringList(list[i], options)
 	}
 	return r
+}
+
+func AnyToDvVariable(v interface{}) *DvVariable {
+	switch v.(type) {
+	case *DvVariable:
+		return v.(*DvVariable)
+	case string:
+		return &DvVariable{Kind: FIELD_STRING, Value: []byte(v.(string))}
+	case int:
+		return &DvVariable{Kind: FIELD_NUMBER, Value: []byte(strconv.Itoa(v.(int)))}
+	case float64,float32,int64,int32:
+		s:=AnyToString(v)
+		return &DvVariable{Kind: FIELD_NUMBER, Value: []byte(s)}
+	}
+	return nil
 }
 
 func ConvertInterfaceListsMapToStringListsMap(listMap map[string][][]interface{}, options int) map[string][][]string {

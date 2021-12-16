@@ -7,22 +7,19 @@ package dvaction
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
 )
 
-type JsonConvertModify struct {
-	Source      string `json:"src"`
-	Path        string `json:"path"`
-	Destination string `json:"dst"`
-	Expression  string `json:"expr"`
-}
-
 type JsonConvertConfig struct {
-	Source      *JsonRead           `json:"source"`
-	Result      string              `json:"result"`
-	StorePrefix string              `json:"prefix"`
-	Add       []JsonConvertModify `json:"add"`
-	Remove     []JsonConvertModify `json:"remove"`
+	Source  *JsonRead   `json:"source"`
+	Result  string      `json:"result"`
+	Add     []*JsonRead `json:"add"`
+	Merge   []*JsonRead `json:"merge"`
+	Replace []*JsonRead `json:"replace"`
+	Update  []*JsonRead `json:"update"`
+	Remove  []string    `json:"remove"`
 }
 
 func jsonConvertInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -30,11 +27,7 @@ func jsonConvertInit(command string, ctx *dvcontext.RequestContext) ([]interface
 	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
-	if config.StorePrefix == "" {
-		log.Printf("prefix must be specified in %s", command)
-		return nil, false
-	}
-	if config.Source == nil || config.Source.Place == "" {
+	if config.Source == nil || config.Source.Var == "" {
 		log.Printf("source must be present in %s", command)
 		return nil, false
 	}
@@ -54,7 +47,50 @@ func jsonConvertRun(data []interface{}) bool {
 	return JsonConvertRunByConfig(config, ctx)
 }
 
-func JsonConvertRunByConfig(config *JsonConvertConfig, ctx *dvcontext.RequestContext) bool {
+func updateVariablesByConfig(config []*JsonRead, mode int, src interface{}, env *dvevaluation.DvObject) (interface{}, bool) {
+	n := len(config)
+	for i := 0; i < n; i++ {
+		conf := config[i]
+		v, err := JsonExtract(conf, env)
+		if err != nil {
+			dvlog.PrintlnError("Error in json extracting by " + conf.Var)
+			return src, false
+		}
+		src = dvevaluation.UpdateAnyVariables(src, v, conf.Destination,
+			mode, conf.Ids, env)
+	}
+	return src, true
+}
 
+func JsonConvertRunByConfig(config *JsonConvertConfig, ctx *dvcontext.RequestContext) bool {
+	env := GetEnvironment(ctx)
+	src, err := JsonExtract(config.Source, env)
+	if err != nil {
+		dvlog.PrintlnError("Error in json extracting by " + config.Source.Var)
+		return true
+	}
+	var ok bool
+	src, ok = updateVariablesByConfig(config.Add, dvevaluation.UPDATE_MODE_ADD_BY_KEYS, src, env)
+	if !ok {
+		return true
+	}
+	src, ok = updateVariablesByConfig(config.Merge, dvevaluation.UPDATE_MODE_MERGE, src, env)
+	if !ok {
+		return true
+	}
+	src, ok = updateVariablesByConfig(config.Replace, dvevaluation.UPDATE_MODE_REPLACE, src, env)
+	if !ok {
+		return true
+	}
+	src, ok = updateVariablesByConfig(config.Update, dvevaluation.UPDATE_MODE_APPEND, src, env)
+	if !ok {
+		return true
+	}
+	n := len(config.Remove)
+	for i := 0; i < n; i++ {
+		v := config.Remove[i]
+		src = dvevaluation.RemoveAnyVariable(src, v, env)
+	}
+	env.Set(config.Result, src)
 	return true
 }

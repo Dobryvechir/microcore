@@ -15,6 +15,8 @@ import (
 type ActionEndPointHandler func(ctx *dvcontext.RequestContext) bool
 
 var registeredActionProcessors = make(map[string]ActionEndPointHandler)
+var dynamicWaitingActions []*dvcontext.DvAction
+var dynamicActionPool map[string]*dvurl.UrlPool
 
 func RegisterActionProcessor(name string, proc ActionEndPointHandler, silent bool) bool {
 	if _, ok := registeredActionProcessors[name]; ok {
@@ -50,7 +52,7 @@ func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) b
 		dvlog.Printf("Action %s url %s has incorrect type %s", action.Name, action.Url, action.Typ)
 		return false
 	}
-	if request.Reader.Method=="OPTIONS" {
+	if request.Reader.Method == "OPTIONS" {
 		request.HandleCommunication()
 		return true
 	}
@@ -70,14 +72,14 @@ func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) b
 	return proc(request)
 }
 
-func RegisterEndPointActions(actions []dvcontext.DvAction) dvcontext.HandlerFunc {
+func RegisterEndPointActions(actions []*dvcontext.DvAction) (dvcontext.HandlerFunc, map[string]*dvurl.UrlPool) {
 	n := len(actions)
 	if n == 0 {
-		return nil
+		return nil, nil
 	}
 	base := make(map[string]*dvurl.UrlPool)
 	for i := 0; i < n; i++ {
-		action := &actions[i]
+		action := actions[i]
 		method := strings.ToUpper(strings.TrimSpace(action.Method))
 		if method == "" {
 			method = "GET"
@@ -89,7 +91,7 @@ func RegisterEndPointActions(actions []dvcontext.DvAction) dvcontext.HandlerFunc
 		}
 		pool.RegisterHandlerFunc(action.Url, action)
 	}
-	return getActionHandlerFunc(base)
+	return getActionHandlerFunc(base), base
 }
 
 func urlActionVerifier(context interface{}, resolver *dvurl.UrlResolver, urlData *dvurl.UrlResultInfo) bool {
@@ -109,5 +111,47 @@ func getActionHandlerFunc(base map[string]*dvurl.UrlPool) dvcontext.HandlerFunc 
 		urls := context.Urls
 		ok, _ := dvurl.UrlSearch(context, urlPool, urls, urlActionVerifier, context.PrimaryContextEnvironment)
 		return ok
+	}
+}
+
+func DynamicRegisterEndPointActions(actions []*dvcontext.DvAction, isDynamic bool) dvcontext.HandlerFunc {
+	if isDynamic && dynamicWaitingActions != nil {
+		actions = append(actions, dynamicWaitingActions...)
+	}
+	fn, pool := RegisterEndPointActions(actions)
+	if isDynamic {
+		dynamicActionPool = pool
+	}
+	return fn
+}
+
+func AddDynamicAction(action *dvcontext.DvAction, env *dvevaluation.DvObject) {
+	if action.Method == "" {
+		action.Method = "GET"
+	} else {
+		action.Method = strings.ToUpper(action.Method)
+	}
+	if dynamicActionPool == nil {
+		if dynamicWaitingActions == nil {
+			dynamicWaitingActions = make([]*dvcontext.DvAction, 1, 128)
+			dynamicWaitingActions[0] = action
+		} else {
+			dynamicWaitingActions = append(dynamicWaitingActions, action)
+		}
+	} else {
+		urlPool := dynamicActionPool[action.Method]
+		if urlPool == nil {
+			urlPool = dvurl.GetUrlHandler()
+			dynamicActionPool[action.Method] = urlPool
+			urlPool.RegisterHandlerFunc(action.Url, action)
+		} else {
+			ok, res := dvurl.SingleSimplifiedUrlSearch(urlPool, action.Url)
+			if !ok {
+				urlPool.RegisterHandlerFunc(action.Url, action)
+			} else {
+				currentAction := res.CustomObject.(*dvcontext.DvAction)
+				currentAction.CloneFrom(action)
+			}
+		}
 	}
 }

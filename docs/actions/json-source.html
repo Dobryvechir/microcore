@@ -1,0 +1,30 @@
+<h1>Json source</h1>
+<pre>
+The json source is used in many actions and describes the operations to take the json
+{
+   "var" string, the name of the variable where this json or string json is stored
+   "path" string, the path inside json, in case of need not the root level, but
+       a part inside
+   "filter" string, optional, used for json of array type at the first level (after applying
+          the "path"),
+          it allows to filter out items in the array
+            (for example: "filter": "name=='key'")
+   "sort" []string, optional, used for json of array type at the first level
+          (after applying "path" and "filter")
+          it allows to sort the final array by some fields.
+          (for example "sort": ["name","kind"]
+   "noReadOfUndefined" bool, true or false (optional, the default is false)
+          if it is true, an error is raised in case the path requires
+          reading of undefined.
+   "errorSignificant" bool, true or false, (optional, the default is false)
+          if it is true, the error of path is promoted as a result of the action
+    "convert" string, expression to convert the source as after applying the path,
+           sort and filter.
+    Some optional fields for some other purposes:
+    "ids" array of strings, the list of ids which identify the primary key for the following
+        search inside the
+    "destination" string, the place where the result must be placed for some actions
+}
+Example:
+{"var":"JSON_SOURCE"}
+</pre>

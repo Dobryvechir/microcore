@@ -30,6 +30,10 @@ func (item *DvVariable) CreateQuickInfoByKeys(ids []string) {
 		}
 		n := len(item.Fields)
 		m := len(ids)
+		if m == 0 {
+			ids = []string{"id"}
+			m = 1
+		}
 		for i := 0; i < n; i++ {
 			f := item.Fields[i]
 			if f != nil {

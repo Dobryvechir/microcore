@@ -7,17 +7,17 @@ package dvaction
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
 )
 
 type PagingConfig struct {
-	Source      string `json:"source"`
-	Path		string `json:"path"`
-	Result      string `json:"result"`
-	StorePrefix string `json:"prefix"`
-	SortField   string `json:"sort"`
-	PageSize    int    `json:"pageSize"`
-	CurrentPage int    `json:"currentPage"`
+	Source      *JsonRead `json:"source"`
+	Result      string    `json:"result"`
+	StorePrefix string    `json:"prefix"`
+	PageSize    int       `json:"pageSize"`
+	CurrentPage int       `json:"currentPage"`
 }
 
 func pagingInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -25,17 +25,22 @@ func pagingInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, b
 	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
-	if config.StorePrefix == "" {
-		log.Printf("prefix must be specified in %s", command)
+	if config.Source == nil || config.Source.Var == "" {
+		log.Printf("source.var must be specified in %s", command)
 		return nil, false
 	}
 	if config.PageSize <= 0 {
-		log.Printf("pageSize must be present and positive in %s", command)
-		return nil, false
+		config.PageSize = 3
 	}
 	if config.Result == "" {
 		log.Printf("Result name is not specified in command %s", command)
 		return nil, false
+	}
+	if config.StorePrefix == "" {
+		config.StorePrefix = "PAGING"
+	}
+	if config.CurrentPage <= 0 {
+		config.CurrentPage = 1
 	}
 	return []interface{}{config, ctx}, true
 }
@@ -50,6 +55,35 @@ func pagingRun(data []interface{}) bool {
 }
 
 func PagingRunByConfig(config *PagingConfig, ctx *dvcontext.RequestContext) bool {
-
+	src, err := JsonExtract(config.Source, ctx.LocalContextEnvironment)
+	if err != nil {
+		dvlog.PrintlnError("Error in json extracting by " + config.Source.Var)
+		return true
+	}
+	itemAmount := dvevaluation.GetLengthOfAny(src)
+	pageSize := config.PageSize
+	pages := (itemAmount + pageSize) / pageSize
+	currentPage := config.CurrentPage
+	if currentPage > pages {
+		currentPage = 1
+	}
+	startIndex := (currentPage - 1) * pageSize
+	endIndex := startIndex + pageSize
+	if endIndex > itemAmount {
+		endIndex = itemAmount
+	}
+	var items interface{} = nil
+	size := endIndex - startIndex
+	if size > 0 {
+		items = dvevaluation.GetChildrenOfAnyByRange(src, startIndex, endIndex)
+	}
+	pref := config.StorePrefix + "_"
+	env := GetEnvironment(ctx)
+	env.Set(pref+"PAGE_SIZE", pageSize)
+	env.Set(pref+"OFFSET", startIndex)
+	env.Set(pref+"PAGE", currentPage)
+	env.Set(pref+"TOTAL_SIZE", itemAmount)
+	env.Set(pref+"TOTAL_PAGES", pages)
+	env.Set(config.Result, items)
 	return true
 }

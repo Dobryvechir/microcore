@@ -14,13 +14,15 @@ import (
 )
 
 type JsonRead struct {
-	Place             string   `json:"place"`
+	Var               string   `json:"var"`
 	Path              string   `json:"path"`
 	Sort              []string `json:"sort"`
 	Filter            string   `json:"filter"`
-	Ids               []string `json:"ids"`
 	NoReadOfUndefined bool     `json:"noReadOfUndefined"`
 	ErrorSignificant  bool     `json:"errorSignificant"`
+	Convert           string   `json:"convert"`
+	Ids               []string `json:"ids"`
+	Destination       string   `json:"destination"`
 }
 
 type CompareJsonConfig struct {
@@ -39,11 +41,11 @@ func compareJsonInit(command string, ctx *dvcontext.RequestContext) ([]interface
 	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
-	if config.Sample == nil || config.Sample.Place == "" {
+	if config.Sample == nil || config.Sample.Var == "" {
 		log.Printf("sample.place must be specified in %s", command)
 		return nil, false
 	}
-	if config.Ref == nil || config.Ref.Place == "" {
+	if config.Ref == nil || config.Ref.Var == "" {
 		log.Printf("reference.place must be present in %s", command)
 		return nil, false
 	}
@@ -60,44 +62,56 @@ func compareJsonRun(data []interface{}) bool {
 }
 
 func JsonExtract(info *JsonRead, env *dvevaluation.DvObject) (interface{}, error) {
-	val, ok := env.Get(info.Place)
+	return JsonExtractExtended(info.Var, info.Path, info.Sort, info.Filter,
+		info.NoReadOfUndefined, info.ErrorSignificant, info.Ids, info.Convert, env)
+}
+
+func JsonExtractExtended(place string, path string, sort []string, filter string,
+	noReadOfUndefined bool, errorSignificant bool, ids []string, convert string,
+	env *dvevaluation.DvObject) (interface{}, error) {
+	val, ok := env.Get(place)
 	if !ok {
 		return nil, nil
 	}
-	if info.Path != "" {
-		item, err := dvjson.ReadPathOfAny(val, info.Path, info.NoReadOfUndefined, env)
+	if path != "" {
+		item, _, err := dvjson.ReadPathOfAny(val, path, noReadOfUndefined, env)
 		if err != nil {
 			return nil, err
 		}
 		val = item
 	}
-	if info.Filter != "" {
-		res, err := dvjson.IterateFilterByExpression(val, info.Filter, env, info.ErrorSignificant)
+	if filter != "" {
+		res, err := dvjson.IterateFilterByExpression(val, filter, env, errorSignificant)
 		if err != nil {
 			return nil, err
 		}
 		val = res
 	}
-	if len(info.Sort) > 0 {
-		res, err := dvjson.IterateSortByFields(val, info.Sort, env)
+	if len(sort) > 0 {
+		res, err := dvjson.IterateSortByFields(val, sort, env)
 		if err != nil {
 			return nil, err
 		}
 		val = res
 	}
-	dvjson.CreateQuickInfoByKeysForAny(val, info.Ids)
+	dvjson.CreateQuickInfoByKeysForAny(val, ids)
+	if convert != "" {
+		env.Set("arg", val)
+		res, err := env.EvaluateAnyTypeExpression(convert)
+		return res, err
+	}
 	return val, nil
 }
 
 func CompareJsonByConfig(config *CompareJsonConfig, ctx *dvcontext.RequestContext) bool {
 	sample, err := JsonExtract(config.Sample, ctx.LocalContextEnvironment)
 	if err != nil {
-		dvlog.PrintlnError("Error in json extracting by " + config.Sample.Place)
+		dvlog.PrintlnError("Error in json extracting by " + config.Sample.Var)
 		return true
 	}
 	ref, err := JsonExtract(config.Ref, ctx.LocalContextEnvironment)
 	if err != nil {
-		dvlog.PrintlnError("Error in json extracting by " + config.Ref.Place)
+		dvlog.PrintlnError("Error in json extracting by " + config.Ref.Var)
 		return true
 	}
 	added, removed, updated, unchanged, counterparts := dvjson.FindDifferenceForAnyType(sample, ref,

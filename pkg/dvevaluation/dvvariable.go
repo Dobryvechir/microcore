@@ -11,19 +11,19 @@ import (
 
 type ExpressionResolver func(string, map[string]interface{}, int) (string, error)
 
-func (item *DvVariable) ReadChildOfAnyLevel(name string, props *DvObject) (res *DvVariable, err error) {
+func (item *DvVariable) ReadChildOfAnyLevel(name string, props *DvObject) (res *DvVariable, parent *DvVariable, err error) {
 	name = strings.TrimSpace(name)
-	if len(name) == 0 || item==nil {
-		return item, nil
+	if len(name) == 0 || item == nil {
+		return item, nil, nil
 	}
-	defProps:=make(map[string]interface{})
-	if props==nil {
-		return nil, errors.New("Props cannot be null")
+	defProps := make(map[string]interface{})
+	if props == nil {
+		return nil, nil, errors.New("Props cannot be null")
 	} else {
-		props = NewObjectWithPrototype(defProps,props)
+		props = NewObjectWithPrototype(defProps, props)
 	}
-	res, err = item.ReadChild(name, func(expr string, data map[string]interface{},options int) (string, error) {
-		if data==nil {
+	res, parent, err = item.ReadChild(name, func(expr string, data map[string]interface{}, options int) (string, error) {
+		if data == nil {
 			data = defProps
 		}
 		props.Properties = data
@@ -49,22 +49,22 @@ func (field *DvVariable) AddField(item *DvVariable) bool {
 }
 
 func (item *DvVariable) ContainsItemIn(v interface{}) bool {
-	if item==nil {
+	if item == nil {
 		return false
 	}
-	s:=AnyToString(v)
-	n:=len(item.Fields)
+	s := AnyToString(v)
+	n := len(item.Fields)
 	switch item.Kind {
 	case FIELD_OBJECT:
-		for i:=0;i<n;i++ {
+		for i := 0; i < n; i++ {
 			if string(item.Fields[i].Name) == s {
 				return true
 			}
 		}
 	case FIELD_ARRAY:
-		for i:=0;i<n;i++ {
-			f:=item.Fields[i]
-			if f.Kind!=FIELD_ARRAY && f.Kind!=FIELD_OBJECT && string(f.Value) == s {
+		for i := 0; i < n; i++ {
+			f := item.Fields[i]
+			if f.Kind != FIELD_ARRAY && f.Kind != FIELD_OBJECT && string(f.Value) == s {
 				return true
 			}
 		}
@@ -85,14 +85,14 @@ func (item *DvVariable) FindDifferenceByQuickMap(other *DvVariable,
 	n1 := 0
 	if item != nil {
 		n1 = len(item.Fields)
-		if item.Kind==FIELD_ARRAY || item.Kind==FIELD_OBJECT {
+		if item.Kind == FIELD_ARRAY || item.Kind == FIELD_OBJECT {
 			kind = item.Kind
 		}
 	}
 	n2 := 0
 	if other != nil {
 		n2 = len(other.Fields)
-		if (other.Kind==FIELD_ARRAY || other.Kind==FIELD_OBJECT) && n1==0 {
+		if (other.Kind == FIELD_ARRAY || other.Kind == FIELD_OBJECT) && n1 == 0 {
 			kind = other.Kind
 		}
 	}
@@ -332,31 +332,51 @@ func (item *DvVariable) ReadSimpleChildValue(fieldName string) string {
 }
 
 func (item *DvVariable) ReadChildStringValue(fieldName string) string {
-	subItem, err := item.ReadChild(fieldName, nil)
+	subItem, _, err := item.ReadChild(fieldName, nil)
 	if err != nil || subItem == nil {
 		return ""
 	}
 	return dvtextutils.GetUnquotedString(subItem.GetStringValue())
 }
 
-func (item *DvVariable) ReadPath(childName string, rejectChildOfUndefined bool, env *DvObject) (*DvVariable, error) {
-	item, err := item.ReadChildOfAnyLevel(childName, env)
+func (item *DvVariable) ReadChildMapValue(fieldName string) map[string]string {
+	subItem, _, err := item.ReadChild(fieldName, nil)
+	if err != nil || subItem == nil || subItem.Kind != FIELD_OBJECT || len(subItem.Fields) == 0 {
+		return nil
+	}
+	res := make(map[string]string)
+	n := len(subItem.Fields)
+	for i := 0; i < n; i++ {
+		field := subItem.Fields[i]
+		if field == nil || len(field.Name) == 0 {
+			continue
+		}
+		key := string(field.Name)
+		val := dvtextutils.GetUnquotedString(field.GetStringValue())
+		res[key] = val
+	}
+	return res
+}
+
+func (item *DvVariable) ReadPath(childName string, rejectChildOfUndefined bool, env *DvObject) (*DvVariable, *DvVariable, error) {
+	item, parent, err := item.ReadChildOfAnyLevel(childName, env)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "undefined ") {
 			if rejectChildOfUndefined {
-				return nil, nil
+				return nil, parent, nil
 			}
-			return nil, errors.New("Read of undefined at " + childName)
+			return nil, nil, errors.New("Read of undefined at " + childName)
 		}
-		return nil, err
+		return nil, nil, err
 	}
-	return item, nil
+	return item, parent, nil
 }
 
-func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver) (res *DvVariable, err error) {
+func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver) (res *DvVariable, parent *DvVariable, err error) {
 	n := len(childName)
+	parent = item
 	if n == 0 {
-		return item, nil
+		return item, nil, nil
 	}
 	strict := true
 	pos := 0
@@ -366,14 +386,14 @@ func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver)
 	if c == '.' {
 		pos++
 		if pos == n {
-			return item, nil
+			return item, nil, nil
 		}
 		c = childName[pos]
 	}
 	if c == '[' || c == '{' {
 		endPos, err := dvtextutils.ReadInsideBrackets(childName, pos)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		endPos++
 		if endPos < n && childName[endPos] == '?' {
@@ -387,7 +407,7 @@ func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver)
 			fn = fnResolvedSign
 		}
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		childName = childName[endPos:]
 	} else {
@@ -400,13 +420,13 @@ func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver)
 			if c == '(' {
 				fn = strings.TrimSpace(childName[pos:i])
 				if fn == "" {
-					return nil, fmt.Errorf("Empty function name before ( in %s at %d", childName, i)
+					return nil, nil, fmt.Errorf("Empty function name before ( in %s at %d", childName, i)
 				}
 				pos = i + 1
 				var err error
 				i, err = dvtextutils.ReadInsideBrackets(childName, i)
 				if err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 				break
 			}
@@ -429,17 +449,17 @@ func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver)
 		} else {
 			current, err = ExecuteProcessorFunction(fn, data, item)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
 	} else {
 		current = item.ReadSimpleChild(data)
 	}
 	if childName == "" || current == nil && !strict {
-		return current, nil
+		return current, parent, nil
 	}
 	if current == nil {
-		return nil, fmt.Errorf("Cannot read %s of undefined in %s", childName, data)
+		return nil, nil, fmt.Errorf("Cannot read %s of undefined in %s", childName, data)
 	}
 	return current.ReadChild(childName, resolver)
 }
@@ -613,3 +633,279 @@ func (item *DvVariable) ConvertValueToInterface() (interface{}, bool) {
 	return item.ConvertSimpleValueToInterface()
 }
 
+func (item *DvVariable) GetLength() int {
+	if item == nil {
+		return 0
+	}
+	switch item.Kind {
+	case FIELD_ARRAY, FIELD_OBJECT:
+		return len(item.Fields)
+	case FIELD_STRING:
+		return len(item.Value)
+	}
+	return 0
+}
+
+func (item *DvVariable) IndexOf(child *DvVariable) int {
+	if item == nil {
+		return -1
+	}
+	n := len(item.Fields)
+	for i := 0; i < n; i++ {
+		sub := item.Fields[i]
+		if sub == child {
+			return i
+		}
+	}
+	if child == nil {
+		child = &DvVariable{Kind: FIELD_NULL}
+	}
+	for i := 0; i < n; i++ {
+		sub := item.Fields[i]
+		if sub.Kind == child.Kind && bytes.Equal(sub.Name, child.Name) {
+			if len(sub.Name) > 0 {
+				return i
+			}
+			if sub.Kind != FIELD_OBJECT && sub.Kind != FIELD_ARRAY {
+				if bytes.Equal(sub.Value, child.Value) {
+					return i
+				}
+			}
+		}
+	}
+	return -1
+}
+
+func (item *DvVariable) RemoveChild(child *DvVariable) {
+	n := item.IndexOf(child)
+	if n >= 0 {
+		item.Fields = append(item.Fields[:n], item.Fields[n+1:]...)
+	}
+}
+
+func (item *DvVariable) FindIndex(key string) int {
+	if item == nil {
+		return -1
+	}
+	n := len(item.Fields)
+	keyBytes := []byte(key)
+	for i := 0; i < n; i++ {
+		if item.Fields[i] != nil && bytes.Equal(item.Fields[i].Name, keyBytes) {
+			return i
+		}
+	}
+	return -1
+}
+
+func (item *DvVariable) InsertAtSimplePath(path string, child *DvVariable) bool {
+	if item == nil || (item.Kind != FIELD_OBJECT && item.Kind != FIELD_ARRAY && item.Kind != FIELD_NULL && item.Kind != FIELD_UNDEFINED) {
+		return false
+	}
+	if child == nil {
+		child = &DvVariable{Kind: FIELD_NULL}
+	}
+	path = strings.Trim(path, ".")
+	n := strings.Index(path, ".")
+	current := path
+	next := ""
+	isLast := n < 0
+	if !isLast {
+		current = path[:n]
+		next = path[n+1:]
+	}
+	if item.Fields == nil {
+		item.Fields = make([]*DvVariable, 0, 1)
+	}
+	n = len(item.Fields)
+	if item.Kind == FIELD_OBJECT {
+		k := item.FindIndex(current)
+		if k >= 0 {
+			if isLast {
+				item.Fields[k].CloneExceptKey(child, false)
+			} else {
+				return item.Fields[k].InsertAtSimplePath(next, child)
+			}
+		} else {
+			itemAdd := &DvVariable{
+				Kind: FIELD_NULL,
+			}
+			item.Fields = append(item.Fields, itemAdd)
+			if isLast {
+				itemAdd.CloneExceptKey(child, false)
+			} else {
+				itemAdd.Name = []byte(current)
+				return itemAdd.InsertAtSimplePath(next, child)
+			}
+		}
+	} else {
+		pos := dvtextutils.TryReadInteger(current, -1)
+		if pos >= 0 && pos < n {
+			if isLast {
+				item.Fields[pos] = child
+			} else {
+				if item.Fields[pos] == nil {
+					item.Fields[pos] = &DvVariable{Kind: FIELD_NULL}
+				}
+				return item.Fields[pos].InsertAtSimplePath(next, child)
+			}
+		} else {
+			if item.Kind != FIELD_ARRAY {
+				if pos == 0 {
+					item.Kind = FIELD_ARRAY
+				} else {
+					item.Kind = FIELD_OBJECT
+				}
+			}
+			if isLast {
+				item.Fields = append(item.Fields, child)
+				return true
+			}
+			nextItem := &DvVariable{Kind: FIELD_NULL}
+			if item.Kind == FIELD_OBJECT {
+				nextItem.Name = []byte(current)
+			}
+			item.Fields = append(item.Fields, nextItem)
+			return nextItem.InsertAtSimplePath(next, child)
+		}
+	}
+	return true
+}
+
+func (item *DvVariable) MergeAtChild(index int, child *DvVariable, mode int) bool {
+	if item == nil || index < 0 || index >= len(item.Fields) {
+		return false
+	}
+	if item.Fields[index] == nil {
+		item.Fields[index] = child
+		return true
+	}
+	item.Fields[index].CloneExceptKey(child, false)
+	return true
+}
+
+func (item *DvVariable) MergeOtherVariable(other *DvVariable, mode int, ids []string) *DvVariable {
+	if item == nil {
+		return other
+	}
+	if other == nil {
+		return item
+	}
+	switch item.Kind {
+	case FIELD_NULL, FIELD_UNDEFINED:
+		item.CloneExceptKey(other, false)
+	case FIELD_ARRAY:
+		if other.Kind == FIELD_ARRAY {
+			if mode == UPDATE_MODE_REPLACE {
+				item.Fields = other.Fields
+			} else if mode == UPDATE_MODE_ADD_BY_KEYS || mode == UPDATE_MODE_MERGE {
+				item.MergeArraysByIds(other, ids, mode)
+			} else {
+				item.Fields = append(item.Fields, other.Fields...)
+			}
+		} else {
+			if mode == UPDATE_MODE_REPLACE {
+				item.Fields = append(item.Fields[:0], other)
+			} else {
+				item.Fields = append(item.Fields, other)
+			}
+		}
+	case FIELD_OBJECT:
+		if other.Kind == FIELD_OBJECT {
+			item.MergeObjectIntoObject(other, mode == UPDATE_MODE_REPLACE || mode == UPDATE_MODE_MERGE,
+				mode == UPDATE_MODE_MERGE)
+		}
+	}
+	return item
+}
+
+func (item *DvVariable) CloneExceptKey(other *DvVariable, deep bool) *DvVariable {
+	if item == nil {
+		item = &DvVariable{}
+	}
+	item.Kind = other.Kind
+	item.Value = other.Value
+	item.Extra = other.Extra
+	item.Prototype = other.Prototype
+	item.QuickSearch = nil
+	if item.Kind == FIELD_ARRAY || item.Kind == FIELD_OBJECT {
+		fld := other.Fields
+		if deep {
+			n := len(fld)
+			newFields := make([]*DvVariable, n)
+			item.Fields = newFields
+			for i := 0; i < n; i++ {
+				oldField := fld[i]
+				if oldField == nil {
+					continue
+				}
+				field := &DvVariable{Name: oldField.Name}
+				field.CloneExceptKey(oldField, true)
+				newFields[i] = field
+			}
+		} else {
+			item.Fields = fld
+		}
+
+	} else {
+		item.Fields = nil
+	}
+	return item
+}
+
+func (item *DvVariable) MergeObjectIntoObject(other *DvVariable, replace bool, deep bool) {
+	if item == nil || other == nil || len(other.Fields) == 0 {
+		return
+	}
+	item.CreateQuickInfoForObjectType()
+	fields := other.Fields
+	n := len(fields)
+	lookup := item.QuickSearch.Looker
+	for i := 0; i < n; i++ {
+		field := fields[i]
+		name := string(field.Name)
+		if m, ok := lookup[name]; ok {
+			if replace {
+				if deep && m.Kind == FIELD_OBJECT {
+					m.MergeObjectIntoObject(field, true, true)
+				} else {
+					m.CloneExceptKey(field, false)
+				}
+			}
+		} else {
+			item.Fields = append(item.Fields, field)
+			lookup[name] = field
+		}
+	}
+}
+
+func (item *DvVariable) Clone() *DvVariable {
+	if item == nil {
+		return nil
+	}
+	other := &DvVariable{Name: item.Name}
+	other.CloneExceptKey(item, true)
+	return other
+}
+
+func (item *DvVariable) MergeArraysByIds(other *DvVariable, ids []string, mode int) {
+	if item == nil || other == nil {
+		return
+	}
+	item.CreateQuickInfoByKeys(ids)
+	other.CreateQuickInfoByKeys(ids)
+	lookerMain := item.QuickSearch.Looker
+	lookerSecond := other.QuickSearch.Looker
+	for k, v := range lookerSecond {
+		if m, ok := lookerMain[k]; ok {
+			switch mode {
+			case UPDATE_MODE_MERGE:
+				m.MergeObjectIntoObject(v, true, true)
+			case UPDATE_MODE_ADD_BY_KEYS:
+				m.CloneExceptKey(v, true)
+			}
+		} else {
+			item.Fields = append(item.Fields, v)
+			lookerMain[k] = v
+		}
+	}
+}

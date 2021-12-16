@@ -25,11 +25,11 @@ func findChangeInit(command string, ctx *dvcontext.RequestContext) ([]interface{
 	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
-	if config.Sample == nil || config.Sample.Place == "" {
+	if config.Sample == nil || config.Sample.Var == "" {
 		log.Printf("sample.place must be specified in %s", command)
 		return nil, false
 	}
-	if config.Ref == nil || config.Ref.Place == "" {
+	if config.Ref == nil || config.Ref.Var == "" {
 		log.Printf("reference.place must be present in %s", command)
 		return nil, false
 	}
@@ -52,12 +52,12 @@ func findChangeRun(data []interface{}) bool {
 func FindChangeByConfig(config *FindChangeConfig, ctx *dvcontext.RequestContext) bool {
 	src, err := JsonExtract(config.Sample, ctx.LocalContextEnvironment)
 	if err != nil {
-		dvlog.PrintlnError("Error in json extracting by " + config.Sample.Place)
+		dvlog.PrintlnError("Error in json extracting by " + config.Sample.Var)
 		return true
 	}
 	ref, err := JsonExtract(config.Ref, ctx.LocalContextEnvironment)
 	if err != nil {
-		dvlog.PrintlnError("Error in json extracting by " + config.Ref.Place)
+		dvlog.PrintlnError("Error in json extracting by " + config.Ref.Var)
 		return true
 	}
 	env := ctx.LocalContextEnvironment

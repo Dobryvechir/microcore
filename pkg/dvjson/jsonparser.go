@@ -697,3 +697,17 @@ func JsonFullParser(body []byte) (*dvevaluation.DvVariable, error) {
 }
 
 var jsonFullParserInited = dvevaluation.RegisterJsonFullParser(JsonFullParser)
+
+func ParseAny(v interface{}) (res *dvevaluation.DvVariable, err error) {
+	switch v.(type) {
+	case *dvevaluation.DvVariable:
+		return v.(*dvevaluation.DvVariable), nil
+	case []byte:
+		res, err = JsonFullParser(v.([]byte))
+		return
+	case string:
+		res, err = JsonFullParser([]byte(v.(string)))
+		return
+	}
+	return dvevaluation.AnyToDvVariable(v), nil
+}

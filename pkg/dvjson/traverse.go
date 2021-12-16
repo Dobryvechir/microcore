@@ -9,7 +9,6 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 )
 
-
 func (parseInfo *DvCrudParsingInfo) GetDvFieldInfoHierarchy() []*dvevaluation.DvVariable {
 	n := len(parseInfo.Items)
 	res := make([]*dvevaluation.DvVariable, n)
@@ -19,14 +18,12 @@ func (parseInfo *DvCrudParsingInfo) GetDvFieldInfoHierarchy() []*dvevaluation.Dv
 	return res
 }
 
-
-
-func ReadPathOfAny(item interface{}, childName string, rejectChildOfUndefined bool, env *dvevaluation.DvObject) (*dvevaluation.DvVariable, error) {
+func ReadPathOfAny(item interface{}, childName string, rejectChildOfUndefined bool, env *dvevaluation.DvObject) (*dvevaluation.DvVariable, *dvevaluation.DvVariable, error) {
 	switch item.(type) {
 	case *dvevaluation.DvVariable:
 		return item.(*dvevaluation.DvVariable).ReadPath(childName, rejectChildOfUndefined, env)
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
 func ReadJsonChild(data []byte, childName string, rejectChildOfUndefined bool, env *dvevaluation.DvObject) (*dvevaluation.DvVariable, error) {
@@ -34,7 +31,8 @@ func ReadJsonChild(data []byte, childName string, rejectChildOfUndefined bool, e
 	if err != nil {
 		return nil, err
 	}
-	return item.ReadPath(childName, rejectChildOfUndefined, env)
+	res, _, err := item.ReadPath(childName, rejectChildOfUndefined, env)
+	return res, err
 }
 
 func CountChildren(val interface{}) int {

@@ -22,7 +22,7 @@ func ReadPodEnvironmentAndDC(microServiceName string) (res map[string]string, dc
 	if err != nil {
 		return
 	}
-	data, err := dc.ReadChild(dcEnvironmentVariablesPath, nil)
+	data, _, err := dc.ReadChild(dcEnvironmentVariablesPath, nil)
 	if err != nil || data == nil {
 		return
 	}

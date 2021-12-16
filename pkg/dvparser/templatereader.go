@@ -91,6 +91,11 @@ func SetGlobalPropertiesValue(key string, value string) {
 	GlobalPropertiesAsDvObject.Set(key, value)
 }
 
+func SetGlobalPropertiesAnyValue(key string, value interface{}) {
+	GlobalProperties[key] = dvevaluation.AnyToString(value)
+	GlobalPropertiesAsDvObject.Set(key, value)
+}
+
 func RemoveGlobalPropertiesValue(key string) {
 	delete(GlobalProperties, key)
 	delete(GlobalPropertiesAsDvObject.Properties, key)
