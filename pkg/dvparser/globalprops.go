@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020-2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020-2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvparser
 
@@ -13,6 +13,7 @@ import (
 
 var MicroCorePrexix = "MICROCORE_"
 var MicroCorePathSuffix = "PATH"
+var IsDevelopmentVar = "IS_DEVELOPMENT"
 
 // MicroCorePropertiesInCurrentFolderFileName is a main property file name, which can be customized
 var MicroCorePropertiesInCurrentFolderFileName = "MicroCore.properties"
@@ -30,12 +31,12 @@ func makePremapOfEnvironment() map[string]string {
 			mappa[k] = v
 		}
 	}
-	osname:=strings.ToLower(runtime.GOOS)
+	osname := strings.ToLower(runtime.GOOS)
 	switch osname {
 	case "windows":
-		mappa["IS_WINDOWS"]="1"
+		mappa["IS_WINDOWS"] = "1"
 	default:
-		mappa["IS_LINUX"]="1"
+		mappa["IS_LINUX"] = "1"
 	}
 	commands := os.Args[1:]
 	globalCommandLine = make([]string, 0, len(commands))
@@ -132,3 +133,9 @@ func GetByGlobalPropertiesOrDefault(propName, defValue string) string {
 	return value
 }
 
+func IsDevelopment() bool {
+	if _, ok := GlobalProperties[IsDevelopmentVar]; ok {
+		return true
+	}
+	return false
+}

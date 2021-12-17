@@ -49,7 +49,15 @@ func DynamicActionByConfig(config *dvevaluation.DvVariable, ctx *dvcontext.Reque
 		return true
 	}
 	env := GetEnvironment(ctx)
-	props, ok := config.FindChildByKey("properties")
+	name := "production"
+	if dvparser.IsDevelopment() {
+		name = "development"
+	}
+	props, ok := config.FindChildByKey(name)
+	if ok && props != nil {
+		DynamicSetProperties(props)
+	}
+	props, ok = config.FindChildByKey("properties")
 	if ok && props != nil {
 		DynamicSetProperties(props)
 	}
@@ -91,11 +99,39 @@ func ConvertToAction(v *dvevaluation.DvVariable) *dvcontext.DvAction {
 		Definitions: v.ReadChildMapValue("definitions"),
 		InnerParams: v.ReadChildStringValue("params"),
 		Conditions:  v.ReadChildMapValue("conditions"),
+		Validations: readValidations(v),
 	}
 	if len(action.Name) < 5 || len(action.Url) < 5 {
 		log.Printf("Too small name or url %v", action)
 	}
 	return action
+}
+
+func readValidations(v *dvevaluation.DvVariable) []*dvcontext.ValidatePattern {
+	if v == nil {
+		return nil
+	}
+	v = v.ReadSimpleChild("validations")
+	if v == nil || v.Kind != dvevaluation.FIELD_ARRAY || len(v.Fields) == 0 {
+		return nil
+	}
+	n := len(v.Fields)
+	res := make([]*dvcontext.ValidatePattern, n)
+	for i := 0; i < n; i++ {
+		val := v.Fields[i]
+		if val == nil {
+			continue
+		}
+		valid := &dvcontext.ValidatePattern{
+			Source:       v.ReadChildStringValue("source"),
+			Message:      v.ReadChildStringValue("message"),
+			EmptyMessage: v.ReadChildStringValue("empty"),
+			Contains:     v.ReadChildStringValue("contains"),
+			RegPattern:   v.ReadChildStringValue("pattern"),
+		}
+		res[i] = valid
+	}
+	return res
 }
 
 func DynamicSetActions(props *dvevaluation.DvVariable, env *dvevaluation.DvObject) {

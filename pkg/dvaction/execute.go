@@ -46,6 +46,7 @@ const (
 	CommandVar         = "var"
 	CommandStore       = "store"
 	CommandVersion     = "version"
+	CommandDebug       = "debug"
 )
 
 var processFunctions = map[string]ProcessFunction{
@@ -60,6 +61,7 @@ var processFunctions = map[string]ProcessFunction{
 	CommandCompareJson: {Init: compareJsonInit, Run: compareJsonRun},
 	CommandVar:         {Init: varTransformInit, Run: varTransformRun},
 	CommandStore:       {Init: storeInit, Run: storeRun},
+	CommandDebug:       {Init: debugInit, Run: debugRun},
 }
 
 var logicProcessFunctions = map[string]ProcessFunction{

@@ -38,13 +38,14 @@ type SmartNetConfigTemplate struct {
 }
 
 type SmartNetConfig struct {
-	Url         string                 `json:"url"`
-	Method      string                 `json:"method"`
-	Headers     string                 `json:"headers"`
-	Template    SmartNetConfigTemplate `json:"template"`
-	ContentType string                 `json:"type"`
-	Result      string                 `json:"result"`
-	Body        string                 `json:"body"`
+	Url           string                 `json:"url"`
+	Method        string                 `json:"method"`
+	Headers       string                 `json:"headers"`
+	Template      SmartNetConfigTemplate `json:"template"`
+	ContentType   string                 `json:"type"`
+	Result        string                 `json:"result"`
+	DefaultResult string                 `json:"default"`
+	Body          string                 `json:"body"`
 }
 
 type ProxyNetConfig struct {
@@ -186,9 +187,9 @@ func smartNetProcessHeaders(headers map[string]string, newHeaders string, method
 func SaveHeaderResult(result string, heads http.Header, env *dvevaluation.DvObject) {
 	env.Set("MC_NET_RESULT", result)
 	result = "HEADERS_" + result + "_"
-	for k,v:=range heads {
-		key:=result + k
-		if len(v)>0 {
+	for k, v := range heads {
+		key := result + k
+		if len(v) > 0 {
 			env.Set(key, v[0])
 		}
 	}
@@ -200,14 +201,18 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 	if !ok {
 		return true
 	}
-	env:=GetEnvironment(ctx)
+	env := GetEnvironment(ctx)
 	headers := make(map[string]string)
 	headers = smartNetProcessHeaders(headers, config.Headers, config.Method, body)
 	res, err, heads := NetRequest(config.Method, config.Url, body, headers, options)
 	if err != nil {
 		log.Println(res)
 		log.Printf("%s %s failed: %v", config.Method, config.Url, err)
-		return false
+		if config.DefaultResult=="" {
+			return false
+		} else {
+			res = []byte(config.DefaultResult)
+		}
 	}
 	var result interface{}
 	switch config.ContentType {
@@ -330,8 +335,8 @@ func ProxyNetRunByConfig(config *ProxyNetConfig, ctx *dvcontext.RequestContext) 
 	default:
 		result = string(res)
 	}
-	if !config.NotReturnHeaders && ctx.PrimaryContextEnvironment!=nil {
-		SaveHeaderResult("RESPONSE",heads,ctx.PrimaryContextEnvironment)
+	if !config.NotReturnHeaders && ctx.PrimaryContextEnvironment != nil {
+		SaveHeaderResult("RESPONSE", heads, ctx.PrimaryContextEnvironment)
 		ctx.PrimaryContextEnvironment.Set(dvcontext.AUTO_HEADER_SET_BY, dvcontext.HEADERS_RESPONSE)
 	}
 	SaveActionResult(config.Result, result, ctx)
@@ -339,9 +344,9 @@ func ProxyNetRunByConfig(config *ProxyNetConfig, ctx *dvcontext.RequestContext) 
 }
 
 func smartProvideProxyHeaders(headers map[string]string, ctx *dvcontext.RequestContext) {
-	origHeaders:=ctx.Reader.Header
-    for k,v:=range origHeaders {
-		if len(v)>0 {
+	origHeaders := ctx.Reader.Header
+	for k, v := range origHeaders {
+		if len(v) > 0 {
 			headers[k] = v[0]
 		}
 	}
