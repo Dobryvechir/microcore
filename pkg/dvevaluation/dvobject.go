@@ -84,6 +84,13 @@ func (obj *DvObject) Set(key string, value interface{}) {
 	obj.Properties[key] = value
 }
 
+func (obj *DvObject) Delete(key string) {
+	if obj == nil || obj.Properties == nil {
+		return
+	}
+	delete(obj.Properties, key)
+}
+
 func (obj *DvObject) SetAtParent(key string, value interface{}, level int) {
 	place := obj
 	for ; level > 0 && place != nil; level-- {
@@ -96,6 +103,29 @@ func (obj *DvObject) SetAtParent(key string, value interface{}, level int) {
 		place.Properties = make(map[string]interface{})
 	}
 	place.Properties[key] = value
+}
+
+func (obj *DvObject) DeleteAtParent(key string, level int) {
+	place := obj
+	for ; level > 0 && place != nil; level-- {
+		place = place.Prototype
+	}
+	if place == nil || place.Properties == nil {
+		return
+	}
+	delete(place.Properties, key)
+}
+
+func (obj *DvObject) ReadAtParent(key string, level int) (res interface{}, ok bool) {
+	place := obj
+	for ; level > 0 && place != nil; level-- {
+		place = place.Prototype
+	}
+	if place == nil || place.Properties == nil {
+		return
+	}
+	res, ok = place.Properties[key]
+	return
 }
 
 func NewDvObjectWithSpecialValues(value interface{}, kind int, proto *DvObject, properties map[string]interface{}) *DvObject {

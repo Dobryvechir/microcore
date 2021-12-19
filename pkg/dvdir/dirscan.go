@@ -72,7 +72,7 @@ func DirScanProvider(data map[string][]string, currentDir string, dirListProc Di
 			if strings.Index(i, "*") >= 0 {
 				if info == nil {
 					info, err = dirListProc(k)
-					if err!=nil {
+					if err != nil {
 						return nil, err
 					}
 				}
@@ -87,6 +87,25 @@ func DirScanProvider(data map[string][]string, currentDir string, dirListProc Di
 		}
 	}
 	return res, nil
+}
+
+func WildMaskFullPathScan(lst []string, mask string) []string {
+	mp := make(map[string]string)
+	n := len(lst)
+	fl := make([]string, n)
+	for i := 0; i < n; i++ {
+		s := lst[i]
+		_, nm := ParsePathName(s)
+		mp[nm] = s
+		fl[i] = nm
+	}
+	masked := WildMaskStringScan(fl, mask)
+	n = len(masked)
+	res := make([]string, n)
+	for i := 0; i < n; i++ {
+		res[i] = mp[masked[i]]
+	}
+	return res
 }
 
 func WildMaskStringScan(lst []string, mask string) []string {

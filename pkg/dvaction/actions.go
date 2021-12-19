@@ -218,6 +218,65 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 	}
 }
 
+func DeleteActionResult(result string, ctx *dvcontext.RequestContext) {
+	if result != "" {
+		p := strings.Index(result, ":")
+		level := ""
+		if p >= 0 {
+			level = strings.ToLower(result[:p])
+			result = result[p+1:]
+		}
+		if ctx != nil && level != "global" {
+			if ctx.LocalContextEnvironment != nil && level != "request" {
+				if level != "" && level[0] >= '1' && level[0] <= '9' {
+					levelVal, err := strconv.Atoi(level)
+					if err == nil {
+						ctx.LocalContextEnvironment.DeleteAtParent(result, levelVal)
+					} else {
+						dvlog.PrintfError("Unknown level %s", level)
+					}
+				} else {
+					ctx.LocalContextEnvironment.Delete(result)
+				}
+			} else {
+				ctx.PrimaryContextEnvironment.Delete(result)
+			}
+		} else {
+			dvparser.RemoveGlobalPropertiesValue(result)
+		}
+	}
+}
+
+func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interface{}, ok bool) {
+	if result != "" {
+		p := strings.Index(result, ":")
+		level := ""
+		if p >= 0 {
+			level = strings.ToLower(result[:p])
+			result = result[p+1:]
+		}
+		if ctx != nil && level != "global" {
+			if ctx.LocalContextEnvironment != nil && level != "request" {
+				if level != "" && level[0] >= '1' && level[0] <= '9' {
+					levelVal, err := strconv.Atoi(level)
+					if err == nil {
+						ctx.LocalContextEnvironment.DeleteAtParent(result, levelVal)
+					} else {
+						dvlog.PrintfError("Unknown level %s", level)
+					}
+				} else {
+					res, ok=ctx.LocalContextEnvironment.Properties[result]
+				}
+			} else {
+				res, ok= ctx.PrimaryContextEnvironment.Properties[result]
+			}
+		} else {
+			res,ok = dvparser.GlobalProperties[result]
+		}
+	}
+	return
+}
+
 func IsLikeJson(s string) bool {
 	t := strings.TrimSpace(s)
 	n := len(t)

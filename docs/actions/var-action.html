@@ -1,0 +1,95 @@
+<h1>var</h1>
+<pre>
+Make conversions with variables
+{
+   "parse" map of string to string, for each key-value pair, the value is parsed
+        as json and stored in the variable with the name of the key
+   "read" map of string to {<a href="json-source.html">json-source</a>}, for each key-value pair,
+       reading json at specific path, filtering, sorting according common rules
+       and the result is stored in
+       the variable with the name of the key
+   "transform" map of string to string, for each key-value pair, the expression
+      in the value is evaluated with regard to current environment
+       and the result is stored in
+       the variable with the name of the key
+   "clone" map of string to string, for each key-value pair, the json
+      in the value is cloned
+       and the result is stored in
+       the variable with the name of the key
+   "default_string" map of string to string, for each key-value pair,
+        if the variable by key name is not defined, it is assigned
+         a string value
+   "default_any" map of string to string, for each key-value pair,
+        if the variable by key name is not defined, it is assigned
+         a value of any kind (number, boolean, json)
+   "find" map of string to {
+           "reg-expr": "string"
+           "group": "string"
+           "def-value": "string"
+           "source": "string" required
+           "is-all": true/false
+           "count": int
+         }
+       for each key-value pair, the search is made for the variable by the source name
+          by regular expression defined in "reg-expr".
+       If the result has not been found, the "def-value" is used.
+       If "is-all" is true, the result is the array of strings (if group is "0", "1","2",..)
+              or array of array of strings (with all submatches) if group is not a number.
+       If "is-all" is true and "count" is greater than zero, the result for n-th
+       search is returned
+       The result is stored in
+       the variable with the name of the key
+   "replace" map of string to {
+           "reg-expr": "string"
+           "source": "string"
+           "replacement": "string"
+           "literal": true/false
+         }
+       for each key-value pair, the search is made for the variable by the source name
+          by regular expression defined in "reg-expr".
+       If "literal" is false, and the replacement contains $1, ${1}, $2, ${2} they are used
+        as the places where old values are reused
+       The replacement is made and the result is stored in the variable
+       specified by the key.
+}
+Example:
+var:{"clone":{"CLONED_A":"A"},"replace":{"source":"A","reg-expr":"a(x+)b","replacement":"${1}cd"}}
+</pre>
+<h1>Replacement examples</h1>
+<table>
+    <tr>
+        <td>source</td>
+        <td>reg-expr</td>
+        <td>replacement</td>
+        <td>result (literal-false)</td>
+        <td>result (literal-true)</td>
+    </tr>
+    <tr>
+        <td>-ab-axxb-</td>
+        <td>a(x*)b</td>
+        <td>Dv</td>
+        <td>-Dv-Dv-</td>
+        <td>-Dv-Dv-</td>
+    </tr>
+    <tr>
+        <td>-ab-axxb-</td>
+        <td>a(x*)b</td>
+        <td>$1</td>
+        <td>--xx-</td>
+        <td>-$1-$1-</td>
+    </tr>
+    <tr>
+        <td>-ab-axxb-</td>
+        <td>a(x*)b</td>
+        <td>$1Dv</td>
+        <td>-$1Dv-$1Dv-</td>
+        <td>-$1Dv-$1Dv-</td>
+    </tr>
+    <tr>
+        <td>-ab-axxb-</td>
+        <td>a(x*)b</td>
+        <td>${1}Dv</td>
+        <td>-Dv-xxDv-</td>
+        <td>-${1}Dv-${1}Dv-</td>
+    </tr>
+</table>

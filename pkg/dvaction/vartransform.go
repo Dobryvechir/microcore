@@ -10,16 +10,35 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"log"
 )
 
+type PlaceRegExpression struct {
+	RegExpr  string `json:"reg-expr"`
+	Group    string `json:"group"`
+	DefValue string `json:"def-value"`
+	Source   string `json:"source"`
+	IsAll    bool   `json:"is-all"`
+	Count    int    `json:"count"`
+}
+
+type ReplaceRegExpression struct {
+	RegExpr     string `json:"reg-expr"`
+	Replacement string `json:"replacement"`
+	Source      string `json:"source"`
+	Literal     bool   `json:"literal"`
+}
+
 type VarTransformConfig struct {
-	Transform     map[string]string    `json:"transform"`
-	Clone         map[string]string    `json:"clone"`
-	JsonParse     map[string]string    `json:"parse"`
-	Read          map[string]*JsonRead `json:"read"`
-	DefaultString map[string]string    `json:"default_string"`
-	DefaultAny    map[string]string    `json:"default_any"`
+	JsonParse      map[string]string                `json:"parse"`
+	Read           map[string]*JsonRead             `json:"read"`
+	Transform      map[string]string                `json:"transform"`
+	Clone          map[string]string                `json:"clone"`
+	DefaultString  map[string]string                `json:"default_string"`
+	DefaultAny     map[string]string                `json:"default_any"`
+	FindRegExpr    map[string]*PlaceRegExpression   `json:"find"`
+	ReplaceRegExpr map[string]*ReplaceRegExpression `json:"replace"`
 }
 
 func varTransformInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -46,7 +65,7 @@ func varTransformRun(data []interface{}) bool {
 func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestContext) bool {
 	if config.JsonParse != nil {
 		for k, v := range config.JsonParse {
-            j,_:=ctx.LocalContextEnvironment.Get(v)
+			j, _ := ctx.LocalContextEnvironment.Get(v)
 			r, err := dvjson.ParseAny(j)
 			if err != nil {
 				dvlog.PrintlnError("Error in expression " + k + ":" + err.Error())
@@ -102,6 +121,32 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 					dvlog.PrintlnError("Error in json " + v + ":" + err.Error())
 				}
 				SaveActionResult(k, r, ctx)
+			}
+		}
+	}
+	if config.FindRegExpr != nil {
+		for k, v := range config.FindRegExpr {
+			r, ok := ctx.LocalContextEnvironment.Get(v.Source)
+			if ok {
+				src := dvevaluation.AnyToString(r)
+				res, err := dvtextutils.FindByRegularExpression(src, v.RegExpr, v.Group, v.DefValue, v.IsAll, v.Count)
+				if err != nil {
+					dvlog.PrintlnError("Error in regular expression " + src + ":" + err.Error())
+				}
+				SaveActionResult(k, res, ctx)
+			}
+		}
+	}
+	if config.ReplaceRegExpr != nil {
+		for k, v := range config.ReplaceRegExpr {
+			r, ok := ctx.LocalContextEnvironment.Get(v.Source)
+			if ok {
+				src := dvevaluation.AnyToString(r)
+				res, err := dvtextutils.ReplaceByRegularExpression(src, v.RegExpr, v.Replacement, v.Literal)
+				if err != nil {
+					dvlog.PrintlnError("Error in regular expression " + src + ":" + err.Error())
+				}
+				SaveActionResult(k, res, ctx)
 			}
 		}
 	}

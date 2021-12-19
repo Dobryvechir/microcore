@@ -124,6 +124,17 @@ func DeleteFileIfExists(fileName string) bool {
 	return true
 }
 
+func DeleteFilesIfExist(fileNames []string) int {
+	k:=0
+	n:=len(fileNames)
+	for i:=0;i<n;i++ {
+		if DeleteFileIfExists(fileNames[i]) {
+			k++
+		}
+	}
+	return k
+}
+
 func MakeLastPathIfNotAbsolute(fileName string) string {
 	pos := strings.LastIndex(fileName, "/")
 	if fileName == "" || fileName[0] == '/' || pos <= 0 || pos == len(fileName)-1 {

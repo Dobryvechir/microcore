@@ -7,12 +7,14 @@ package dvaction
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -61,7 +63,25 @@ func readFileActionRun(data []interface{}) bool {
 }
 
 func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext) bool {
-	_, err := os.Stat(config.FileName)
+	fileNames := dvdir.ReadFileList(config.FileName)
+	n := len(fileNames)
+	if config.Kind == "remove" {
+		k := dvdir.DeleteFilesIfExist(fileNames)
+		SaveActionResult(config.Result, strconv.Itoa(k)+"/"+strconv.Itoa(n), ctx)
+		return true
+	}
+	isMulti := n > 1
+	if isMulti {
+		DeleteActionResult(config.Result, ctx)
+	}
+	for i := 0; i < n; i++ {
+		ProcessSingleFile(fileNames[i], config, ctx, isMulti)
+	}
+	return true
+}
+
+func ProcessSingleFile(fileName string, config *ReadFileConfig, ctx *dvcontext.RequestContext, isMulti bool) bool {
+	_, err := os.Stat(fileName)
 	if err != nil {
 		log.Printf("File not found %s", config.FileName)
 		return false
@@ -69,12 +89,12 @@ func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext)
 	var dat []byte
 	env := GetEnvironment(ctx)
 	if config.IsTemplate {
-		dat, err = dvparser.SmartReadLikeJsonTemplate(config.FileName, 3, env)
+		dat, err = dvparser.SmartReadLikeJsonTemplate(fileName, 3, env)
 	} else {
-		dat, err = ioutil.ReadFile(config.FileName)
+		dat, err = ioutil.ReadFile(fileName)
 	}
 	if err != nil {
-		log.Printf("Error reading file %s %v", config.FileName, err)
+		log.Printf("Error reading file %s %v", fileName, err)
 		return false
 	}
 	var res interface{}
@@ -90,9 +110,30 @@ func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext)
 	case "text":
 		res = string(dat)
 	case "string":
-		res = strings.TrimSpace(string(dat))
+		s := strings.TrimSpace(string(dat))
+		if isMulti {
+			prev, ok := ReadActionResult(config.Result, ctx)
+			if ok && prev != nil {
+				res = append(prev.([]byte), dat...)
+			} else {
+				res = dat
+			}
+		} else {
+			res = s
+		}
+	case "binary":
+		if isMulti {
+			prev, ok := ReadActionResult(config.Result, ctx)
+			if ok && prev != nil {
+				res = append(prev.([]byte), dat...)
+			} else {
+				res = dat
+			}
+		} else {
+			res = dat
+		}
 	}
-	return ProcessSavingActionResult(config.Result, res, ctx, err, "in file ", config.FileName)
+	return ProcessSavingActionResult(config.Result, res, ctx, err, "in file ", fileName)
 }
 
 func ReadJsonTrimmed(data []byte, path string, noReadOfUndefined bool, env *dvevaluation.DvObject) (interface{}, error) {
