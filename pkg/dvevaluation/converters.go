@@ -24,6 +24,16 @@ func AnyToString(v interface{}) string {
 	return AnyToStringWithOptions(v, ConversionOptionJsonLike)
 }
 
+func AnyToByteArray(v interface{}) []byte {
+	switch v.(type) {
+	case []byte:
+		return v.([]byte)
+	case string:
+		return []byte(v.(string))
+	}
+	return []byte(AnyToStringWithOptions(v, ConversionOptionJsonLike))
+}
+
 func AnyToStringWithOptions(v interface{}, options int) string {
 	f, ok := ConvertSimpleTypeToString(v)
 	if ok {

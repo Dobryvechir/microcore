@@ -190,7 +190,7 @@ func GetMicroServicePropertyName(microServiceName string) string {
 	return strings.ToUpper(strings.ReplaceAll(microServiceName, "-", "_"))
 }
 
-func NetRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header) {
+func NetRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header, int) {
 	_, m2mSimple := headers[M2M]
 	microServiceName, m2mComplex := headers[Authorization]
 	if m2mComplex {
@@ -209,24 +209,20 @@ func NetRequest(method string, url string, body string, headers map[string]strin
 	}
 	m2mToken, ok := GetM2MToken(microServiceName)
 	if !ok {
-		return nil, errors.New("Cannot get M2M token " + microServiceName), nil
+		return nil, errors.New("Cannot get M2M token " + microServiceName), nil, 500
 	}
 	headers[Authorization] = m2mToken
-	data, err, heads := dvnet.NewRequestRepeatPause(method, url, body, headers, options, 1, 0)
-	if err == nil {
-		return data, nil, heads
+	data, err, heads, stat := dvnet.NewRequestRepeatPause(method, url, body, headers, options, 1, 0)
+	if err == nil && stat < 500 && stat != 401 && stat != 403 {
+		return data, nil, heads, stat
 	}
-	message := err.Error()
-	if len(message) >= 3 && (message[:3] == "401" || message[:3] == "403") {
-		CleanM2MTokenInCache(microServiceName)
-		m2mToken, ok = GetM2MToken(microServiceName)
-		if !ok {
-			return nil, errors.New("Cannot get M2M token for " + microServiceName), nil
-		}
-		headers[Authorization] = m2mToken
-		return dvnet.NewRequest(method, url, body, headers, options)
+	CleanM2MTokenInCache(microServiceName)
+	m2mToken, ok = GetM2MToken(microServiceName)
+	if !ok {
+		return data, errors.New("Cannot get M2M token for " + microServiceName), heads, stat
 	}
-	return data, err, heads
+	headers[Authorization] = m2mToken
+	return dvnet.NewRequest(method, url, body, headers, options)
 }
 
 func GetIdentityProviderClientCredentials(microServiceName string) (user string, pw string, ok bool) {

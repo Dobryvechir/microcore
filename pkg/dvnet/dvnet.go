@@ -47,7 +47,7 @@ const (
 var Log = LogError
 
 var AveragePersistentOptions = map[string]interface{}{
-	"repeats": 50,
+	"repeats": 0,
 	"pause":   5,
 }
 
@@ -84,13 +84,13 @@ func GetIntegerOption(options map[string]interface{}, name string, defValue int)
 	return defValue
 }
 
-func NewRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header) {
+func NewRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header, int) {
 	repeats := GetIntegerOption(options, "repeats", 0)
 	pause := GetIntegerOption(options, "pause", 5)
 	return NewRequestRepeatPause(method, url, body, headers, options, repeats, pause)
 }
 
-func NewRequestRepeatPause(method string, url string, body string, headers map[string]string, options map[string]interface{},repeats int, pause int) ([]byte, error, http.Header) {
+func NewRequestRepeatPause(method string, url string, body string, headers map[string]string, options map[string]interface{}, repeats int, pause int) ([]byte, error, http.Header, int) {
 	insecureSkipVerify := true
 	if Log >= LogInfo {
 		if Log >= LogDetail {
@@ -127,7 +127,7 @@ func NewRequestRepeatPause(method string, url string, body string, headers map[s
 		request, err = http.NewRequest(method, url, bodyIo)
 		request.Header = httpHeaders
 		if err != nil {
-			return nil, err, nil
+			return nil, err, nil, 400 // bad request
 		}
 		tr := http.DefaultTransport.(*http.Transport)
 		if tr.TLSClientConfig == nil {
@@ -142,8 +142,14 @@ func NewRequestRepeatPause(method string, url string, body string, headers map[s
 		if err == nil {
 			statusCode = response.StatusCode
 			buf, err = ioutil.ReadAll(response.Body)
+		} else {
+			statusCode = 502; // Bad Gateway
 		}
-		if err == nil && statusCode < 400 {
+		if response != nil {
+			response.Body.Close()
+			respHeaders = response.Header
+		}
+		if statusCode < 500 {
 			break
 		}
 		if Log >= LogDebug {
@@ -155,18 +161,11 @@ func NewRequestRepeatPause(method string, url string, body string, headers map[s
 			}
 			dvlog.PrintfFullOnly("Waiting %d s/%d because %d %s", pause, repeats, statusCode, message)
 		}
-		if pause > 0 {
+		if pause > 0 && repeats > 1 {
 			time.Sleep(time.Duration(pause) * time.Second)
 		}
-		if response != nil {
-			response.Body.Close()
-			respHeaders = response.Header
-		}
 	}
-	erroneous := err != nil || statusCode >= 400
-	if !erroneous {
-		defer response.Body.Close()
-	}
+	erroneous := statusCode >= 400
 	if Log >= LogInfo || (Log >= LogError && erroneous) {
 		var bufStuff string
 		if Log < LogDebug && len(bufStuff) > 70 {
@@ -181,19 +180,19 @@ func NewRequestRepeatPause(method string, url string, body string, headers map[s
 			dvlog.Println("", s)
 		}
 	}
-	if erroneous {
+	if err != nil {
 		message := ""
 		if response != nil {
 			message = response.Status
-		} else if err != nil {
+		} else {
 			message = err.Error()
 		}
-		return nil, errors.New(message + " " + string(buf)), nil
+		return nil, errors.New(message + " " + string(buf)), nil, statusCode
 	}
-	return buf, nil, respHeaders
+	return buf, nil, respHeaders, statusCode
 }
 
-func NewJsonRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header) {
+func NewJsonRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header, int) {
 	if headers == nil {
 		headers = make(map[string]string)
 	}
@@ -232,9 +231,12 @@ func UrlEncodedPart(data interface{}) string {
 }
 
 func LoadStruct(method string, url string, body string, headers map[string]string, v interface{}, options map[string]interface{}) error {
-	buf, err, _ := NewRequest(method, url, body, headers, options)
+	buf, err, _, stat := NewRequest(method, url, body, headers, options)
 	if err != nil {
 		return err
+	}
+	if stat>=400 {
+		return errors.New("Failed net "+method+" "+url+" "+strconv.Itoa(stat))
 	}
 	return json.Unmarshal(buf, v)
 }

@@ -24,8 +24,7 @@ func storeInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bo
 		return nil, false
 	}
 	if config.Storage == "" {
-		log.Printf("storage must be specified in %s", command)
-		return nil, false
+		config.Storage="fs"
 	}
 	if config.Storage != "fs" {
 		log.Printf("unknown storage in %s", command)
@@ -62,7 +61,7 @@ func StoreRunByConfig(config *StoreConfig, ctx *dvcontext.RequestContext) bool {
 }
 
 func StoreValue(path string, data interface{}) error {
-	s := dvevaluation.AnyToString(data)
-	err := os.WriteFile(path, []byte(s), 0466)
+	s := dvevaluation.AnyToByteArray(data)
+	err := os.WriteFile(path, s, 0466)
 	return err
 }

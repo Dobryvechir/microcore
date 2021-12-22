@@ -17,6 +17,7 @@ type DvAction struct {
 	InnerParams string             `json:"params"`
 	Conditions  map[string]string  `json:"conditions"`
 	Validations []*ValidatePattern `json:"validations"`
+	ErrorPolicy string             `json:"error-policy"`
 }
 
 func (action *DvAction) CloneFrom(other *DvAction) {
@@ -32,4 +33,5 @@ func (action *DvAction) CloneFrom(other *DvAction) {
 	action.InnerParams = other.InnerParams
 	action.Conditions = other.Conditions
 	action.Validations = other.Validations
+	action.ErrorPolicy = other.ErrorPolicy
 }

@@ -62,8 +62,9 @@ type MicroCoreInfo struct {
 	ProxyServerUrl            string
 	ProxyServerSettings       ServerSettings
 	ProxyName                 string
-	DomainName				  string
+	DomainName                string
 	ProxyServers              []*ProxyServerBlock
+	ErrorPolicies	          map[string]*RequestErrorPolicy
 	HeadersStatic             map[string][]string
 	HeadersProxyServer        map[string][]string
 	HeadersStaticOptions      map[string][]string
@@ -94,7 +95,7 @@ type RequestContext struct {
 	UrlsLowerCase             []string
 	FileName                  string
 	DataType                  string
-	Queries					  map[string]string
+	Queries                   map[string]string
 	Writer                    http.ResponseWriter
 	Reader                    *http.Request
 	Server                    *MicroCoreInfo
@@ -102,7 +103,7 @@ type RequestContext struct {
 	InputStr                  string
 	InputJson                 interface{}
 	Output                    []byte
-	Headers					  map[string][]string
+	Headers                   map[string][]string
 	Error                     error
 	Action                    *DvAction
 	StatusCode                int
@@ -110,12 +111,26 @@ type RequestContext struct {
 
 type HandlerFunc func(request *RequestContext) bool
 
+type RequestErrorPolicy struct {
+	Name         string `json:"name"`
+	Format       string `json:"format"`
+	ContentType  string `json:"content_type"`
+	FormatForced bool   `json:"format_forced"`
+}
+
 const (
-	BODY_STRING = "BODY_STRING"
-	BODY_JSON   = "BODY_JSON"
-	REQUEST_METHOD = "REQUEST_METHOD"
-	REQUEST_URI = "REQUEST_URI"
+	BODY_STRING        = "BODY_STRING"
+	BODY_JSON          = "BODY_JSON"
+	REQUEST_METHOD     = "REQUEST_METHOD"
+	REQUEST_URI        = "REQUEST_URI"
 	REQUEST_URL_PARAMS = "REQUEST_URL_PARAMS"
 	AUTO_HEADER_SET_BY = "AUTO_HEADER_SET_BY"
-	HEADERS_RESPONSE = "HEADERS_RESPONSE"
+	HEADERS_RESPONSE   = "HEADERS_RESPONSE"
 )
+
+var DefaultRequestErrorPolicy = &RequestErrorPolicy{
+	Name:         "default",
+	Format:       "{\"timestamp\":\"$$$TIMESTAMP\",\"status\":$$$STATUS,\"error\":\"$$$ERROR\",\"message\":\"$$$MESSAGE\",\"path\":\"$$$PATH\"}",
+	ContentType:  "application/json",
+	FormatForced: false,
+}

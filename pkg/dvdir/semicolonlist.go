@@ -124,7 +124,12 @@ func CollectFileListForWildCard(path string, name string, pool []string) []strin
 	list := WildMaskFullPathScan(files, name)
 	n := len(list)
 	if n > 0 {
-		pool = append(pool, list...)
+		if path != "" && path[len(path)-1] != '\\' && path[len(path)-1] != '/' {
+			path += "/"
+		}
+		for i := 0; i < n; i++ {
+			pool = append(pool, path+list[i])
+		}
 	}
 	return pool
 }

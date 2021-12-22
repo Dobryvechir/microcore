@@ -42,12 +42,12 @@ func readFileActionInit(command string, ctx *dvcontext.RequestContext) ([]interf
 	if config.Kind == "" {
 		config.Kind = "json"
 	}
-	if config.Kind != "json" && config.Kind != "string" && config.Kind != "text" {
+	if config.Kind != "json" && config.Kind != "string" && config.Kind != "text" && config.Kind != "remove" && config.Kind!="binary" {
 		log.Printf("Supported file kind is not supported %s (available kind options: json)", command)
 		return nil, false
 	}
-	if config.Result == "" {
-		log.Printf("Result name is not specified in command %s", command)
+	if config.Result == "" && config.Kind != "remove" {
+		log.Printf("Result is not specified in command %s", command)
 		return nil, false
 	}
 	return []interface{}{config, ctx}, true

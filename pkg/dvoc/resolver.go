@@ -11,6 +11,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"strconv"
 	"strings"
 )
 
@@ -95,9 +96,11 @@ func ResolveUrlRequestByGlobalPropertiesAndDefaults(prefix string, defaultMethod
 			method = strings.ReplaceAll(method, s, v)
 		}
 	}
-	res, err, _ := dvnet.NewJsonRequest(method, url, body, headers, dvnet.AveragePersistentOptions)
+	res, err, _, stat := dvnet.NewJsonRequest(method, url, body, headers, dvnet.AveragePersistentOptions)
 	if err != nil {
 		return "", err
+	} else if stat >= 400 {
+		return string(res), errors.New(strconv.Itoa(stat) + " in " + method + " " + url)
 	}
 	return string(res), nil
 }

@@ -16,6 +16,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -30,6 +31,9 @@ func fireAction(ctx *dvcontext.RequestContext) bool {
 
 func fireActionByName(ctx *dvcontext.RequestContext, name string,
 	definitions map[string]string) bool {
+	if ctx.Action != nil && ctx.Action.ErrorPolicy != "" {
+		ctx.PrimaryContextEnvironment.Set("ERROR_POLICY", ctx.Action.ErrorPolicy)
+	}
 	prefix := ActionPrefix + name
 	if ctx.PrimaryContextEnvironment.GetString(prefix+"_1") == "" {
 		ctx.StatusCode = 501
@@ -42,7 +46,7 @@ func fireActionByName(ctx *dvcontext.RequestContext, name string,
 }
 
 func ActionProcessResult(ctx *dvcontext.RequestContext, res bool) {
-	if !res {
+	if !res && ctx.StatusCode < 400 {
 		ctx.HandleInternalServerError()
 	} else {
 		ActionContextResult(ctx)
@@ -265,13 +269,13 @@ func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interfa
 						dvlog.PrintfError("Unknown level %s", level)
 					}
 				} else {
-					res, ok=ctx.LocalContextEnvironment.Properties[result]
+					res, ok = ctx.LocalContextEnvironment.Properties[result]
 				}
 			} else {
-				res, ok= ctx.PrimaryContextEnvironment.Properties[result]
+				res, ok = ctx.PrimaryContextEnvironment.Properties[result]
 			}
 		} else {
-			res,ok = dvparser.GlobalProperties[result]
+			res, ok = dvparser.GlobalProperties[result]
 		}
 	}
 	return
@@ -314,4 +318,36 @@ func DefaultInitWithObject(command string, result interface{}, env *dvevaluation
 		return false
 	}
 	return true
+}
+
+func ActionFinalException(status int, body []byte, ctx *dvcontext.RequestContext) {
+	ctx.StatusCode = status
+	ctx.Output = body
+	ctx.PrimaryContextEnvironment.Set(ExSeqLevel, -2)
+}
+
+func ActionInternalException(status int, shortMessage string, longMessage string, ctx *dvcontext.RequestContext) {
+	policy := ctx.GetCurrentErrorPolicy()
+	res := policy.Format
+	t := time.Now()
+	stamp := t.Format(time.RFC850)
+	res = strings.Replace(res, "$$$TIMESTAMP", stamp, -1)
+	res = strings.Replace(res, "$$$STATUS", strconv.Itoa(status), -1)
+	res = strings.Replace(res, "$$$PATH", ctx.Url, -1)
+	res = strings.Replace(res, "$$$MESSAGE", shortMessage, 1)
+	res = strings.Replace(res, "$$$ERROR", longMessage, 1)
+	ActionFinalException(status, []byte(res), ctx)
+}
+
+func ActionExternalException(status int, body []byte, ctx *dvcontext.RequestContext) {
+	policy := ctx.GetCurrentErrorPolicy()
+	if policy.FormatForced {
+		shortMessage := strings.Replace(ctx.PrimaryContextEnvironment.GetString("ERROR_POLICY_STANDARD_ERROR"), "$$$STATUS", strconv.Itoa(status), -1)
+		if shortMessage == "" {
+			shortMessage = string(body)
+		}
+		ActionInternalException(status, shortMessage, string(body), ctx)
+		return
+	}
+	ActionFinalException(status, body, ctx)
 }

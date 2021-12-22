@@ -7,10 +7,12 @@ package dvoc
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvnet"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"strconv"
 	"strings"
 )
 
@@ -66,9 +68,11 @@ func GetDbaasProperties(microServiceName string, m2mToken string, database strin
 		headers["Tenant"] = tenantId
 	}
 	method := dvparser.GetByGlobalPropertiesOrDefault(DbaaSRequestMethodProperty, DbaaSRequestMethod)
-	res, err, _ := dvnet.NewJsonRequest(method, url, body, headers, dvnet.AveragePersistentOptions)
+	res, err, _, stat := dvnet.NewJsonRequest(method, url, body, headers, dvnet.AveragePersistentOptions)
 	if err != nil {
 		return nil, err
+	} else if stat >= 400 {
+		return nil, errors.New(strconv.Itoa(stat))
 	}
 	dbaasInfo := &DbaasInfo{}
 	if err = json.Unmarshal(res, dbaasInfo); err != nil {

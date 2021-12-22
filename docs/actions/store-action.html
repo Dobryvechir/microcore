@@ -1,0 +1,15 @@
+<h1>store</h1>
+<pre>
+This command stores data to the local file system
+    (or other devices in future versions)
+"store" command has the following parameters:
+{
+    "storage" string, the storage, now it is only "fs" (this is the default), which
+       means the data is stored in the local file system
+     "data"   map of string to string, for each key-value pair,
+       the value of the variable having the name as the value,
+       is stored into the destination specified in the key
+ }
+Example:
+UPDATE_SAVE_1=store:{"data":{"./data/d1.txt":"A1","./data/d2.txt":"A2"}
+</pre>

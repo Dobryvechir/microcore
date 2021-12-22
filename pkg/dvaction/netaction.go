@@ -55,6 +55,7 @@ type ProxyNetConfig struct {
 	ContentType       string `json:"type"`
 	Result            string `json:"result"`
 	Body              string `json:"body"`
+	DefaultResult     string `json:"default"`
 	NotProxyHeaders   bool   `json:"not_proxy_headers"`
 	NotProxyUrlParams bool   `json:"not_proxy_url_params"`
 	NotAddUrlPath     bool   `json:"not_add_url_path"`
@@ -92,8 +93,8 @@ func processNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{
 func processNetRun(data []interface{}) bool {
 	url := data[0].(string)
 	headers := data[1].(map[string]string)
-	_, err, _ := dvnet.NewRequest("GET", url, "", headers, dvnet.AveragePersistentOptions)
-	return err == nil
+	_, err, _, stat := dvnet.NewRequest("GET", url, "", headers, dvnet.AveragePersistentOptions)
+	return err == nil && stat < 400
 }
 
 func SmartNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -127,7 +128,9 @@ func SmartNetRun(data []interface{}) bool {
 
 func ProcessSavingActionResult(result string, data interface{}, ctx *dvcontext.RequestContext, err error, message1 string, message2 string) bool {
 	if err != nil {
-		log.Printf("%s %s %v", message1, message2, err)
+		if Log >= dvlog.LogError {
+			log.Printf("%s %s %v", message1, message2, err)
+		}
 		return false
 	}
 	SaveActionResult(result, data, ctx)
@@ -204,15 +207,24 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 	env := GetEnvironment(ctx)
 	headers := make(map[string]string)
 	headers = smartNetProcessHeaders(headers, config.Headers, config.Method, body)
-	res, err, heads := NetRequest(config.Method, config.Url, body, headers, options)
+	res, err, heads, stat := NetRequest(config.Method, config.Url, body, headers, options)
 	if err != nil {
-		log.Println(res)
-		log.Printf("%s %s failed: %v", config.Method, config.Url, err)
-		if config.DefaultResult=="" {
+		if Log >= dvlog.LogError {
+			log.Println(res)
+			log.Printf("%s %s failed: %v", config.Method, config.Url, err)
+		}
+		if config.DefaultResult == "" {
+			if heads != nil {
+				ctx.SetHeaderUnique("Content-Type", heads.Get("Content-Type"))
+			}
+			ActionInternalException(stat, err.Error(), err.Error()+" in "+config.Method+" "+config.Url+"["+body+"]", ctx)
 			return false
 		} else {
 			res = []byte(config.DefaultResult)
 		}
+	} else if stat >= 400 {
+		ActionExternalException(stat, res, ctx)
+		return false
 	}
 	var result interface{}
 	switch config.ContentType {
@@ -319,11 +331,26 @@ func ProxyNetRunByConfig(config *ProxyNetConfig, ctx *dvcontext.RequestContext) 
 	if !config.NotAddUrlPath {
 		url = smartNetAddUrlParams(url, ctx)
 	}
-	res, err, heads := NetRequest(method, url, body, headers, options)
+	res, err, heads, stat := NetRequest(method, url, body, headers, options)
 	if err != nil {
-		log.Println(res)
-		log.Printf("%s %s failed: %v", method, url, err)
-		return false
+		if Log >= dvlog.LogError {
+			log.Println(res)
+			log.Printf("%s %s failed: %v", method, url, err)
+		}
+		if config.DefaultResult == "" {
+			ActionInternalException(stat, err.Error(), err.Error()+" in "+method+" "+url, ctx)
+			return false
+		}
+		res = []byte(config.DefaultResult)
+	} else if stat >= 400 {
+		if config.DefaultResult == "" {
+			if heads != nil {
+				ctx.SetHeaderUnique("Content-Type", heads.Get("Content-Type"))
+			}
+			ActionExternalException(stat, res, ctx)
+			return false
+		}
+		res = []byte(config.DefaultResult)
 	}
 	var result interface{}
 	switch config.ContentType {
