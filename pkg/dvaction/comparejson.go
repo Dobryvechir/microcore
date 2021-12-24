@@ -16,8 +16,9 @@ import (
 type JsonRead struct {
 	Var               string   `json:"var"`
 	Path              string   `json:"path"`
-	Sort              []string `json:"sort"`
 	Filter            string   `json:"filter"`
+	Sort              []string `json:"sort"`
+	AfterPath         string   `json:"afterPath"`
 	NoReadOfUndefined bool     `json:"noReadOfUndefined"`
 	ErrorSignificant  bool     `json:"errorSignificant"`
 	Convert           string   `json:"convert"`
@@ -62,12 +63,12 @@ func compareJsonRun(data []interface{}) bool {
 }
 
 func JsonExtract(info *JsonRead, env *dvevaluation.DvObject) (interface{}, error) {
-	return JsonExtractExtended(info.Var, info.Path, info.Sort, info.Filter,
+	return JsonExtractExtended(info.Var, info.Path, info.Filter, info.Sort, info.AfterPath,
 		info.NoReadOfUndefined, info.ErrorSignificant, info.Ids, info.Convert, env)
 }
 
-func JsonExtractExtended(place string, path string, sort []string, filter string,
-	noReadOfUndefined bool, errorSignificant bool, ids []string, convert string,
+func JsonExtractExtended(place string, path string, filter string, sort []string,
+	afterPath string, noReadOfUndefined bool, errorSignificant bool, ids []string, convert string,
 	env *dvevaluation.DvObject) (interface{}, error) {
 	val, ok := env.Get(place)
 	if !ok {
@@ -93,6 +94,13 @@ func JsonExtractExtended(place string, path string, sort []string, filter string
 			return nil, err
 		}
 		val = res
+	}
+	if afterPath != "" {
+		item, _, err := dvjson.ReadPathOfAny(val, afterPath, noReadOfUndefined, env)
+		if err != nil {
+			return nil, err
+		}
+		val = item
 	}
 	dvjson.CreateQuickInfoByKeysForAny(val, ids)
 	if convert != "" {

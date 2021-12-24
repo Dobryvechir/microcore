@@ -1,0 +1,23 @@
+<h1>json properties</h1>
+<pre>
+The json properties are key-value pairs, where key is a string and value is an
+    object (or json)
+In file system .properties files they are defined as follows:
+KEY_1={"A1:["Value 1"]}
+KEY_2=["Value 2"]
+...
+In dynamic actions they are stored as a map of strings to objects:
+{
+    "KEY_1": {
+        "A1": [
+           "Value 1"
+        ]
+    },
+    "KEY_2": [
+       "Value 2"
+    ],
+    ...
+}
+Example:
+{"V1":["2"],"V2":{"V3":"VV3"}}
+</pre>

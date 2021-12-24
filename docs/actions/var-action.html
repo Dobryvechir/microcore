@@ -2,8 +2,15 @@
 <pre>
 Make conversions with variables
 {
-   "parse" map of string to string, for each key-value pair, the value is parsed
-        as json and stored in the variable with the name of the key
+   "parse" map of string to {
+         "var": string, the name of the source variable
+         "evaluation": int, the number of brackets ({{ }}) to evaluate expression,
+               if 0, no evaluation, otherwise, the number of brackets
+       }
+       for each key-value pair, the source specified in var value is parsed
+       as json and stored in the variable with the name of the key,
+       if the evaluation is not 0 (0 is the default), the source is evaluated
+       before parsing to json
    "read" map of string to {<a href="json-source.html">json-source</a>}, for each key-value pair,
        reading json at specific path, filtering, sorting according common rules
        and the result is stored in

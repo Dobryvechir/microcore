@@ -296,17 +296,39 @@ func DefaultInitWithObject(command string, result interface{}, env *dvevaluation
 	cmdDat := []byte(cmd)
 	if cmd[0] != '{' || cmd[len(cmd)-1] != '}' {
 		if cmd[0] == '@' && len(cmd) > 1 {
-			dat, err := dvparser.SmartReadLikeJsonTemplate(cmd[1:], 3, env)
-			if err != nil {
-				log.Printf("Bad file in %s %v", command, err)
-				return false
+			if cmd[1] == '@' && len(cmd) > 2 {
+				dat, ok := env.Get(cmd[2:])
+				if !ok {
+					log.Printf("Empty parameter %s", cmd)
+					return false
+				}
+				s := strings.TrimSpace(dvevaluation.AnyToString(dat))
+				if strings.Contains(s, "{{") {
+					ss, err := env.CalculateString(s)
+					if err != nil {
+						log.Printf("Wrong expression in %s: %v", s, err)
+						return false
+					}
+					s = ss
+				}
+				if len(s) == 0 || s[0] != '{' || s[len(s)-1] != '}' {
+					log.Printf("Wrong object described by %s", cmd)
+					return false
+				}
+				cmdDat = []byte(s)
+			} else {
+				dat, err := dvparser.SmartReadLikeJsonTemplate(cmd[1:], 3, env)
+				if err != nil {
+					log.Printf("Bad file in %s %v", command, err)
+					return false
+				}
+				dat = bytes.TrimSpace(dat)
+				if len(dat) < 2 || dat[0] != '{' || dat[len(dat)-1] != '}' {
+					log.Printf("Empty file in %s", command)
+					return false
+				}
+				cmdDat = dat
 			}
-			dat = bytes.TrimSpace(dat)
-			if len(dat) < 2 || dat[0] != '{' || dat[len(dat)-1] != '}' {
-				log.Printf("Empty file in %s", command)
-				return false
-			}
-			cmdDat = dat
 		} else {
 			log.Printf("Empty parameters in %s", command)
 			return false

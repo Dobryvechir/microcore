@@ -30,8 +30,13 @@ type ReplaceRegExpression struct {
 	Literal     bool   `json:"literal"`
 }
 
+type JsonParseData struct {
+	Var        string `json:"string"`
+	Evaluation int    `json:"evaluation"`
+}
+
 type VarTransformConfig struct {
-	JsonParse      map[string]string                `json:"parse"`
+	JsonParse      map[string]*JsonParseData        `json:"parse"`
 	Read           map[string]*JsonRead             `json:"read"`
 	Transform      map[string]string                `json:"transform"`
 	Clone          map[string]string                `json:"clone"`
@@ -65,12 +70,22 @@ func varTransformRun(data []interface{}) bool {
 func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestContext) bool {
 	if config.JsonParse != nil {
 		for k, v := range config.JsonParse {
-			j, _ := ctx.LocalContextEnvironment.Get(v)
-			r, err := dvjson.ParseAny(j)
+			j, _ := ctx.LocalContextEnvironment.Get(v.Var)
+			var err error = nil
+			if v.Evaluation > 0 {
+				s := dvevaluation.AnyToString(j)
+				s, err = ctx.LocalContextEnvironment.CalculateStringWithBrackets([]byte(s), v.Evaluation)
+				if err == nil {
+					j = s
+				}
+			}
+			if err == nil {
+				j, err = dvjson.ParseAny(j)
+			}
 			if err != nil {
 				dvlog.PrintlnError("Error in expression " + k + ":" + err.Error())
 			} else {
-				SaveActionResult(k, r, ctx)
+				SaveActionResult(k, j, ctx)
 			}
 		}
 	}

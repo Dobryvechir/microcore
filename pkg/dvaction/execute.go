@@ -47,6 +47,7 @@ const (
 	CommandStore       = "store"
 	CommandVersion     = "version"
 	CommandDebug       = "debug"
+	CommandDynamic     = "dynamic"
 )
 
 var processFunctions = map[string]ProcessFunction{
@@ -67,6 +68,7 @@ var processFunctions = map[string]ProcessFunction{
 var logicProcessFunctions = map[string]ProcessFunction{
 	CommandPaging:  {Init: pagingInit, Run: pagingRun},
 	CommandVersion: {Init: versionInit, Run: versionRun},
+	CommandDynamic: {Init: dynamicActionInit, Run: dynamicActionRun},
 }
 
 const (
