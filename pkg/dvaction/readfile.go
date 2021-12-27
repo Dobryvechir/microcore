@@ -27,6 +27,7 @@ type ReadFileConfig struct {
 	Filter            string   `json:"filter"`
 	Sort              []string `json:"sort"`
 	Joiner            string   `json:"joiner"`
+	Append            int      `json:"append"`
 	NoReadOfUndefined bool     `json:"noReadOfUndefined"`
 	ErrorSignificant  bool     `json:"errorSignificant"`
 	IsTemplate        bool     `json:"template"`
@@ -75,10 +76,14 @@ func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext)
 	}
 	isMulti := n > 1
 	if isMulti {
-		DeleteActionResult(config.Result, ctx)
+		if config.Append == 0 {
+			DeleteActionResult(config.Result, ctx)
+		}
 		if config.Kind != "json" && config.Sort != nil {
 			fileNames = dvtextutils.SortStringArray(fileNames, config.Sort)
 		}
+	} else {
+		isMulti = config.Append != 0
 	}
 	for i := 0; i < n; i++ {
 		ProcessSingleFile(fileNames[i], config, ctx, isMulti)
@@ -90,7 +95,10 @@ func combineStrings(s string, isMulti bool, config *ReadFileConfig, ctx *dvconte
 	if isMulti {
 		prev, ok := ReadActionResult(config.Result, ctx)
 		if ok && prev != nil {
-			t := prev.(string)
+			t := dvevaluation.AnyToString(prev)
+			if config.Append<0 {
+				t, s = s, t
+			}
 			if config.Joiner != "" {
 				t += config.Joiner
 			}
@@ -138,7 +146,10 @@ func ProcessSingleFile(fileName string, config *ReadFileConfig, ctx *dvcontext.R
 		if isMulti {
 			prev, ok := ReadActionResult(config.Result, ctx)
 			if ok && prev != nil {
-				t := prev.([]byte)
+				t := dvevaluation.AnyToByteArray(prev)
+				if config.Append < 0 {
+					t, dat = dat, t
+				}
 				if config.Joiner != "" {
 					t = append(t, []byte(config.Joiner)...)
 				}
