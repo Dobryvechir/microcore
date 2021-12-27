@@ -20,11 +20,9 @@ func FindByRegularExpression(source string, regexpr string, group string, defval
 	if group != "" {
 		if group[0] >= '0' && group[0] <= '9' {
 			grp, err = strconv.Atoi(group)
-			if err != nil {
-				isIndex = false
+			if err == nil {
+				isIndex = true
 			}
-		} else {
-			isIndex = false
 		}
 	}
 	if isall {

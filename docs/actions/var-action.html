@@ -15,6 +15,10 @@ Make conversions with variables
        reading json at specific path, filtering, sorting according common rules
        and the result is stored in
        the variable with the name of the key
+   "to_integer" map of string to string, for each key-value pair, the variable
+      in the value is evaluated to integer with regard to current environment
+       and the result is stored in
+       the variable with the name of the key
    "transform" map of string to string, for each key-value pair, the expression
       in the value is evaluated with regard to current environment
        and the result is stored in
@@ -58,6 +62,20 @@ Make conversions with variables
         as the places where old values are reused
        The replacement is made and the result is stored in the variable
        specified by the key.
+    "increase_version" map of string to {
+           "var": "string"
+           "limit": integer
+           "def_version": string
+         }
+       for each key-value pair, the version (like 1.0.10) from the
+       variable with the name of "var" is increased
+       and the result is stored in the variable specified by the key.
+       The "limit" specifies the point of increase at the next level
+        (for example, 1.0.99 + 1 = 1.1.0 if the limit is 100)
+       It is optional, default is 100. This value is not applied to the first
+       number in the version.
+       The "def_version" is used if the variable "var" does not contain a valid
+        version ("N. ... .N, examples of valid versions: 1.0.0.0.1, 1.0.19, 1.2, 2, 34, 34.1)
 }
 Example:
 var:{"clone":{"CLONED_A":"A"},"replace":{"source":"A","reg-expr":"a(x+)b","replacement":"${1}cd"}}
