@@ -27,12 +27,18 @@ It has the parameters as follows:
    "sort" []string, optional, used for json of array type at the first level
           (after applying "path" and "filter")
           it allows to sort the final array by some fields.
-          (for example "sort": ["name","kind"]
+          (for example "sort": ["name","kind"])
+          If the "kind" is not "json", and multiple files are used, it is used to sort
+          the original files: "asc"-acending order, "desc"- descending order
    "noReadOfUndefined" bool, true or false (optional, the default is false)
           if it is true, an error is raised in case the path requires
           reading of undefined.
    "errorSignificant" bool, true or false, (optional, the default is false)
           if it is true, the error of path is promoted as a result of the action
+    "joiner" string, a joining string to join multiple files (if names define
+          multiple files (for "kind" = "text" or "binary")
+    "eol_joiner" bool true/false, if true, additional joiner as EOL is provided
+          for multiple files (for "kind"="text" or "binary")
    "result" string, the name of the variable to store the result
 }
 Example:

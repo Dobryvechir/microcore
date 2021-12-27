@@ -11,6 +11,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"log"
 	"os"
@@ -25,9 +26,11 @@ type ReadFileConfig struct {
 	Path              string   `json:"path"`
 	Filter            string   `json:"filter"`
 	Sort              []string `json:"sort"`
+	Joiner            string   `json:"joiner"`
 	NoReadOfUndefined bool     `json:"noReadOfUndefined"`
 	ErrorSignificant  bool     `json:"errorSignificant"`
 	IsTemplate        bool     `json:"template"`
+	EolJoiner         bool     `json:"eol_joiner"`
 }
 
 func readFileActionInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -42,7 +45,7 @@ func readFileActionInit(command string, ctx *dvcontext.RequestContext) ([]interf
 	if config.Kind == "" {
 		config.Kind = "json"
 	}
-	if config.Kind != "json" && config.Kind != "string" && config.Kind != "text" && config.Kind != "remove" && config.Kind!="binary" {
+	if config.Kind != "json" && config.Kind != "string" && config.Kind != "text" && config.Kind != "remove" && config.Kind != "binary" {
 		log.Printf("Supported file kind is not supported %s (available kind options: json)", command)
 		return nil, false
 	}
@@ -73,11 +76,31 @@ func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext)
 	isMulti := n > 1
 	if isMulti {
 		DeleteActionResult(config.Result, ctx)
+		if config.Kind != "json" && config.Sort != nil {
+			fileNames = dvtextutils.SortStringArray(fileNames, config.Sort)
+		}
 	}
 	for i := 0; i < n; i++ {
 		ProcessSingleFile(fileNames[i], config, ctx, isMulti)
 	}
 	return true
+}
+
+func combineStrings(s string, isMulti bool, config *ReadFileConfig, ctx *dvcontext.RequestContext) string {
+	if isMulti {
+		prev, ok := ReadActionResult(config.Result, ctx)
+		if ok && prev != nil {
+			t := prev.(string)
+			if config.Joiner != "" {
+				t += config.Joiner
+			}
+			if config.EolJoiner {
+				t += "\n"
+			}
+			s = t + s
+		}
+	}
+	return s
 }
 
 func ProcessSingleFile(fileName string, config *ReadFileConfig, ctx *dvcontext.RequestContext, isMulti bool) bool {
@@ -108,24 +131,21 @@ func ProcessSingleFile(fileName string, config *ReadFileConfig, ctx *dvcontext.R
 			res, err = dvjson.IterateSortByFields(res, config.Sort, env)
 		}
 	case "text":
-		res = string(dat)
+		res = combineStrings(string(dat), isMulti, config, ctx)
 	case "string":
-		s := strings.TrimSpace(string(dat))
-		if isMulti {
-			prev, ok := ReadActionResult(config.Result, ctx)
-			if ok && prev != nil {
-				res = append(prev.([]byte), dat...)
-			} else {
-				res = dat
-			}
-		} else {
-			res = s
-		}
+		res = combineStrings(strings.TrimSpace(string(dat)), isMulti, config, ctx)
 	case "binary":
 		if isMulti {
 			prev, ok := ReadActionResult(config.Result, ctx)
 			if ok && prev != nil {
-				res = append(prev.([]byte), dat...)
+				t := prev.([]byte)
+				if config.Joiner != "" {
+					t = append(t, []byte(config.Joiner)...)
+				}
+				if config.EolJoiner {
+					t = append(t, byte(10))
+				}
+				res = append(t, dat...)
 			} else {
 				res = dat
 			}
