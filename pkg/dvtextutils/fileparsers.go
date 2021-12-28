@@ -178,3 +178,17 @@ func ComposeParametersInTemplate(template string, brackets int, value string) (r
 	}
 	return
 }
+
+func LoadSimpleMapFromString(data string) map[string]string {
+	v := ConvertToNonEmptySemicolonList(data)
+	n := len(v)
+	if n == 0 {
+		return nil
+	}
+	m := make(map[string]string, n)
+	for i := 0; i < n; i++ {
+		k, v := SeparateToKeyValue(v[i])
+		m[k] = v
+	}
+	return m
+}

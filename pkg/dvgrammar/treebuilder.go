@@ -83,66 +83,75 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (*BuildNode
 				return nil, errorMessage("Unexpected unary operator before "+operator, value)
 			}
 			if current.Value != nil {
-				valueNode := newNode(current, opt, currentPreAttributes)
-				currentPreAttributes = currentPreAttributes[:0]
-				valueNode.Value = current.Value
+				valueNode := &BuildNode{
+					Parent: current,
+					PreAttributes: current.PreAttributes,
+					PostAttributes: current.PostAttributes,
+					Value: current.Value,
+				}
 				current.Children = make([]*BuildNode, 1, 2)
 				current.Children[0] = valueNode
 				current.Value = nil
 			}
 			if current.Children == nil {
-				fullTreeClean(tree)
-				return nil, errorMessage("Unexpected "+operator, value)
-			}
-			node := newNode(current, opt, nil)
-			if current.Operator == "" {
-				current.Operator = operator
-				current.Children = append(current.Children, node)
-				current = node
-			} else {
-				precedence := properties.Precedence
-				for current.Parent != nil && opt.Operators[current.Parent.Operator] != nil &&
-					(current.closed || opt.Operators[current.Operator].Precedence > precedence) {
-					current = current.Parent
+				if _,isUniOper:=opt.UnaryOperators[operator];isUniOper {
+					isOperator = false
+				} else {
+					fullTreeClean(tree)
+					return nil, errorMessage("Unexpected "+operator, value)
 				}
-				if current.Operator == operator && properties.Multi {
+			} else {
+				node := newNode(current, opt, nil)
+				if current.Operator == "" {
+					current.Operator = operator
 					current.Children = append(current.Children, node)
 					current = node
-				} else if !current.closed && opt.Operators[current.Operator].Precedence < precedence {
-					//reattach the node
-					lastIndex := len(current.Children) - 1
-					lastNode := current.Children[lastIndex]
-					node.Children = make([]*BuildNode, 2, 3)
-					node.Children[0] = lastNode
-					node.Operator = operator
-					lastNode.Parent = node
-					current.Children = append(current.Children, node)
-					lastNode = newNode(node, opt, currentPreAttributes)
-					currentPreAttributes = currentPreAttributes[:0]
-					node.Children[1] = lastNode
-					current = lastNode
 				} else {
-					//attach at up position
-					node.Parent = current.Parent
-					node.Children = make([]*BuildNode, 1, 2)
-					node.Children[0] = current
-					node.Operator = operator
-					if node.Parent == nil {
-						tree = node
-					} else {
-						index := indexOfNode(node.Parent.Children, current)
-						if index < 0 {
-							fullTreeClean(tree)
-							return nil, errorMessage("Tree broken", value)
-						}
-						node.Parent.Children[index] = node
+					precedence := properties.Precedence
+					for current.Parent != nil && opt.Operators[current.Parent.Operator] != nil &&
+						(current.closed || opt.Operators[current.Operator].Precedence > precedence) {
+						current = current.Parent
 					}
-					current.Parent = node
-					current = newNode(node, opt, nil)
-					node.Children = append(node.Children, current)
+					if current.Operator == operator && properties.Multi {
+						current.Children = append(current.Children, node)
+						current = node
+					} else if !current.closed && opt.Operators[current.Operator].Precedence < precedence {
+						//reattach the node
+						lastIndex := len(current.Children) - 1
+						lastNode := current.Children[lastIndex]
+						node.Children = make([]*BuildNode, 2, 3)
+						node.Children[0] = lastNode
+						node.Operator = operator
+						lastNode.Parent = node
+						current.Children = append(current.Children, node)
+						lastNode = newNode(node, opt, currentPreAttributes)
+						currentPreAttributes = currentPreAttributes[:0]
+						node.Children[1] = lastNode
+						current = lastNode
+					} else {
+						//attach at up position
+						node.Parent = current.Parent
+						node.Children = make([]*BuildNode, 1, 2)
+						node.Children[0] = current
+						node.Operator = operator
+						if node.Parent == nil {
+							tree = node
+						} else {
+							index := indexOfNode(node.Parent.Children, current)
+							if index < 0 {
+								fullTreeClean(tree)
+								return nil, errorMessage("Tree broken", value)
+							}
+							node.Parent.Children[index] = node
+						}
+						current.Parent = node
+						current = newNode(node, opt, nil)
+						node.Children = append(node.Children, current)
+					}
 				}
 			}
-		} else {
+		}
+		if !isOperator {
 			modifier, okModifier := opt.UnaryOperators[operator]
 			if okModifier {
 				if modifier.Post {
