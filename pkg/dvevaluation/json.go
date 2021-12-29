@@ -33,7 +33,7 @@ func ConvertAnyTypeToJson(buf []byte, v interface{}) []byte {
 		buf = buf[:n]
 	}
 	var ok bool
-	buf, ok = ConvertSimpleTypeToBuf(buf, v)
+	buf, ok, _  = ConvertSimpleTypeToBuf(buf, v)
 	if ok {
 		return buf
 	}

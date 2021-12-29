@@ -83,3 +83,11 @@ func CreateQuickInfoByKeysForAny(data interface{}, ids []string) {
 		}
 	}
 }
+
+func RemovePathOfAny(item interface{}, childName string, rejectChildOfUndefined bool, env *dvevaluation.DvObject) (*dvevaluation.DvVariable, *dvevaluation.DvVariable, error) {
+	switch item.(type) {
+	case *dvevaluation.DvVariable:
+		return item.(*dvevaluation.DvVariable).ReadPath(childName, rejectChildOfUndefined, env)
+	}
+	return nil, nil, nil
+}

@@ -52,6 +52,9 @@ type VarTransformConfig struct {
 	FindRegExpr     map[string]*PlaceRegExpression   `json:"find"`
 	ReplaceRegExpr  map[string]*ReplaceRegExpression `json:"replace"`
 	IncreaseVersion map[string]*IncreaseVersionInfo  `json:"increase_version"`
+	RemoveVars      []string                         `json:"remove_vars"`
+	CreateObject    map[string]map[string]string     `json:"create_object"`
+	CreateArray     map[string][]string              `json:"create_array"`
 }
 
 func varTransformInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -75,7 +78,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	env := GetEnvironment(ctx)
 	if config.JsonParse != nil {
 		for k, v := range config.JsonParse {
-			j, _ := env.Get(v.Var)
+			j, _ := ReadActionResult(v.Var, ctx)
 			var err error = nil
 			if v.Evaluation > 0 {
 				s := dvevaluation.AnyToString(j)
@@ -106,7 +109,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	}
 	if config.ToInteger != nil {
 		for k, v := range config.ToInteger {
-			r, ok := env.Get(v)
+			r, ok := ReadActionResult(v, ctx)
 			if !ok {
 				if Log >= dvlog.LogWarning {
 					dvlog.PrintlnError("Variable not found " + v + " to be stored in " + k)
@@ -135,7 +138,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	}
 	if config.Clone != nil {
 		for k, v := range config.Clone {
-			r, ok := env.Get(v)
+			r, ok := ReadActionResult(v, ctx)
 			if ok {
 				d := dvevaluation.AnyToDvVariable(r)
 				d = d.Clone()
@@ -145,7 +148,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	}
 	if config.DefaultString != nil {
 		for k, v := range config.DefaultString {
-			_, ok := env.Get(k)
+			_, ok := ReadActionResult(k, ctx)
 			if !ok {
 				SaveActionResult(k, v, ctx)
 			}
@@ -153,7 +156,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	}
 	if config.DefaultAny != nil {
 		for k, v := range config.DefaultAny {
-			_, ok := env.Get(k)
+			_, ok := ReadActionResult(k, ctx)
 			if !ok {
 				r, err := dvjson.JsonFullParser([]byte(v))
 				if err != nil {
@@ -165,7 +168,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	}
 	if config.FindRegExpr != nil {
 		for k, v := range config.FindRegExpr {
-			r, ok := env.Get(v.Source)
+			r, ok := ReadActionResult(v.Source, ctx)
 			if ok {
 				src := dvevaluation.AnyToString(r)
 				res, err := dvtextutils.FindByRegularExpression(src, v.RegExpr, v.Group, v.DefValue, v.IsAll, v.Count)
@@ -178,7 +181,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	}
 	if config.ReplaceRegExpr != nil {
 		for k, v := range config.ReplaceRegExpr {
-			r, ok := env.Get(v.Source)
+			r, ok := ReadActionResult(v.Source, ctx)
 			if ok {
 				src := dvevaluation.AnyToString(r)
 				res, err := dvtextutils.ReplaceByRegularExpression(src, v.RegExpr, v.Replacement, v.Literal)
@@ -191,7 +194,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	}
 	if config.IncreaseVersion != nil {
 		for k, v := range config.IncreaseVersion {
-			r, ok := env.Get(v.Var)
+			r, ok := ReadActionResult(v.Var, ctx)
 			if !ok {
 				dvlog.PrintlnError("Version variable not found " + v.Var + " to be stored in " + k)
 			} else {
@@ -199,6 +202,46 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 				s = dvjsmaster.MathIncreaseVersion(s, v.Limit, v.DefVersion)
 				SaveActionResult(k, s, ctx)
 			}
+		}
+	}
+	if config.RemoveVars != nil {
+		for _, v := range config.RemoveVars {
+			DeleteActionResult(v, ctx)
+		}
+	}
+	if config.CreateObject != nil {
+		for kp, vp := range config.CreateObject {
+			f := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_OBJECT, Fields: make([]*dvevaluation.DvVariable, 0, 32)}
+			if vp != nil {
+				for k, v := range vp {
+					vs, ok := ReadActionResult(v, ctx)
+					if ok {
+						t := dvevaluation.AnyToDvVariable(vs)
+						t.Name = []byte(k)
+						f.Fields = append(f.Fields, t)
+					} else {
+						f.Fields = append(f.Fields, &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_NULL, Name: []byte(k)})
+					}
+				}
+			}
+			SaveActionResult(kp, f, ctx)
+		}
+	}
+	if config.CreateArray != nil {
+		for kp, vp := range config.CreateArray {
+			f := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: make([]*dvevaluation.DvVariable, 0, 32)}
+			if vp != nil {
+				for _, v := range vp {
+					vs, ok := ReadActionResult(v, ctx)
+					if ok {
+						t := dvevaluation.AnyToDvVariable(vs)
+						f.Fields = append(f.Fields, t)
+					} else {
+						f.Fields = append(f.Fields, &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_NULL})
+					}
+				}
+			}
+			SaveActionResult(kp, f, ctx)
 		}
 	}
 	return true

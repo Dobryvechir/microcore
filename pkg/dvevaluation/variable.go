@@ -120,6 +120,31 @@ func ConvertStringArrayToDvVariableArray(data []string) (res []*DvVariable) {
 	return
 }
 
+func GetBooleanValue(isTrue bool) []byte {
+	if isTrue {
+		return bytesTrue
+	}
+	return bytesFalse
+}
+
+func ConvertAnyToDvVariable(data interface{}) *DvVariable {
+	switch data.(type) {
+	case *DvVariable:
+		return data.(*DvVariable)
+	case string:
+		return &DvVariable{Kind: FIELD_STRING, Value: []byte(data.(string))}
+	case nil:
+		return &DvVariable{Kind: FIELD_NULL}
+	}
+	buf := make([]byte, 0, 100)
+	b, ok, kind := ConvertSimpleTypeToBuf(buf, data)
+	if ok {
+		return &DvVariable{Kind: kind, Value: b}
+	}
+	s := AnyToString(data)
+	return &DvVariable{Kind: FIELD_STRING, Value: []byte(s)}
+}
+
 func ConvertStringMapToDvVariableMap(data map[string]string) (res map[string]*DvVariable) {
 	res = make(map[string]*DvVariable)
 	if data != nil {

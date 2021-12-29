@@ -19,6 +19,7 @@ const (
 	KindInteger    = 'I'
 	KindString     = 'S'
 	KindFloat      = 'F'
+	KindBoolean    = 'B'
 	KindDvVariable = 'V'
 )
 

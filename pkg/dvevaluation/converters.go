@@ -243,6 +243,24 @@ func AnyToNumberInt(v interface{}) (f int64, ok bool) {
 		}
 	case float64:
 		f, ok = NumberToInt(v.(float64))
+	case *DvVariable:
+		vr := v.(*DvVariable)
+		switch vr.Kind {
+		case FIELD_OBJECT, FIELD_ARRAY, FIELD_FUNCTION:
+			f = int64(len(vr.Fields))
+		case FIELD_UNDEFINED, FIELD_NULL:
+			f = 0
+		case FIELD_BOOLEAN:
+			if len(vr.Value) > 0 && vr.Value[0] == 't' {
+				f = 1
+			} else {
+				f = 0
+			}
+		default:
+			return AnyToNumberInt(string(vr.Value))
+		}
+	case nil:
+		f = 0
 	default:
 		ok = false
 	}
@@ -289,8 +307,8 @@ func AnyToDvVariable(v interface{}) *DvVariable {
 		return &DvVariable{Kind: FIELD_STRING, Value: []byte(v.(string))}
 	case int:
 		return &DvVariable{Kind: FIELD_NUMBER, Value: []byte(strconv.Itoa(v.(int)))}
-	case float64,float32,int64,int32:
-		s:=AnyToString(v)
+	case float64, float32, int64, int32:
+		s := AnyToString(v)
 		return &DvVariable{Kind: FIELD_NUMBER, Value: []byte(s)}
 	}
 	return nil
@@ -302,4 +320,38 @@ func ConvertInterfaceListsMapToStringListsMap(listMap map[string][][]interface{}
 		r[k] = ConvertInterfaceListsToStringLists(v, options)
 	}
 	return r
+}
+
+func CreateDvVariableByPathAndData(path string, data interface{}, parent *DvVariable) *DvVariable {
+	p := strings.Index(path, ".")
+	if p == 0 {
+		return CreateDvVariableByPathAndData(path[1:], data, parent)
+	}
+	if p > 0 {
+		name := path[:p]
+		if parent == nil {
+			parent = &DvVariable{Kind: FIELD_OBJECT, Fields: make([]*DvVariable, 0, 7)}
+		}
+		item := &DvVariable{Kind: FIELD_OBJECT, Value: []byte(name)}
+		if parent.Fields == nil {
+			parent.Fields = make([]*DvVariable, 0, 7)
+		}
+		parent.Fields = append(parent.Fields, item)
+		CreateDvVariableByPathAndData(path[p+1:], data, item)
+		return parent
+	}
+	dvvar := ConvertAnyToDvVariable(data)
+	if path == "" {
+		if parent == nil {
+			return dvvar
+		}
+		parent.CloneExceptKey(dvvar, false)
+		return parent
+	}
+	dvvar.Name = []byte(path)
+	if parent == nil {
+		return &DvVariable{Kind: FIELD_OBJECT, Fields: []*DvVariable{dvvar}}
+	}
+	parent.CloneWithKey(dvvar, false)
+	return parent
 }

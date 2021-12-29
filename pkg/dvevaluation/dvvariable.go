@@ -852,6 +852,15 @@ func (item *DvVariable) CloneExceptKey(other *DvVariable, deep bool) *DvVariable
 	return item
 }
 
+func (item *DvVariable) CloneWithKey(other *DvVariable, deep bool) *DvVariable {
+	if item == nil {
+		item = &DvVariable{}
+	}
+	item.CloneExceptKey(other, deep)
+	item.Name = other.Name
+	return item
+}
+
 func (item *DvVariable) MergeObjectIntoObject(other *DvVariable, replace bool, deep bool) {
 	if item == nil || other == nil || len(other.Fields) == 0 {
 		return
@@ -909,3 +918,4 @@ func (item *DvVariable) MergeArraysByIds(other *DvVariable, ids []string, mode i
 		}
 	}
 }
+

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvsecurity"
@@ -191,91 +192,168 @@ func GetEnvironment(ctx *dvcontext.RequestContext) *dvevaluation.DvObject {
 }
 
 func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestContext) {
+	env := GetEnvironment(ctx)
 	if result != "" {
-		p := strings.Index(result, ":")
-		level := ""
-		if p >= 0 {
-			level = strings.ToLower(result[:p])
-			result = result[p+1:]
+		level, varName, path := GetLevelMainPath(result)
+		if path != "" {
+			dat, ok := ReadActionResult(result, ctx)
+			if !ok {
+				data = dvevaluation.CreateDvVariableByPathAndData(path, data, nil)
+			} else {
+				dvevaluation.UpdateAnyVariables(dat, data, path, dvevaluation.UPDATE_MODE_REPLACE, nil, env)
+				data = dat
+			}
 		}
 		if ctx != nil && level != "global" {
 			if ctx.LocalContextEnvironment != nil && level != "request" {
 				if level != "" && level[0] >= '1' && level[0] <= '9' {
 					levelVal, err := strconv.Atoi(level)
 					if err == nil {
-						ctx.LocalContextEnvironment.SetAtParent(result, data, levelVal)
+						ctx.LocalContextEnvironment.SetAtParent(varName, data, levelVal)
 					} else {
 						dvlog.PrintfError("Unknown level %s", level)
 					}
 				} else {
-					ctx.LocalContextEnvironment.Set(result, data)
+					ctx.LocalContextEnvironment.Set(varName, data)
 				}
 			} else {
-				ctx.PrimaryContextEnvironment.Set(result, data)
+				ctx.PrimaryContextEnvironment.Set(varName, data)
 			}
 		} else {
-			switch data.(type) {
-			case string:
-				dvparser.SetGlobalPropertiesValue(result, data.(string))
-			}
+			dvparser.SetGlobalPropertiesAnyValue(varName, data)
 		}
 	}
 }
 
 func DeleteActionResult(result string, ctx *dvcontext.RequestContext) {
 	if result != "" {
-		p := strings.Index(result, ":")
-		level := ""
-		if p >= 0 {
-			level = strings.ToLower(result[:p])
-			result = result[p+1:]
-		}
+		level, varName, path := GetLevelMainPath(result)
+		var res interface{}
+		var ok bool
+		var env *dvevaluation.DvObject = nil
 		if ctx != nil && level != "global" {
 			if ctx.LocalContextEnvironment != nil && level != "request" {
 				if level != "" && level[0] >= '1' && level[0] <= '9' {
 					levelVal, err := strconv.Atoi(level)
 					if err == nil {
-						ctx.LocalContextEnvironment.DeleteAtParent(result, levelVal)
+						if path == "" {
+							ctx.LocalContextEnvironment.DeleteAtParent(varName, levelVal)
+						} else {
+							res, ok = ctx.LocalContextEnvironment.ReadAtParent(varName, levelVal)
+							if ok {
+								res, _, err = dvjson.RemovePathOfAny(res, path, false, ctx.LocalContextEnvironment)
+								if err != nil {
+									log.Printf("Cannot remove %s : %v", path, err)
+								} else {
+									ctx.LocalContextEnvironment.SetAtParent(varName, res, levelVal)
+								}
+							}
+						}
 					} else {
 						dvlog.PrintfError("Unknown level %s", level)
 					}
 				} else {
-					ctx.LocalContextEnvironment.Delete(result)
+					if path == "" {
+						ctx.LocalContextEnvironment.Delete(varName)
+					} else {
+						env = ctx.LocalContextEnvironment
+					}
 				}
 			} else {
-				ctx.PrimaryContextEnvironment.Delete(result)
+				if path == "" {
+					ctx.PrimaryContextEnvironment.Delete(varName)
+				} else {
+					env = ctx.PrimaryContextEnvironment
+				}
 			}
 		} else {
-			dvparser.RemoveGlobalPropertiesValue(result)
+			dvparser.RemoveGlobalPropertiesValue(varName)
+		}
+		if path != "" && env != nil {
+			res, ok = env.Get(varName)
+			var err error
+			if ok {
+				res, _, err = dvjson.RemovePathOfAny(res, path, false, env)
+				if err != nil {
+					log.Printf("Cannot remove %s : %v", path, err)
+				} else {
+					env.Set(varName, res)
+				}
+			}
 		}
 	}
 }
 
+func GetLevelMainPath(result string) (string, string, string) {
+	p := strings.Index(result, ":")
+	level := ""
+	path := ""
+	if p >= 0 {
+		level = strings.ToLower(result[:p])
+		result = result[p+1:]
+	}
+	p = strings.Index(result, ".")
+	if p >= 0 {
+		path = result[p+1:]
+		result = result[:p]
+	}
+	return level, result, path
+}
+
 func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interface{}, ok bool) {
+	env := GetEnvironment(ctx)
 	if result != "" {
-		p := strings.Index(result, ":")
-		level := ""
-		if p >= 0 {
-			level = strings.ToLower(result[:p])
-			result = result[p+1:]
+		if result[0] == '\'' && result[len(result)-1] == '\'' && len(result) >= 2 {
+			return result[1 : len(result)-1], true
 		}
+		level, varName, path := GetLevelMainPath(result)
 		if ctx != nil && level != "global" {
-			if ctx.LocalContextEnvironment != nil && level != "request" {
-				if level != "" && level[0] >= '1' && level[0] <= '9' {
-					levelVal, err := strconv.Atoi(level)
-					if err == nil {
-						ctx.LocalContextEnvironment.DeleteAtParent(result, levelVal)
+			switch level {
+			case "":
+				res, ok = env.Get(varName)
+			case "_":
+				j, err := dvjson.ParseAny(result[2:])
+				if err != nil {
+					dvlog.PrintfError("Failed to convert to json %s: %v", result, err)
+					j = nil
+					ok = false
+				}
+				res = j
+			case "$":
+				rs, err := env.EvaluateAnyTypeExpression(result[2:])
+				if err != nil {
+					dvlog.PrintfError("Failed to evaluate %s: %v", result, err)
+					rs = nil
+					ok = false
+				}
+				res = rs
+			default:
+				if ctx.LocalContextEnvironment != nil && level != "request" {
+					if level[0] >= '1' && level[0] <= '9' {
+						levelVal, err := strconv.Atoi(level)
+						if err == nil {
+							res, ok = ctx.LocalContextEnvironment.ReadAtParent(varName, levelVal)
+						} else {
+							dvlog.PrintfError("Unknown level %s", level)
+						}
 					} else {
-						dvlog.PrintfError("Unknown level %s", level)
+						res, ok = ctx.LocalContextEnvironment.Get(varName)
 					}
 				} else {
-					res, ok = ctx.LocalContextEnvironment.Properties[result]
+					res, ok = ctx.PrimaryContextEnvironment.Get(varName)
 				}
-			} else {
-				res, ok = ctx.PrimaryContextEnvironment.Properties[result]
 			}
 		} else {
-			res, ok = dvparser.GlobalProperties[result]
+			res, ok = dvparser.GlobalProperties[varName]
+		}
+		if ok && path != "" {
+			var err error
+			env := GetEnvironment(ctx)
+			res, _, err = dvjson.ReadPathOfAny(res, path, false, env)
+			if err != nil {
+				res = nil
+				ok = false
+			}
 		}
 	}
 	return

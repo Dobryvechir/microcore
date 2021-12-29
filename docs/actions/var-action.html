@@ -76,9 +76,28 @@ Make conversions with variables
        number in the version.
        The "def_version" is used if the variable "var" does not contain a valid
         version ("N. ... .N, examples of valid versions: 1.0.0.0.1, 1.0.19, 1.2, 2, 34, 34.1)
+    "remove_vars" array of string, removes variables from the environment (by name)
+    "create_object" map of strings to map of strings to strings, creates the object based
+      on map of strings to strings and stored at the variable having the name of the key of the primary map
+    "create_array" map of strings to array of strings, creates the array based
+      on array of strings and stored at the variable having the name of the key of the primary map
 }
 Example:
 var:{"clone":{"CLONED_A":"A"},"replace":{"source":"A","reg-expr":"a(x+)b","replacement":"${1}cd"}}
+Note: all variables can contain the following parts in the name:
+    [level][variable name][path]
+    [level] and [path] are optional. [level] can be "global" or "request" or number (if it is the number,
+    it is the number of closures beyond the current environment). "global" means that the change
+    is made at the level of global variables and this will effect the following http requests.
+    "request" level is the starting level at which the request variables were stored.
+    [path] is useful only if the variable is json, and this is the path inside json
+    Examples: "Global:M2M_TOKEN", "request:URL", "8:MAINJSON.0.name"
+    When variable is read, it is also assumed that
+    A) if it is in single quotes, it is a plain string,
+    not taken from the environment.
+    Example: "'key'" is evaluated as a string 'key' and it is not taken from the environment
+    B) if the [level] is "_", it is considered as the value to be converted into json
+    C) if the [level] is "$", it is considered as the expression to be evaluated
 </pre>
 <h1>Replacement examples</h1>
 <table>

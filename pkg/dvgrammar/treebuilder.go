@@ -92,6 +92,8 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (*BuildNode
 				current.Children = make([]*BuildNode, 1, 2)
 				current.Children[0] = valueNode
 				current.Value = nil
+				current.PreAttributes = nil
+				current.PostAttributes = nil
 			}
 			if current.Children == nil {
 				if _,isUniOper:=opt.UnaryOperators[operator];isUniOper {
@@ -123,7 +125,7 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (*BuildNode
 						node.Children[0] = lastNode
 						node.Operator = operator
 						lastNode.Parent = node
-						current.Children = append(current.Children, node)
+						current.Children[lastIndex] = node
 						lastNode = newNode(node, opt, currentPreAttributes)
 						currentPreAttributes = currentPreAttributes[:0]
 						node.Children[1] = lastNode

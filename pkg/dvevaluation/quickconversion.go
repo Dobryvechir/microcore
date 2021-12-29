@@ -115,47 +115,47 @@ func ConvertUnsignedInt64ToBuf(buf []byte, v uint64) []byte {
 	return buf
 }
 
-func ConvertSimpleTypeToBuf(buf []byte, v interface{}) ([]byte, bool) {
+func ConvertSimpleTypeToBuf(buf []byte, v interface{}) ([]byte, bool,int) {
 	switch v.(type) {
 	case int:
-		return ConvertIntToBuf(buf, v.(int)), true
+		return ConvertIntToBuf(buf, v.(int)), true, FIELD_NUMBER
 	case int64:
-		return ConvertInt64ToBuf(buf, v.(int64)), true
+		return ConvertInt64ToBuf(buf, v.(int64)), true, FIELD_NUMBER
 	case int8:
-		return ConvertInt64ToBuf(buf, int64(v.(int8))), true
+		return ConvertInt64ToBuf(buf, int64(v.(int8))), true, FIELD_NUMBER
 	case int16:
-		return ConvertInt64ToBuf(buf, int64(v.(int16))), true
+		return ConvertInt64ToBuf(buf, int64(v.(int16))), true, FIELD_NUMBER
 	case int32:
-		return ConvertInt64ToBuf(buf, int64(v.(int32))), true
+		return ConvertInt64ToBuf(buf, int64(v.(int32))), true, FIELD_NUMBER
 	case uint:
-		return ConvertUnsignedIntToBuf(buf, v.(uint)), true
+		return ConvertUnsignedIntToBuf(buf, v.(uint)), true, FIELD_NUMBER
 	case uint64:
-		return ConvertUnsignedInt64ToBuf(buf, v.(uint64)), true
+		return ConvertUnsignedInt64ToBuf(buf, v.(uint64)), true, FIELD_NUMBER
 	case uint8:
-		return ConvertUnsignedInt64ToBuf(buf, uint64(v.(uint8))), true
+		return ConvertUnsignedInt64ToBuf(buf, uint64(v.(uint8))), true, FIELD_NUMBER
 	case uint16:
-		return ConvertUnsignedInt64ToBuf(buf, uint64(v.(uint16))), true
+		return ConvertUnsignedInt64ToBuf(buf, uint64(v.(uint16))), true, FIELD_NUMBER
 	case uint32:
-		return ConvertUnsignedInt64ToBuf(buf, uint64(v.(uint32))), true
+		return ConvertUnsignedInt64ToBuf(buf, uint64(v.(uint32))), true, FIELD_NUMBER
 	case bool:
 		if v.(bool) {
 			buf = append(buf, bytesTrue...)
 		} else {
 			buf = append(buf, bytesFalse...)
 		}
-		return buf, true
+		return buf, true, FIELD_BOOLEAN
 	case float32:
 		buf = append(buf, strconv.FormatFloat(float64(v.(float32)), 'g', -1, 32)...)
-		return buf, true
+		return buf, true, FIELD_NUMBER
 	case float64:
 		buf = append(buf, strconv.FormatFloat(v.(float64), 'g', -1, 64)...)
-		return buf, true
+		return buf, true,FIELD_NUMBER
 	}
-	return buf, false
+	return buf, false, FIELD_UNDEFINED
 }
 
 func ConvertSimpleTypeToString(v interface{}) (string, bool) {
-	buf, ok := ConvertSimpleTypeToBuf(make([]byte, 0, 100), v)
+	buf, ok, _ := ConvertSimpleTypeToBuf(make([]byte, 0, 100), v)
 	return string(buf), ok
 }
 
