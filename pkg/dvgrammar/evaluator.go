@@ -4,7 +4,7 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 ************************************************************************/
 package dvgrammar
 
-func Compile(data []byte, context *ExpressionContext) (*BuildNode, error) {
+func Compile(data []byte, context *ExpressionContext) ([]*BuildNode, error) {
 	CheckCreateGrammarTable(context.Rules)
 	tokens, err := Tokenize(context.Reference, data, context.Rules.Grammar)
 	if err != nil {
@@ -17,13 +17,13 @@ func Compile(data []byte, context *ExpressionContext) (*BuildNode, error) {
 	return tree, nil
 }
 
-func CompileOrCache(data []byte, context *ExpressionContext, cache bool) (*BuildNode, error) {
+func CompileOrCache(data []byte, context *ExpressionContext, cache bool) ([]*BuildNode, error) {
 	if !cache {
 		return Compile(data, context)
 	}
 	key := string(data)
 	if context.Rules.cache == nil {
-		context.Rules.cache = make(map[string]*BuildNode)
+		context.Rules.cache = make(map[string][]*BuildNode)
 	}
 	tree, ok := context.Rules.cache[key]
 	if ok {
@@ -40,13 +40,21 @@ func CompileOrCache(data []byte, context *ExpressionContext, cache bool) (*Build
 
 func FastEvaluation(data []byte, context *ExpressionContext) (*ExpressionValue, error) {
 	cache := (context.VisitorOptions & VISITOR_OPTION_CASHED) != 0
-	tree, err := CompileOrCache(data, context, cache)
+	forest, err := CompileOrCache(data, context, cache)
 	if err != nil {
 		return nil, err
 	}
-	value, err2 := tree.ExecuteExpression(context)
-	if !cache {
-		fullTreeClean(tree)
+	var value *ExpressionValue
+	n := len(forest)
+	for i := 0; i < n; i++ {
+		tree := forest[i]
+		value, err = tree.ExecuteExpression(context)
+		if !cache {
+			fullTreeClean(tree)
+		}
+		if err != nil {
+			break
+		}
 	}
-	return value, err2
+	return value, err
 }

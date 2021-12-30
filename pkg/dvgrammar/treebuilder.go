@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvgrammar
 
@@ -35,6 +35,14 @@ func fullTreeClean(tree *BuildNode) {
 	}
 }
 
+func fullTreeForestClean(forest []*BuildNode, tree *BuildNode) {
+	n := len(forest)
+	for i := 0; i < n; i++ {
+		fullTreeClean(forest[i])
+	}
+	fullTreeClean(tree)
+}
+
 func halfTreeClean(tree *BuildNode) {
 	if tree != nil {
 		tree.Parent = nil
@@ -54,15 +62,32 @@ func indexOfNode(nodes []*BuildNode, node *BuildNode) int {
 	return -1
 }
 
-func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (*BuildNode, error) {
+func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (forest []*BuildNode, err error) {
+	forest = make([]*BuildNode, 0, 16)
 	currentPreAttributes := make([]string, 0, 16)
 	tree := newNode(nil, opt, nil)
 	current := tree
 	amount := len(tokens)
+	group := 0
+	tokenRunner:
 	for i := 0; i < amount; i++ {
 		value := &tokens[i]
 		operator := value.Value
-		if value.DataType != TYPE_OPERATOR && value.DataType != TYPE_CONTROL {
+		if value.DataType == TYPE_CONTROL {
+			switch operator {
+			case ";",",":
+				forest, err = placeTreeToForest(forest, current, tree, tokens, opt, currentPreAttributes, group)
+				if err!=nil {
+					return
+				}
+				if operator==";" {
+					group++
+				}
+				tree = newNode(nil, opt, nil)
+				current = tree
+				continue tokenRunner
+			}
+		} else if value.DataType != TYPE_OPERATOR {
 			operator = dataOperator
 		}
 		properties, isOperator := opt.Operators[operator]
@@ -73,82 +98,87 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (*BuildNode
 				isOperator = true
 				i--
 			} else {
-				fullTreeClean(tree)
+				fullTreeForestClean(forest, tree)
 				return nil, errorMessage("No operator between values", value)
 			}
 		}
 		if isOperator {
 			if len(currentPreAttributes) != 0 {
-				fullTreeClean(tree)
-				return nil, errorMessage("Unexpected unary operator before "+operator, value)
-			}
-			if current.Value != nil {
-				valueNode := &BuildNode{
-					Parent: current,
-					PreAttributes: current.PreAttributes,
-					PostAttributes: current.PostAttributes,
-					Value: current.Value,
-				}
-				current.Children = make([]*BuildNode, 1, 2)
-				current.Children[0] = valueNode
-				current.Value = nil
-				current.PreAttributes = nil
-				current.PostAttributes = nil
-			}
-			if current.Children == nil {
-				if _,isUniOper:=opt.UnaryOperators[operator];isUniOper {
+				if _, isUniOper := opt.UnaryOperators[operator]; isUniOper {
 					isOperator = false
 				} else {
-					fullTreeClean(tree)
-					return nil, errorMessage("Unexpected "+operator, value)
+					fullTreeForestClean(forest, tree)
+					return nil, errorMessage("Unexpected unary operator before "+operator, value)
 				}
 			} else {
-				node := newNode(current, opt, nil)
-				if current.Operator == "" {
-					current.Operator = operator
-					current.Children = append(current.Children, node)
-					current = node
-				} else {
-					precedence := properties.Precedence
-					for current.Parent != nil && opt.Operators[current.Parent.Operator] != nil &&
-						(current.closed || opt.Operators[current.Operator].Precedence > precedence) {
-						current = current.Parent
+				if current.Value != nil {
+					valueNode := &BuildNode{
+						Parent:         current,
+						PreAttributes:  current.PreAttributes,
+						PostAttributes: current.PostAttributes,
+						Value:          current.Value,
 					}
-					if current.Operator == operator && properties.Multi {
+					current.Children = make([]*BuildNode, 1, 2)
+					current.Children[0] = valueNode
+					current.Value = nil
+					current.PreAttributes = nil
+					current.PostAttributes = nil
+				}
+				if current.Children == nil {
+					if _, isUniOper := opt.UnaryOperators[operator]; isUniOper {
+						isOperator = false
+					} else {
+						fullTreeForestClean(forest, tree)
+						return nil, errorMessage("Unexpected "+operator, value)
+					}
+				} else {
+					node := newNode(current, opt, nil)
+					if current.Operator == "" {
+						current.Operator = operator
 						current.Children = append(current.Children, node)
 						current = node
-					} else if !current.closed && opt.Operators[current.Operator].Precedence < precedence {
-						//reattach the node
-						lastIndex := len(current.Children) - 1
-						lastNode := current.Children[lastIndex]
-						node.Children = make([]*BuildNode, 2, 3)
-						node.Children[0] = lastNode
-						node.Operator = operator
-						lastNode.Parent = node
-						current.Children[lastIndex] = node
-						lastNode = newNode(node, opt, currentPreAttributes)
-						currentPreAttributes = currentPreAttributes[:0]
-						node.Children[1] = lastNode
-						current = lastNode
 					} else {
-						//attach at up position
-						node.Parent = current.Parent
-						node.Children = make([]*BuildNode, 1, 2)
-						node.Children[0] = current
-						node.Operator = operator
-						if node.Parent == nil {
-							tree = node
-						} else {
-							index := indexOfNode(node.Parent.Children, current)
-							if index < 0 {
-								fullTreeClean(tree)
-								return nil, errorMessage("Tree broken", value)
-							}
-							node.Parent.Children[index] = node
+						precedence := properties.Precedence
+						for current.Parent != nil && opt.Operators[current.Parent.Operator] != nil &&
+							(current.closed || opt.Operators[current.Operator].Precedence > precedence) {
+							current = current.Parent
 						}
-						current.Parent = node
-						current = newNode(node, opt, nil)
-						node.Children = append(node.Children, current)
+						if current.Operator == operator && properties.Multi {
+							current.Children = append(current.Children, node)
+							current = node
+						} else if !current.closed && opt.Operators[current.Operator].Precedence < precedence {
+							//reattach the node
+							lastIndex := len(current.Children) - 1
+							lastNode := current.Children[lastIndex]
+							node.Children = make([]*BuildNode, 2, 3)
+							node.Children[0] = lastNode
+							node.Operator = operator
+							lastNode.Parent = node
+							current.Children[lastIndex] = node
+							lastNode = newNode(node, opt, currentPreAttributes)
+							currentPreAttributes = currentPreAttributes[:0]
+							node.Children[1] = lastNode
+							current = lastNode
+						} else {
+							//attach at up position
+							node.Parent = current.Parent
+							node.Children = make([]*BuildNode, 1, 2)
+							node.Children[0] = current
+							node.Operator = operator
+							if node.Parent == nil {
+								tree = node
+							} else {
+								index := indexOfNode(node.Parent.Children, current)
+								if index < 0 {
+									fullTreeForestClean(forest, tree)
+									return nil, errorMessage("Tree broken", value)
+								}
+								node.Parent.Children[index] = node
+							}
+							current.Parent = node
+							current = newNode(node, opt, nil)
+							node.Children = append(node.Children, current)
+						}
 					}
 				}
 			}
@@ -176,7 +206,7 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (*BuildNode
 				case ")":
 					for current.Operator != operator {
 						if current.Parent == nil {
-							fullTreeClean(tree)
+							fullTreeForestClean(forest, tree)
 							return nil, errorMessage("Unexpected )", value)
 						}
 						current = current.Parent
@@ -184,7 +214,7 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (*BuildNode
 					if current.Parent != nil {
 						index := indexOfNode(current.Parent.Children, current)
 						if index < 0 {
-							fullTreeClean(tree)
+							fullTreeForestClean(forest, tree)
 							return nil, errorMessage("Broken tree", value)
 						}
 						node := current.Children[0]
@@ -210,23 +240,31 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (*BuildNode
 						current = current.Parent
 					}
 				default:
-					fullTreeClean(tree)
+					fullTreeForestClean(forest, tree)
 					return nil, errorMessage("Not allowed operator "+operator, value)
 				}
 			}
 		}
 	}
+	return placeTreeToForest(forest, current, tree, tokens, opt, currentPreAttributes, group)
+}
+
+func placeTreeToForest(forest []*BuildNode, current *BuildNode, tree *BuildNode,
+	tokens []Token, opt *GrammarBaseDefinition,currentPreAttributes []string,
+	group int) ([]*BuildNode, error) {
 	for current != nil && (current.Operator == "" || opt.Operators[current.Operator] != nil) {
 		current = current.Parent
 	}
 	if current != nil {
-		fullTreeClean(tree)
+		fullTreeForestClean(forest, tree)
 		return nil, errorMessage("Unexpected end of expression", &tokens[len(tokens)-1])
 	}
 	if len(currentPreAttributes) != 0 {
-		fullTreeClean(tree)
+		fullTreeForestClean(forest, tree)
 		return nil, errorMessage("Unexpected unary operator at the end of expression", &tokens[len(tokens)-1])
 	}
 	halfTreeClean(tree)
-	return tree, nil
+	tree.Group = group
+	forest = append(forest, tree)
+	return forest, nil
 }

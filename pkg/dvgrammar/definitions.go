@@ -76,6 +76,7 @@ type BuildNode struct {
 	Value          *Token
 	PreAttributes  []string
 	PostAttributes []string
+	Group          int
 	closed         bool
 }
 
@@ -109,7 +110,7 @@ type GrammarRuleDefinitions struct {
 	UnaryPostVisitors map[string]UnaryVisitor
 	UnaryPreVisitors  map[string]UnaryVisitor
 	DataGetter        func(*Token, *ExpressionContext) (*ExpressionValue, error)
-	cache             map[string]*BuildNode
+	cache             map[string][]*BuildNode
 	Grammar           *GrammarTable
 }
 

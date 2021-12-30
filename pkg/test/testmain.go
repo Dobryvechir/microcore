@@ -12,7 +12,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("", "(-1 - 2)*3","-9", KindInteger)
+	testEvaluationSingle("", "1+2,3+4","7", KindInteger)
 	showResume()
 }
 

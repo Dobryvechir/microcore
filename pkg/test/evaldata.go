@@ -45,6 +45,9 @@ func testEvaluation() {
 	testEvaluationSingle("", "'CAT' && 'DOG'","DOG", KindString)
 	testEvaluationSingle("", "'CAT' || 'DOG'","CAT", KindString)
 	testEvaluationSingle("", "0 && 'DOG'","0", KindString)
+	testEvaluationSingle("", "1+2,3+4","7", KindInteger)
+	testEvaluationSingle("", "1+2;3+4","7", KindInteger)
+	testEvaluationSingle("", "1+2,3+4;5+6;7+8,9+10","19", KindInteger)
 
 	testEvaluationSingle("S=5", "S+1","51", KindString)
 	testEvaluationSingle("S=5","+S+1", "6", KindInteger)
