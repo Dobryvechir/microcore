@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvevaluation
 
@@ -10,11 +10,16 @@ import (
 	"strings"
 )
 
-type DvFunc func(interface{}, []interface{}) (interface{}, error)
+type DvFunc func(*dvgrammar.ExpressionContext, interface{}, []interface{}) (interface{}, error)
+type DvSpecialFunc func([]*dvgrammar.BuildNode, *dvgrammar.ExpressionContext, []*dvgrammar.BuildNode) (*dvgrammar.ExpressionValue, bool, error)
+
 type DvFunction struct {
-	Name string
-	Args []string
-	Fn   DvFunc
+	Name      string
+	Args      []string
+	Fn        DvFunc
+	FnSpecial DvSpecialFunc
+	Immediate bool
+	Special   bool
 }
 
 var dvFunctionPrototypeMap = map[string]interface{}{
@@ -25,7 +30,7 @@ var dvFunctionPrototypeMap = map[string]interface{}{
 
 var DvFunctionPrototype *DvObject
 
-func BindDvFunction(self interface{}, args []interface{}) (interface{}, error) {
+func BindDvFunction(context *dvgrammar.ExpressionContext, self interface{}, args []interface{}) (interface{}, error) {
 	funcObj, ok := self.(*DvObject)
 	if !ok || !IsFunction(funcObj) {
 		return nil, errors.New(" is not a function in bind")
@@ -34,7 +39,7 @@ func BindDvFunction(self interface{}, args []interface{}) (interface{}, error) {
 		return funcObj, nil
 	}
 	n := len(args) - 1
-	var proc = func(self1 interface{}, args1 []interface{}) (interface{}, error) {
+	var proc = func(context *dvgrammar.ExpressionContext, self1 interface{}, args1 []interface{}) (interface{}, error) {
 		l := len(args1)
 		argsTotal := make([]interface{}, n+l)
 		for i := 0; i < n; i++ {
@@ -43,7 +48,7 @@ func BindDvFunction(self interface{}, args []interface{}) (interface{}, error) {
 		for i := 0; i < l; i++ {
 			argsTotal[i+n] = args1[i]
 		}
-		return ExecFunction(funcObj, args[0], argsTotal)
+		return ExecFunction(context, funcObj, args[0], argsTotal)
 	}
 	newArgs := GetDvFunctionArguments(funcObj)
 	if len(newArgs) <= n {
@@ -108,27 +113,32 @@ func IsFunction(v interface{}) bool {
 	return false
 }
 
-func ExecFunction(fn interface{}, self interface{}, arguments []interface{}) (interface{}, error) {
+func ExecFunction(context *dvgrammar.ExpressionContext, fn interface{}, self interface{}, arguments []interface{}) (interface{}, error) {
 	switch fn.(type) {
 	case *DvFunction:
 		dvFunction, _ := fn.(DvFunction)
-		v, err := dvFunction.Fn(self, arguments)
+		v, err := dvFunction.Fn(context, self, arguments)
 		if err != nil {
 			return v, errors.New(err.Error() + " in " + dvFunction.ToString())
 		}
 		return v, nil
 	case *DvObject:
-		return ExecFunction(fn.(*DvObject).Value, self, arguments)
+		return ExecFunction(context, fn.(*DvObject).Value, self, arguments)
+	case *DvVariable:
+		d:=fn.(*DvVariable)
+		if d.Kind==FIELD_FUNCTION && d.Extra!=nil {
+			return ExecFunction(context, d.Extra, self, arguments)
+		}
 	}
 	return nil, errors.New(" is not a function")
 }
 
-func CallDvFunction(self interface{}, args []interface{}) (interface{}, error) {
+func CallDvFunction(context *dvgrammar.ExpressionContext, self interface{}, args []interface{}) (interface{}, error) {
 	//TODO
 	return nil, nil
 }
 
-func ApplyDvFunction(self interface{}, args []interface{}) (interface{}, error) {
+func ApplyDvFunction(context *dvgrammar.ExpressionContext, self interface{}, args []interface{}) (interface{}, error) {
 	//TODO
 	return nil, nil
 }

@@ -7,6 +7,7 @@ package dvevaluation
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
+	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -354,4 +355,26 @@ func CreateDvVariableByPathAndData(path string, data interface{}, parent *DvVari
 	}
 	parent.CloneWithKey(dvvar, false)
 	return parent
+}
+
+func AnyToDvGrammarExpressionValue(v interface{}) *dvgrammar.ExpressionValue {
+    if v==nil {
+		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}
+	}
+	switch v.(type) {
+	case string:
+		return &dvgrammar.ExpressionValue{Value: v,DataType: dvgrammar.TYPE_STRING}
+	case *DvVariable:
+		return v.(*DvVariable).ToDvGrammarExpressionValue()
+	case int64:
+		return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_NUMBER_INT}
+	case float64:
+		return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_NUMBER}
+	case bool:
+		return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_BOOLEAN}
+	case nil:
+		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}
+	}
+	log.Printf("Unknown type %v", v)
+	return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}
 }

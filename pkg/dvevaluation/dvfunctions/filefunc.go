@@ -7,10 +7,11 @@ package dvfunctions
 import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"io/ioutil"
 )
 
-func FileRead(sels interface{}, args []interface{}) (interface{}, error) {
+func FileRead(context *dvgrammar.ExpressionContext,sels interface{}, args []interface{}) (interface{}, error) {
 	n := len(args)
 	var fileName string
 	if n > 0 {

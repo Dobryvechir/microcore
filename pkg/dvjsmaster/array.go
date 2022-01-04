@@ -7,6 +7,7 @@ package dvjsmaster
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 )
 
 func array_init() {
@@ -15,22 +16,26 @@ func array_init() {
 			{
 				Name: []byte("push"),
 				Kind: dvevaluation.FIELD_FUNCTION,
-				Extra:   Array_push,
+				Extra:   &dvevaluation.DvFunction {
+					Fn: Array_push,
+				},
 			},
 			{
 				Name: []byte("slice"),
 				Kind: dvevaluation.FIELD_FUNCTION,
-				Extra:   Array_slice,
+				Extra: &dvevaluation.DvFunction {
+					Fn: Array_slice,
+				},
 			},
 		},
 		Kind: dvevaluation.FIELD_OBJECT,
 	}
 }
 
-func Array_push(context *dvevaluation.DvContext, thisVariable *dvevaluation.DvVariable, params []*dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
+func Array_push(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-func Array_slice(context *dvevaluation.DvContext, thisVariable *dvevaluation.DvVariable, params []*dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
+func Array_slice(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
 	return nil, nil
 }

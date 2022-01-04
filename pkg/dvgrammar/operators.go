@@ -96,13 +96,11 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			Precedence:  4,
 			Multi:       true,
 			RightToLeft: true,
-			Closing:     ":",
 		},
 		":": &InterOperator{
 			Precedence:  4,
 			Multi:       true,
 			RightToLeft: true,
-			Opening:     "?",
 		},
 		"||": &InterOperator{
 			Precedence:         5,

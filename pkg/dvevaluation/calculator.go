@@ -76,6 +76,7 @@ var CalculatorPostUnaryMap = map[string]dvgrammar.UnaryVisitor{
 
 var CalculatorRules = &dvgrammar.GrammarRuleDefinitions{
 	Visitors:          CalculatorOperators,
+	BracketVisitor:    BracketProcessors,
 	DataGetter:        CalculatorDataGetter,
 	EvaluateOptions:   0,
 	UnaryPreVisitors:  CalculatorUnaryMap,

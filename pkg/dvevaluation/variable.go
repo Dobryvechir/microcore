@@ -43,8 +43,6 @@ var typeOf map[int]string = map[int]string{
 	FIELD_FUNCTION:  "function",
 }
 
-type DvvFunction func(*DvContext, *DvVariable, []*DvVariable) (*DvVariable, error)
-
 type QuickSearchInfo struct {
 	Looker map[string]*DvVariable
 	Key    string
@@ -116,6 +114,15 @@ func ConvertStringArrayToDvVariableArray(data []string) (res []*DvVariable) {
 	res = make([]*DvVariable, n)
 	for i := 0; i < n; i++ {
 		res[i] = DvVariableFromString(nil, data[i])
+	}
+	return
+}
+
+func ConvertStringArrayToInterfaceArray(data []string) (res []interface{}) {
+	n := len(data)
+	res = make([]interface{}, n)
+	for i := 0; i < n; i++ {
+		res[i] = data[i]
 	}
 	return
 }

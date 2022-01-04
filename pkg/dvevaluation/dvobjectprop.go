@@ -30,7 +30,7 @@ func (obj *DvObject) GetObjectType() int {
 
 func (obj *DvObject) ToString() string {
 	if fn, ok := obj.Get("toString"); ok && IsFunction(fn) {
-		v, err := ExecFunction(fn, obj, nil)
+		v, err := ExecFunction(nil, fn, obj, nil)
 		if err == nil {
 			return AnyToString(v)
 		}

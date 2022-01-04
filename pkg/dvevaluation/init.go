@@ -7,7 +7,6 @@ package dvevaluation
 
 func Init() bool {
 	dvfunction_init()
-	functionfn_init()
 	return true
 }
 

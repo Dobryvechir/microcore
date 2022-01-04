@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"strconv"
 	"strings"
@@ -917,5 +918,26 @@ func (item *DvVariable) MergeArraysByIds(other *DvVariable, ids []string, mode i
 			lookerMain[k] = v
 		}
 	}
+}
+
+func (item *DvVariable) ToDvGrammarExpressionValue() *dvgrammar.ExpressionValue {
+	if item == nil || item.Kind == FIELD_NULL || item.Kind == FIELD_UNDEFINED {
+		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}
+	}
+	switch item.Kind {
+	case FIELD_BOOLEAN:
+		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_BOOLEAN, Value: len(item.Value) == 4 && item.Value[0] == 't'}
+	case FIELD_STRING:
+		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_STRING, Value: string(item.Value)}
+	case FIELD_NUMBER:
+		s := string(item.Value)
+		f, ok := AnyToNumberInt(s)
+		if !ok || strings.Contains(s, ".") {
+			return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NUMBER, Value: AnyToNumber(s)}
+		} else {
+			return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NUMBER_INT, Value: f}
+		}
+	}
+	return &dvgrammar.ExpressionValue{Value: item, DataType: dvgrammar.TYPE_OBJECT}
 }
 

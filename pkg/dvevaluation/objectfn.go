@@ -332,8 +332,8 @@ func QuickVariableEvaluation(parent *DvVariable, data string) (res *DvVariable, 
 	return
 }
 
-func QuickVariableArrayEvaluation(parent *DvVariable, data []string) (res []*DvVariable, err error) {
-	res = make([]*DvVariable, len(data))
+func QuickVariableArrayEvaluation(parent *DvVariable, data []string) (res []interface{}, err error) {
+	res = make([]interface{}, len(data))
 	for i, v := range data {
 		res[i], err = QuickVariableEvaluation(parent, v)
 		if err != nil {

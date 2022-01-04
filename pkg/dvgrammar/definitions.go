@@ -32,6 +32,7 @@ const (
 	TYPE_NAN        = iota
 	TYPE_FUNCTION   = iota
 	TYPE_DATA       = iota
+	TYPE_OBJECT     = iota
 	TYPE_MASK       = 0x7ff
 )
 
@@ -81,6 +82,7 @@ type BuildNode struct {
 }
 
 type InterOperatorVisitor func([]*ExpressionValue, *BuildNode, *ExpressionContext, string) (*ExpressionValue, error)
+type BracketOperatorVisitor func(*ExpressionValue,*BuildNode, *ExpressionContext, []*BuildNode) (*ExpressionValue, *ExpressionValue, bool, error, bool)
 
 type UnaryVisitor func(*ExpressionValue, *BuildNode, *ExpressionContext, string) (*ExpressionValue, error)
 
@@ -107,6 +109,7 @@ type GrammarRuleDefinitions struct {
 	Recognizers       []TypeRecognizer
 	EvaluateOptions   int
 	Visitors          map[string]InterOperatorVisitor
+	BracketVisitor    map[string]BracketOperatorVisitor
 	UnaryPostVisitors map[string]UnaryVisitor
 	UnaryPreVisitors  map[string]UnaryVisitor
 	DataGetter        func(*Token, *ExpressionContext) (*ExpressionValue, error)

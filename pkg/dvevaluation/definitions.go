@@ -53,3 +53,9 @@ var nullValueVersion = map[int]string{
 	ConversionOptionSimpleLike: "",
 	ConversionOptionJsonLike:   "null",
 }
+
+type DvFunctionObject struct {
+	SelfRef   interface{}
+	Context   *dvgrammar.ExpressionContext
+	Executor  *DvFunction
+}

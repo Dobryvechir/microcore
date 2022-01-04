@@ -14,9 +14,12 @@ import (
 var ObjectMaster *DvVariable = RegisterMasterVariable("Object", &DvVariable{Kind: FIELD_OBJECT})
 var ArrayMaster *DvVariable = RegisterMasterVariable("Array", &DvVariable{Kind: FIELD_OBJECT})
 
-func AssignVariableDirect(parent *DvVariable, value *DvVariable) error {
-	if value == nil {
+func AssignVariableDirect(parent *DvVariable, val interface{}) error {
+	var value *DvVariable
+	if val == nil {
 		value = &DvVariable{Kind: FIELD_UNDEFINED}
+	} else {
+		value = AnyToDvVariable(val)
 	}
 	parent.Fields = value.Fields
 	parent.Value = value.Value
@@ -85,7 +88,7 @@ func (item *DvVariable) MakeCopyWithNewKey(key string) *DvVariable {
 	}
 }
 
-func AssignVariable(parent *DvVariable, keys []string, value *DvVariable, force bool) error {
+func AssignVariable(parent *DvVariable, keys []string, value interface{}, force bool) error {
 	if parent == nil {
 		return errors.New("Cannot assign to undefined [keys:" + strings.Join(keys, ",") + "]")
 	}
@@ -137,7 +140,7 @@ func AssignVariable(parent *DvVariable, keys []string, value *DvVariable, force 
 	if parent.Fields == nil {
 		parent.Fields = make([]*DvVariable, 0, 7)
 	}
-	parent.Fields = append(parent.Fields, value.MakeCopyWithNewKey(key))
+	parent.Fields = append(parent.Fields, AnyToDvVariable(value).MakeCopyWithNewKey(key))
 	return nil
 }
 
@@ -278,7 +281,7 @@ func AssignIntToVariable(parent *DvVariable, variableDefinition string, data int
 	return nil
 }
 
-func AssignVariableToVariable(parent *DvVariable, variableDefinition string, data *DvVariable, force bool) error {
+func AssignVariableToVariable(parent *DvVariable, variableDefinition string, data interface{}, force bool) error {
 	keys, err := ConvertVariableNameToKeys(variableDefinition)
 	if err != nil {
 		return dvgrammar.EnrichErrorStr(err, "At assigning Variable to "+variableDefinition+" due to this name conversion")

@@ -36,7 +36,7 @@ func json_init() {
 
 }
 
-func JSON_stringify(context *dvevaluation.DvContext, thisVariable *dvevaluation.DvVariable, params []*dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
+func JSON_stringify(context , thisVariable *dvevaluation.DvVariable, params []*dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
 	var data []byte
 	if len(params) == 0 || params[0] == nil {
 		data = []byte{}

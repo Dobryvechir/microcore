@@ -4,6 +4,8 @@ Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 ************************************************************************/
 package dvgrammar
 
+import "errors"
+
 const dataOperator string = "DATA"
 
 func invertStrings(data []string) []string {
@@ -62,6 +64,61 @@ func indexOfNode(nodes []*BuildNode, node *BuildNode) int {
 	return -1
 }
 
+func findClosingTag(tokens []Token, pos int) (int, error) {
+	n := len(tokens)
+	var buf []byte
+	tag := tokens[pos].Value[0]
+	var closing byte
+	switch tag {
+	case '(':
+		closing = ')'
+	case '[':
+		closing = ']'
+	case '{':
+		closing = '}'
+	default:
+		return -1, errors.New("Invalid bracket " + tokens[pos].Value)
+	}
+	var nextClosing byte
+	var stackLen = 0
+	for pos++; pos < n; pos++ {
+		if len(tokens[pos].Value) == 0 {
+			continue
+		}
+		tag = tokens[pos].Value[0]
+		if tag == '(' {
+			nextClosing = ')'
+		} else if tag == '[' {
+			nextClosing = ']'
+		} else if tag == '{' {
+			nextClosing = '}'
+		} else if tag == ')' || tag == ']' || tag == '}' {
+			if stackLen == 0 {
+				if tag == closing {
+					return pos, nil
+				}
+				return -1, errors.New("Expected " + string([]byte{closing}) + " but found " + string([]byte{tag}))
+			}
+			stackLen--
+			if tag != buf[stackLen] {
+				return -1, errors.New("Expected " + string([]byte{buf[stackLen]}) + " but found " + string([]byte{tag}))
+			}
+		} else {
+			continue
+		}
+		if stackLen == 0 {
+			buf = make([]byte, 1, n-pos)
+			buf[0] = nextClosing
+		} else if stackLen < len(buf) {
+			buf[stackLen] = nextClosing
+		} else {
+			buf = append(buf, nextClosing)
+		}
+		stackLen++
+	}
+	return -1, errors.New("No closing tag " + string([]byte{closing}))
+}
+
 func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (forest []*BuildNode, err error) {
 	forest = make([]*BuildNode, 0, 16)
 	currentPreAttributes := make([]string, 0, 16)
@@ -69,22 +126,53 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (forest []*
 	current := tree
 	amount := len(tokens)
 	group := 0
-	tokenRunner:
+tokenRunner:
 	for i := 0; i < amount; i++ {
 		value := &tokens[i]
 		operator := value.Value
 		if value.DataType == TYPE_CONTROL {
 			switch operator {
-			case ";",",":
+			case ";", ",":
 				forest, err = placeTreeToForest(forest, current, tree, tokens, opt, currentPreAttributes, group)
-				if err!=nil {
+				if err != nil {
 					return
 				}
-				if operator==";" {
+				if operator == ";" {
 					group++
 				}
 				tree = newNode(nil, opt, nil)
 				current = tree
+				continue tokenRunner
+			case "(", "[", "{":
+				pos, err := findClosingTag(tokens, i)
+				if err != nil {
+					fullTreeForestClean(forest, tree)
+					return nil, err
+				}
+				subForest, err := buildExpressionTree(tokens[i+1:pos], opt)
+				if err != nil {
+					fullTreeForestClean(forest, tree)
+					return nil, err
+				}
+				i = pos
+				node := &BuildNode{
+					Children:      subForest,
+					Operator:      operator,
+					PreAttributes: invertStrings(currentPreAttributes),
+				}
+				currentPreAttributes = currentPreAttributes[:0]
+				holderNode := current
+				for holderNode.Operator != "" {
+					m := len(holderNode.Children)
+					if m == 0 {
+						return nil, errors.New("Unexpected no place for " + operator)
+					}
+					holderNode = holderNode.Children[m-1]
+				}
+				holderNode.Children = append(holderNode.Children, node)
+				if holderNode.Value == nil {
+					current.Value = &Token{DataType: TYPE_FUNCTION}
+				}
 				continue tokenRunner
 			}
 		} else if value.DataType != TYPE_OPERATOR {
@@ -250,7 +338,7 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (forest []*
 }
 
 func placeTreeToForest(forest []*BuildNode, current *BuildNode, tree *BuildNode,
-	tokens []Token, opt *GrammarBaseDefinition,currentPreAttributes []string,
+	tokens []Token, opt *GrammarBaseDefinition, currentPreAttributes []string,
 	group int) ([]*BuildNode, error) {
 	for current != nil && (current.Operator == "" || opt.Operators[current.Operator] != nil) {
 		current = current.Parent

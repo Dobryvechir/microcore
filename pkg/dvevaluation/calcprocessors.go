@@ -63,10 +63,15 @@ func ProcessorMultiply(values []*dvgrammar.ExpressionValue, tree *dvgrammar.Buil
 	var res float64 = 0
 	dataType := dvgrammar.TYPE_NUMBER
 	for i := 0; i < l; i++ {
-		if i == 0 {
-			res = AnyToNumber(values[i].Value)
+		v := values[i]
+		if v == nil {
+			res = 0
 		} else {
-			res *= AnyToNumber(values[i].Value)
+			if i == 0 {
+				res = AnyToNumber(v.Value)
+			} else {
+				res *= AnyToNumber(v.Value)
+			}
 		}
 	}
 	if math.IsNaN(res) {

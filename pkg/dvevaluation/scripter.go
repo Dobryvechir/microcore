@@ -37,7 +37,28 @@ func RegisterMasterVariable(name string, variable *DvVariable) *DvVariable {
 	return variable
 }
 
-func RegisterMasterObject(name string, values map[string]*DvVariable, functions map[string]DvvFunction) *DvVariable {
+func (dv *DvVariable) GetDvObjectByPrototypes() *DvObject {
+	if dv==nil || dv.Prototype==nil || dv.Prototype.Fields==nil {
+		return nil
+	}
+	properties:=make(map[string]interface{})
+	n:=len(dv.Prototype.Fields)
+	for i:=0;i<n;i++ {
+		v:=dv.Prototype.Fields[i]
+		if v!=nil && v.Extra!=nil {
+			properties[string(v.Name)] = v.Extra
+		}
+	}
+	var prototype *DvObject = dv.Prototype.GetDvObjectByPrototypes();
+	return &DvObject{Properties: properties, Prototype: prototype}
+}
+
+func GetFunctionPrototypeFromMasterVariable(name string) *DvObject {
+	dv:=registeredMasterObjects[name]
+	return dv.GetDvObjectByPrototypes()
+}
+
+func RegisterMasterObject(name string, values map[string]*DvVariable, functions map[string]*DvFunction) *DvVariable {
 	masterObject := DvVariableGetNewObject()
 	if values != nil {
 		masterObject.Fields = ConvertMapDvVariableToList(values)
