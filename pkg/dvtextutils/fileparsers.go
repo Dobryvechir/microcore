@@ -101,9 +101,9 @@ func PresentMapAsProperties(pool map[string]string, outputFileName string) error
 }
 
 func SeparateToKeyValue(line string) (key string, value string) {
-	pos := strings.Index(line, ":")
+	pos := strings.Index(line, "=")
 	if pos <= 0 {
-		pos = strings.Index(line, "=")
+		pos = strings.Index(line, ":")
 	}
 	if pos > 0 {
 		key = strings.TrimSpace(line[:pos])

@@ -20,7 +20,7 @@ var BracketProcessors = map[string]dvgrammar.BracketOperatorVisitor{
 	"*{": CurlyBraceParentProcessor,
 }
 
-func ParentheseNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
+func SquareBracketNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
 	n := len(tree.Children)
 	val := &DvVariable{Kind: FIELD_ARRAY, Fields: make([]*DvVariable, n)}
 	for i := 0; i < n; i++ {
@@ -39,7 +39,7 @@ func ParentheseNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgram
 	return
 }
 
-func ParentheseParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
+func SquareBracketParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
 	n := len(tree.Children) - 1
 	parentValue = parent
 	for i := 0; i < n; i++ {
@@ -84,7 +84,7 @@ func ParentheseParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgramma
 	return
 }
 
-func SquareBracketNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
+func CurlyBraceNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
 	n := len(tree.Children)
 	for i := 0; i < n; i++ {
 		value, err = tree.Children[i].ExecuteExpression(context)
@@ -97,11 +97,11 @@ func SquareBracketNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvg
 	return
 }
 
-func SquareBracketParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
+func CurlyBraceParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
 	return nil, nil, false, errors.New("Unexpected expression in {}"), true
 }
 
-func CurlyBraceNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
+func ParentheseNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
 	n := len(tree.Children)
 	for i := 0; i < n; i++ {
 		value, err = tree.Children[i].ExecuteExpression(context)
@@ -112,7 +112,7 @@ func CurlyBraceNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgram
 	return
 }
 
-func CurlyBraceParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
+func ParentheseParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
 	if parent == nil || parent.Value == nil {
 		return nil, nil, false, errors.New("Cannot execute function of null"), false
 	}
@@ -164,23 +164,23 @@ func GetExpressionValueRange(value *dvgrammar.ExpressionValue, indexFrom int, in
 			indexFrom = len(s)
 		}
 		if indexTo > indexFrom && indexTo < len(s) {
-			res = s[indexTo:indexFrom]
+			res = s[indexFrom:indexTo]
 		}
 		return &dvgrammar.ExpressionValue{Value: res, DataType: dvgrammar.TYPE_STRING}, nil
 	}
 	return nil, fmt.Errorf("Cannot apply [:] for %v", value)
 }
 
-func GetStringAtChar(s string,index int) *dvgrammar.ExpressionValue {
-	n:=len(s)
-	if index<0 || index>=n {
+func GetStringAtChar(s string, index int) *dvgrammar.ExpressionValue {
+	n := len(s)
+	if index < 0 || index >= n {
 		return &dvgrammar.ExpressionValue{
 			DataType: dvgrammar.TYPE_NULL,
-			Value: nil,
+			Value:    nil,
 		}
 	}
 	return &dvgrammar.ExpressionValue{
-		Value: s[index: index+1],
+		Value:    s[index : index+1],
 		DataType: dvgrammar.TYPE_STRING,
 	}
 }
@@ -189,24 +189,24 @@ func GetExpressionValueChild(value *dvgrammar.ExpressionValue, index *dvgrammar.
 	if value == nil {
 		return nil, errors.New("Cannot get child of undefined")
 	}
-	indexInt64, intOk := AnyToNumberInt(value)
+	indexInt64, intOk := AnyToNumberInt(index)
 	indexInt := int(indexInt64)
 	if intOk {
 		switch value.DataType {
 		case dvgrammar.TYPE_STRING:
 			return GetStringAtChar(AnyToString(value.Value), indexInt), nil
 		case dvgrammar.TYPE_OBJECT:
-			v:=AnyToDvVariable(value.Value)
-			if v==nil || v.Kind==FIELD_NULL {
+			v := AnyToDvVariable(value.Value)
+			if v == nil || v.Kind == FIELD_NULL {
 				return nil, errors.New("Cannot get child of undefined")
 			}
-			if v.Kind==FIELD_STRING {
+			if v.Kind == FIELD_STRING {
 				return GetStringAtChar(string(v.Value), indexInt), nil
 			}
-			if v.Kind==FIELD_ARRAY {
-				if indexInt<0 || indexInt>=len(v.Fields) {
+			if v.Kind == FIELD_ARRAY {
+				if indexInt < 0 || indexInt >= len(v.Fields) {
 					return &dvgrammar.ExpressionValue{
-						Value: nil,
+						Value:    nil,
 						DataType: dvgrammar.TYPE_NULL,
 					}, nil
 				}
@@ -214,14 +214,14 @@ func GetExpressionValueChild(value *dvgrammar.ExpressionValue, index *dvgrammar.
 			}
 		}
 	}
-	child:=AnyToString(index)
-	v:=AnyToDvVariable(value.Value)
-	r:=v.ReadSimpleChild(child)
-	if r!=nil {
+	child := AnyToString(index)
+	v := AnyToDvVariable(value.Value)
+	r := v.ReadSimpleChild(child)
+	if r != nil {
 		return r.ToDvGrammarExpressionValue(), nil
 	}
-	fnMap:=GetPrototypeForDvGrammarExpressionValue(value)
-	vl,ok:=fnMap.Get(child)
+	fnMap := GetPrototypeForDvGrammarExpressionValue(value)
+	vl, ok := fnMap.Get(child)
 	if !ok {
 		return nil, nil
 	}
@@ -229,7 +229,7 @@ func GetExpressionValueChild(value *dvgrammar.ExpressionValue, index *dvgrammar.
 	case *DvFunction:
 		return GetFunctionObjectVariable(vl.(*DvFunction), value, context)
 	}
-    return AnyToDvGrammarExpressionValue(vl), nil
+	return AnyToDvGrammarExpressionValue(vl), nil
 }
 
 func GetColumnSubNodes(node *dvgrammar.BuildNode) (*dvgrammar.BuildNode, *dvgrammar.BuildNode, bool) {

@@ -21,7 +21,14 @@ func CalculatorDataGetter(token *dvgrammar.Token, context *dvgrammar.ExpressionC
 			return &dvgrammar.ExpressionValue{Value: v, DataType: AnyGetType(v)}, nil
 		}
 	}
-	return &dvgrammar.ExpressionValue{Value: token.Value, DataType: token.DataType}, nil
+	var v interface{} = token.Value
+	switch token.DataType {
+	case dvgrammar.TYPE_NUMBER:
+		v = AnyToNumber(token.Value)
+	case dvgrammar.TYPE_NUMBER_INT:
+		v, _ = AnyToNumberInt(token.Value)
+	}
+	return &dvgrammar.ExpressionValue{Value: v, DataType: token.DataType}, nil
 }
 
 var CalculatorOperators = map[string]dvgrammar.InterOperatorVisitor{
@@ -48,6 +55,8 @@ var CalculatorOperators = map[string]dvgrammar.InterOperatorVisitor{
 	"<":   ProcessorLessThan,
 	"<=":  ProcessorLessEqual,
 	"IN":  ProcessorContainsIn,
+	":":   ProcessorColon,
+	"?":   ProcessorQuestion,
 }
 
 func CalculatorEvaluator(data []byte, scope dvgrammar.ScopeInterface, reference *dvgrammar.SourceReference, visitorOptions int) (*dvgrammar.ExpressionValue, error) {

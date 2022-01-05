@@ -8,8 +8,10 @@ package main
 import (
 	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
+	"log"
 	"strings"
 	"time"
 )
@@ -84,6 +86,7 @@ func putVarsToEnvironment(vars string) {
 		if k != "" {
 			var res interface{} = v
 			var ok bool
+			var err error
 			kn := strings.ToLower(k)
 			switch kn[0] {
 			case 'i':
@@ -93,6 +96,11 @@ func putVarsToEnvironment(vars string) {
 				}
 			case 'f':
 				res = dvevaluation.AnyToNumber(res)
+			case 'v':
+				res, err = dvjson.JsonFullParser([]byte(v))
+				if err != nil {
+					log.Panicf("Incorrect object %s: %v", v, err)
+				}
 			}
 			env.Set(k, res)
 		}

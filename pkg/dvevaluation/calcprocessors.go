@@ -17,20 +17,25 @@ func ProcessorPlus(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNod
 	var resNum float64 = 0
 	dataType := dvgrammar.TYPE_NUMBER
 	for i := 0; i < l; i++ {
-		if values[i].DataType == dvgrammar.TYPE_STRING {
+		dtp := dvgrammar.TYPE_NULL
+		v := values[i]
+		if v != nil {
+			dtp = v.DataType
+		}
+		if dtp != dvgrammar.TYPE_NUMBER && dtp != dvgrammar.TYPE_NUMBER_INT && dtp != dvgrammar.TYPE_NAN {
 			if i == 0 {
 				resStr = ""
 			} else {
 				resStr = AnyToString(resNum)
 			}
 			for ; i < l; i++ {
-				resStr += AnyToString(values[i].Value)
+				resStr += AnyToString(values[i])
 			}
 			res = resStr
 			dataType = dvgrammar.TYPE_STRING
 			break
 		}
-		resNum += AnyToNumber(values[i].Value)
+		resNum += AnyToNumber(v)
 	}
 	if dataType == dvgrammar.TYPE_NUMBER {
 		if math.IsNaN(resNum) {
@@ -47,9 +52,9 @@ func ProcessorMinus(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNo
 	dataType := dvgrammar.TYPE_NUMBER
 	for i := 0; i < l; i++ {
 		if i == 0 {
-			res = AnyToNumber(values[i].Value)
+			res = AnyToNumber(values[i])
 		} else {
-			res -= AnyToNumber(values[i].Value)
+			res -= AnyToNumber(values[i])
 		}
 	}
 	if math.IsNaN(res) {
@@ -86,9 +91,9 @@ func ProcessorDivision(values []*dvgrammar.ExpressionValue, tree *dvgrammar.Buil
 	dataType := dvgrammar.TYPE_NUMBER
 	for i := 0; i < l; i++ {
 		if i == 0 {
-			res = AnyToNumber(values[i].Value)
+			res = AnyToNumber(values[i])
 		} else {
-			res /= AnyToNumber(values[i].Value)
+			res /= AnyToNumber(values[i])
 		}
 	}
 	if math.IsNaN(res) {
@@ -103,9 +108,9 @@ func ProcessorPower(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNo
 	dataType := dvgrammar.TYPE_NUMBER
 	for i := 0; i < l; i++ {
 		if i == 0 {
-			res = AnyToNumber(values[i].Value)
+			res = AnyToNumber(values[i])
 		} else {
-			res = math.Pow(res, AnyToNumber(values[i].Value))
+			res = math.Pow(res, AnyToNumber(values[i]))
 		}
 	}
 	if math.IsNaN(res) {
@@ -122,12 +127,12 @@ func ProcessorPercent(values []*dvgrammar.ExpressionValue, tree *dvgrammar.Build
 	dataType := dvgrammar.TYPE_NUMBER_INT
 	for i := 0; i < l; i++ {
 		if i == 0 {
-			res, ok = AnyToNumberInt(values[i].Value)
+			res, ok = AnyToNumberInt(values[i])
 			if !ok {
 				break
 			}
 		} else {
-			f, ok = AnyToNumberInt(values[i].Value)
+			f, ok = AnyToNumberInt(values[i])
 			if !ok || f == 0 {
 				ok = false
 				break
@@ -151,19 +156,23 @@ func ProcessorLeftShift(values []*dvgrammar.ExpressionValue, tree *dvgrammar.Bui
 	dataType := dvgrammar.TYPE_NUMBER_INT
 	for i := 0; i < l; i++ {
 		if i == 0 {
-			res, ok = AnyToNumberInt(values[i].Value)
-			if !ok {
-				res = 0
+			if values[i] != nil {
+				res, ok = AnyToNumberInt(values[i])
+				if !ok {
+					res = 0
+				}
 			}
 		} else {
-			f, ok = AnyToNumberInt(values[i].Value)
-			if !ok {
-				f = 0
-			}
-			if f < 0 || f > 64 {
-				res = 0
-			} else {
-				res = res << uint(f)
+			if values[i] != nil {
+				f, ok = AnyToNumberInt(values[i])
+				if !ok {
+					f = 0
+				}
+				if f < 0 || f > 64 {
+					res = 0
+				} else {
+					res = res << uint(f)
+				}
 			}
 		}
 	}
@@ -174,10 +183,80 @@ func ProcessorContainsIn(values []*dvgrammar.ExpressionValue, tree *dvgrammar.Bu
 	l := len(values)
 	var res bool = false
 	dataType := dvgrammar.TYPE_BOOLEAN
-	if l >= 2 {
+	if l >= 2 && values[0] != nil && values[1] != nil {
 		res = ContainInProcess(values[0].Value, values[1].Value)
 	}
 	return &dvgrammar.ExpressionValue{Value: res, DataType: dataType}, nil
+}
+
+func ProcessorColon(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	l := len(tree.Children)
+	if l != 2 {
+		return nil, errors.New("Insufficient arguments for ternary operators")
+	}
+	condNode, err := GetLeftestQuestionNode(tree)
+	if err != nil {
+		return nil, err
+	}
+	condition, err := condNode.ExecuteExpression(context)
+	if err != nil {
+		return nil, err
+	}
+	right := AnyToBoolean(condition)
+	if right {
+		return tree.Children[0].ExecuteExpression(context)
+	}
+	return tree.Children[1].ExecuteExpression(context)
+}
+
+func GetLeftestQuestionNode(tree *dvgrammar.BuildNode) (*dvgrammar.BuildNode, error) {
+	if tree == nil || len(tree.Children) != 2 || tree.Children[0] == nil {
+		return nil, errors.New("No appropriate ? clause for :")
+	}
+	t := tree.Children[0]
+	operator := t.Operator
+	if operator == ":" {
+		return GetLeftestQuestionNode(tree.Children[0])
+	}
+	if operator != "?" {
+		return nil, errors.New("No relevant ? clause for :")
+	}
+	for len(t.Children) == 2 && t.Children[0] != nil && (t.Children[0].Operator == "?" || t.Children[0].Operator == ":") {
+		if t.Children[0].Operator == ":" {
+			return GetLeftestQuestionNode(t.Children[0])
+		}
+		t = t.Children[0]
+	}
+	if len(t.Children) != 2 {
+		return nil, errors.New("Not enough clauses for ? (question) in the ternary operator")
+	}
+	res := t.Children[0]
+	t.CloneFrom(t.Children[1])
+	return res, nil
+}
+
+func ProcessorQuestion(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	l := len(tree.Children)
+	if l != 2 {
+		return nil, errors.New("Ternary operator requires condition ? value1 : value2 format")
+	}
+	node1, node2, ok := GetColumnSubNodes(tree.Children[1])
+	if !ok {
+		return nil, errors.New("Missing : clause in ternary operation")
+	}
+	return CalculateTernaryOperator(tree.Children[0], node1, node2, context)
+}
+
+func CalculateTernaryOperator(condNode, node1, node2 *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext) (*dvgrammar.ExpressionValue, error) {
+	condition, err := condNode.ExecuteExpression(context)
+	if err != nil {
+		return nil, err
+	}
+	right := AnyToBoolean(condition)
+	if right {
+		return node1.ExecuteExpression(context)
+	}
+	return node2.ExecuteExpression(context)
 }
 
 func ProcessorRightShift(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {

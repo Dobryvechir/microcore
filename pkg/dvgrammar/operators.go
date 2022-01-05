@@ -94,13 +94,15 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 		},
 		"?": &InterOperator{
 			Precedence:  4,
-			Multi:       true,
+			Multi:       false,
 			RightToLeft: true,
+			LazyLoadedOperands: true,
 		},
 		":": &InterOperator{
 			Precedence:  4,
-			Multi:       true,
+			Multi:       false,
 			RightToLeft: true,
+			LazyLoadedOperands: true,
 		},
 		"||": &InterOperator{
 			Precedence:         5,

@@ -143,6 +143,33 @@ tokenRunner:
 				tree = newNode(nil, opt, nil)
 				current = tree
 				continue tokenRunner
+			case ".":
+				holdDot := current
+				for holdDot.Operator != "" && len(holdDot.Children) > 0 {
+					holdDot = holdDot.Children[len(holdDot.Children)-1]
+				}
+				if holdDot.Value == nil {
+					return nil, errors.New("Unexpected dot without previous variable")
+				}
+				i++
+				if i == amount {
+					return nil, errors.New("Unexpected dot without following name")
+				}
+				value = &tokens[i]
+				operator = value.Value
+				if operator == "" || value.DataType == TYPE_CONTROL || value.DataType == TYPE_OPERATOR || value.DataType == TYPE_OBJECT {
+					return nil, errors.New("Dot must be followed by name")
+				}
+				subForest := make([]*BuildNode, 1)
+				subForest[0] = &BuildNode{
+					Value: &Token{DataType: TYPE_STRING, Value: operator},
+				}
+				node := &BuildNode{
+					Children: subForest,
+					Operator: "[",
+				}
+				holdDot.Children = append(holdDot.Children, node)
+				continue tokenRunner
 			case "(", "[", "{":
 				pos, err := findClosingTag(tokens, i)
 				if err != nil {
@@ -171,7 +198,10 @@ tokenRunner:
 				}
 				holderNode.Children = append(holderNode.Children, node)
 				if holderNode.Value == nil {
-					current.Value = &Token{DataType: TYPE_FUNCTION}
+					holderNode.Value = &Token{DataType: TYPE_FUNCTION}
+				}
+				if current.Operator == "" && current.Parent != nil && (current.Parent.Operator == "" || opt.Operators[current.Parent.Operator] != nil) {
+					current = current.Parent
 				}
 				continue tokenRunner
 			}
@@ -179,7 +209,7 @@ tokenRunner:
 			operator = dataOperator
 		}
 		properties, isOperator := opt.Operators[operator]
-		if !isOperator && (current.Children != nil || current.Value != nil) && operator != ")" {
+		if !isOperator && (current.Children != nil || current.Value != nil) {
 			if opt.DefaultOperator != "" {
 				operator = opt.DefaultOperator
 				properties = opt.Operators[operator]
@@ -205,6 +235,7 @@ tokenRunner:
 						PreAttributes:  current.PreAttributes,
 						PostAttributes: current.PostAttributes,
 						Value:          current.Value,
+						Children:       current.Children,
 					}
 					current.Children = make([]*BuildNode, 1, 2)
 					current.Children[0] = valueNode
@@ -282,42 +313,6 @@ tokenRunner:
 				}
 			} else {
 				switch operator {
-				case "(":
-					{
-						node := newNode(current, opt, currentPreAttributes)
-						currentPreAttributes = currentPreAttributes[:0]
-						current.Children = make([]*BuildNode, 1, 2)
-						current.Children[0] = node
-						current.Operator = ")"
-						current = node
-					}
-				case ")":
-					for current.Operator != operator {
-						if current.Parent == nil {
-							fullTreeForestClean(forest, tree)
-							return nil, errorMessage("Unexpected )", value)
-						}
-						current = current.Parent
-					}
-					if current.Parent != nil {
-						index := indexOfNode(current.Parent.Children, current)
-						if index < 0 {
-							fullTreeForestClean(forest, tree)
-							return nil, errorMessage("Broken tree", value)
-						}
-						node := current.Children[0]
-						node.Parent = current.Parent
-						current.Parent.Children[index] = node
-						current = node
-					} else {
-						tree = current.Children[0]
-						tree.Parent = nil
-						current = tree
-					}
-					current.closed = true
-					if current.Value != nil && current.Parent != nil && (current.Parent.Operator == "" || opt.Operators[current.Parent.Operator] != nil) {
-						current = current.Parent
-					}
 				case dataOperator:
 					current.Value = value
 					if len(currentPreAttributes) != 0 {
@@ -355,4 +350,28 @@ func placeTreeToForest(forest []*BuildNode, current *BuildNode, tree *BuildNode,
 	tree.Group = group
 	forest = append(forest, tree)
 	return forest, nil
+}
+
+func (b *BuildNode) CloneFrom(other *BuildNode) {
+	if b != nil {
+		if other == nil {
+			b.Value = nil
+			b.Operator = ""
+			b.Children = nil
+			b.PreAttributes = nil
+			b.PostAttributes = nil
+			b.Parent = nil
+			b.Group = 0
+			b.closed = false
+		} else {
+			b.Value = other.Value
+			b.Operator = other.Operator
+			b.Children = other.Children
+			b.PreAttributes = other.PreAttributes
+			b.PostAttributes = other.PostAttributes
+			b.Parent = other.Parent
+			b.Group = other.Group
+			b.closed = other.closed
+		}
+	}
 }

@@ -51,6 +51,14 @@ func AnyToStringWithOptions(v interface{}, options int) string {
 		f = string(v.([]byte))
 	case nil:
 		f = nullValueVersion[options]
+	case *dvgrammar.ExpressionValue:
+		b := v.(*dvgrammar.ExpressionValue)
+		switch b.DataType {
+		case dvgrammar.TYPE_NULL, dvgrammar.TYPE_NAN:
+			return ""
+		default:
+			return AnyToString(b.Value)
+		}
 	default:
 		n := len(poolStringConverters)
 		done := false
@@ -87,6 +95,8 @@ func AnyGetType(v interface{}) int {
 		if math.IsNaN(v.(float64)) {
 			f = dvgrammar.TYPE_NAN
 		}
+	case *DvVariable:
+		f = dvgrammar.TYPE_OBJECT
 	case nil:
 		f = dvgrammar.TYPE_UNDEFINED
 	}
@@ -115,6 +125,24 @@ func AnyToNumber(v interface{}) float64 {
 		f = StringToNumber(v.(string))
 	case *DvObject:
 		f = v.(*DvObject).ToNumber()
+	case *dvgrammar.ExpressionValue:
+		d := v.(*dvgrammar.ExpressionValue)
+		switch d.DataType {
+		case dvgrammar.TYPE_NULL:
+			f = 0
+		default:
+			return AnyToNumber(d.Value)
+		}
+	case *DvVariable:
+		b := v.(*DvVariable)
+		switch b.Kind {
+		case FIELD_OBJECT, FIELD_ARRAY:
+			f = float64(len(b.Fields))
+		case FIELD_NULL, FIELD_UNDEFINED:
+			f = 0
+		default:
+			return AnyToNumber(string(b.Value))
+		}
 	case int:
 		f = float64(v.(int))
 	case int64:
@@ -148,6 +176,9 @@ func AnyWithTypeToNumber(kind int, v interface{}) float64 {
 }
 
 func AnyToBoolean(v interface{}) bool {
+	if v == nil {
+		return false
+	}
 	var f bool = false
 	switch v.(type) {
 	case string:
@@ -165,6 +196,38 @@ func AnyToBoolean(v interface{}) bool {
 		f = e != 0 && !math.IsNaN(e)
 	case nil:
 		f = false
+	case *DvVariable:
+		d := v.(*DvVariable)
+		f = d != nil
+		if f {
+			switch d.Kind {
+			case FIELD_NULL, FIELD_UNDEFINED:
+				f = false
+			case FIELD_STRING:
+				f = len(d.Value) > 0
+			case FIELD_NUMBER:
+				f = len(d.Value) > 0 && string(d.Value) != "0"
+			case FIELD_BOOLEAN:
+				f = len(d.Value) > 0 && d.Value[0] != 'f'
+			}
+		}
+	case *dvgrammar.ExpressionValue:
+		b := v.(*dvgrammar.ExpressionValue)
+		f = b != nil
+		if f {
+			switch b.DataType {
+			case dvgrammar.TYPE_NULL, dvgrammar.TYPE_NAN:
+				f = false
+				/*			case dvgrammar.TYPE_NUMBER:
+								f = AnyToNumber(b.Value)!=0
+							case dvgrammar.TYPE_NUMBER_INT:
+								i,ok := AnyToNumberInt(b.Value)
+								f = ok && i==0
+				*/
+			default:
+				f = AnyToBoolean(b.Value)
+			}
+		}
 	}
 	return f
 }
@@ -262,6 +325,13 @@ func AnyToNumberInt(v interface{}) (f int64, ok bool) {
 		}
 	case nil:
 		f = 0
+	case *dvgrammar.ExpressionValue:
+		b := v.(*dvgrammar.ExpressionValue)
+		if b.DataType == dvgrammar.TYPE_NULL || b.DataType == dvgrammar.TYPE_NAN {
+			f = 0
+		} else {
+			return AnyToNumberInt(b.Value)
+		}
 	default:
 		ok = false
 	}
@@ -358,12 +428,12 @@ func CreateDvVariableByPathAndData(path string, data interface{}, parent *DvVari
 }
 
 func AnyToDvGrammarExpressionValue(v interface{}) *dvgrammar.ExpressionValue {
-    if v==nil {
+	if v == nil {
 		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}
 	}
 	switch v.(type) {
 	case string:
-		return &dvgrammar.ExpressionValue{Value: v,DataType: dvgrammar.TYPE_STRING}
+		return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_STRING}
 	case *DvVariable:
 		return v.(*DvVariable).ToDvGrammarExpressionValue()
 	case int64:

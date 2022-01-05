@@ -29,36 +29,32 @@ func LogicalNotOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildN
 	return value, nil
 }
 
-func ProcessorBooleanOr(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func ProcessorBooleanOr(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (res *dvgrammar.ExpressionValue, err error) {
 	l := tree.GetChildrenNumber()
-	res := false
 	for i := 0; i < l; i++ {
-		ev, err := tree.GetChildrenExpressionValue(i, context)
+		res, err = tree.GetChildrenExpressionValue(i, context)
 		if err != nil {
 			return nil, err
 		}
-		if AnyToBoolean(ev.Value) {
-			res = true
+		if AnyToBoolean(res) {
 			break
 		}
 	}
-	return &dvgrammar.ExpressionValue{Value: res, DataType: dvgrammar.TYPE_BOOLEAN}, nil
+	return
 }
 
-func ProcessorBooleanAnd(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func ProcessorBooleanAnd(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (res *dvgrammar.ExpressionValue, err error) {
 	l := tree.GetChildrenNumber()
-	res := true
 	for i := 0; i < l; i++ {
-		ev, err := tree.GetChildrenExpressionValue(i, context)
+		res, err = tree.GetChildrenExpressionValue(i, context)
 		if err != nil {
 			return nil, err
 		}
-		if !AnyToBoolean(ev.Value) {
-			res = false
+		if !AnyToBoolean(res) {
 			break
 		}
 	}
-	return &dvgrammar.ExpressionValue{Value: res, DataType: dvgrammar.TYPE_BOOLEAN}, nil
+	return
 }
 
 var LogicalOperators = map[string]dvgrammar.InterOperatorVisitor{

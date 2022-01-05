@@ -101,7 +101,11 @@ func ParseForDvObject(data []byte, params *DvObject, row int, column int, place 
 	ev, err := CalculatorEvaluator(data, params, ref, visitorOptions)
 	var res interface{}
 	if err == nil {
-		res = ev.Value
+		if ev==nil {
+			res = nil
+		} else {
+			res = ev.Value
+		}
 	}
 	return &EvaluateResult{FinalResult: res, Err: err}
 }

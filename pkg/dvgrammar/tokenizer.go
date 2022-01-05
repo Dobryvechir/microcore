@@ -74,3 +74,4 @@ func Tokenize(src *SourceReference, data []byte, grammar *GrammarTable) ([]Token
 	}
 	return tokens, nil
 }
+
