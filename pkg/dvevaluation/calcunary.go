@@ -70,9 +70,11 @@ func PostPlusPlusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.Buil
 	if ok {
 		res = v + 1
 		dataType = dvgrammar.TYPE_NUMBER_INT
+		value = &dvgrammar.ExpressionValue{DataType: dataType, Value: v}
 	} else {
 		res = math.NaN()
 		dataType = dvgrammar.TYPE_NUMBER
+		value = &dvgrammar.ExpressionValue{DataType: dataType, Value: res}
 	}
 	err := SetNodeValue(tree, res, dataType, context)
 	return value, err
@@ -85,9 +87,11 @@ func PostMinusMinusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.Bu
 	if ok {
 		res = v - 1
 		dataType = dvgrammar.TYPE_NUMBER_INT
+		value = &dvgrammar.ExpressionValue{DataType: dataType, Value: v}
 	} else {
 		res = math.NaN()
 		dataType = dvgrammar.TYPE_NUMBER
+		value = &dvgrammar.ExpressionValue{DataType: dataType, Value: res}
 	}
 	err := SetNodeValue(tree, res, dataType, context)
 	return value, err

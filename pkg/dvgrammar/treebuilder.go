@@ -210,7 +210,11 @@ tokenRunner:
 		}
 		properties, isOperator := opt.Operators[operator]
 		if !isOperator && (current.Children != nil || current.Value != nil) {
-			if opt.DefaultOperator != "" {
+			modifier, okModifier := opt.UnaryOperators[operator]
+			if okModifier && modifier.Post {
+				current.PostAttributes = append(current.PostAttributes, operator)
+				continue
+			} else if opt.DefaultOperator != "" {
 				operator = opt.DefaultOperator
 				properties = opt.Operators[operator]
 				isOperator = true
@@ -304,13 +308,8 @@ tokenRunner:
 		}
 		if !isOperator {
 			modifier, okModifier := opt.UnaryOperators[operator]
-			if okModifier {
-				if modifier.Post {
-
-				}
-				if modifier.Pre {
-					currentPreAttributes = append(currentPreAttributes, operator)
-				}
+			if okModifier && modifier.Pre {
+				currentPreAttributes = append(currentPreAttributes, operator)
 			} else {
 				switch operator {
 				case dataOperator:

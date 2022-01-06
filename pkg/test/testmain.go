@@ -12,14 +12,14 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle( "i=2", "i<10 ? i<7? 1: 2 : 3", "1", KindInteger)
+	testEvaluationSingle("S=5", "S++ + +4", "9", KindInteger)
 	showResume()
 }
 
 func testInit() {
-	err:=dvparser.ReadPropertiesFileWithEnvironmentVariablesInCurrentDirectory("test.properties")
-	if err!=nil {
-		log.Panicf("Cannot read properties %v",err)
+	err := dvparser.ReadPropertiesFileWithEnvironmentVariablesInCurrentDirectory("test.properties")
+	if err != nil {
+		log.Panicf("Cannot read properties %v", err)
 	}
 }
 
