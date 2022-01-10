@@ -9,7 +9,7 @@ import (
 	"math"
 )
 
-func BitwiseNotOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func BitwiseNotOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string, lastVarName string, lastParent *dvgrammar.ExpressionValue) (*dvgrammar.ExpressionValue, error) {
 	v, ok := AnyToNumberInt(value.Value)
 	if ok {
 		value = &dvgrammar.ExpressionValue{Value: -1 ^ v, DataType: dvgrammar.TYPE_NUMBER_INT}
@@ -19,19 +19,19 @@ func BitwiseNotOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildN
 	return value, nil
 }
 
-func UnaryPlusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func UnaryPlusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string, lastVarName string, lastParent *dvgrammar.ExpressionValue) (*dvgrammar.ExpressionValue, error) {
 	v := AnyToNumber(value.Value)
 	value = &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_NUMBER}
 	return value, nil
 }
 
-func UnaryMinusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func UnaryMinusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string, lastVarName string, lastParent *dvgrammar.ExpressionValue) (*dvgrammar.ExpressionValue, error) {
 	v := -AnyToNumber(value.Value)
 	value = &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_NUMBER}
 	return value, nil
 }
 
-func PrePlusPlusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func PrePlusPlusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string, lastVarName string, lastParent *dvgrammar.ExpressionValue) (*dvgrammar.ExpressionValue, error) {
 	v, ok := AnyToNumberInt(value.Value)
 	var res interface{}
 	var dataType int
@@ -43,11 +43,11 @@ func PrePlusPlusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.Build
 		dataType = dvgrammar.TYPE_NUMBER
 	}
 	value = &dvgrammar.ExpressionValue{Value: res, DataType: dataType}
-	err := SetNodeValue(tree, res, dataType, context)
+	err := SetNodeValue(tree, res, dataType, context, lastVarName, lastParent)
 	return value, err
 }
 
-func PreMinusMinusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func PreMinusMinusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string, lastVarName string, lastParent *dvgrammar.ExpressionValue) (*dvgrammar.ExpressionValue, error) {
 	v, ok := AnyToNumberInt(value.Value)
 	var res interface{}
 	var dataType int
@@ -59,11 +59,11 @@ func PreMinusMinusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.Bui
 		dataType = dvgrammar.TYPE_NUMBER
 	}
 	value = &dvgrammar.ExpressionValue{Value: res, DataType: dataType}
-	err := SetNodeValue(tree, res, dataType, context)
+	err := SetNodeValue(tree, res, dataType, context, lastVarName, lastParent)
 	return value, err
 }
 
-func PostPlusPlusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func PostPlusPlusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string, lastVarName string, lastParent *dvgrammar.ExpressionValue) (*dvgrammar.ExpressionValue, error) {
 	v, ok := AnyToNumberInt(value.Value)
 	var res interface{}
 	var dataType int
@@ -76,11 +76,11 @@ func PostPlusPlusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.Buil
 		dataType = dvgrammar.TYPE_NUMBER
 		value = &dvgrammar.ExpressionValue{DataType: dataType, Value: res}
 	}
-	err := SetNodeValue(tree, res, dataType, context)
+	err := SetNodeValue(tree, res, dataType, context, lastVarName, lastParent)
 	return value, err
 }
 
-func PostMinusMinusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func PostMinusMinusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string, lastVarName string, lastParent *dvgrammar.ExpressionValue) (*dvgrammar.ExpressionValue, error) {
 	v, ok := AnyToNumberInt(value.Value)
 	var res interface{}
 	var dataType int
@@ -93,6 +93,6 @@ func PostMinusMinusOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.Bu
 		dataType = dvgrammar.TYPE_NUMBER
 		value = &dvgrammar.ExpressionValue{DataType: dataType, Value: res}
 	}
-	err := SetNodeValue(tree, res, dataType, context)
+	err := SetNodeValue(tree, res, dataType, context, lastVarName, lastParent)
 	return value, err
 }

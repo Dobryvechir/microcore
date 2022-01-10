@@ -92,7 +92,9 @@ var CalculatorRules = &dvgrammar.GrammarRuleDefinitions{
 	UnaryPostVisitors: CalculatorPostUnaryMap,
 }
 
-func SetNodeValue(tree *dvgrammar.BuildNode, v interface{}, dataType int, context *dvgrammar.ExpressionContext) error {
-	//TODO: implement
+func SetNodeValue(tree *dvgrammar.BuildNode, v interface{}, dataType int, context *dvgrammar.ExpressionContext, lastVarName string, lastParent *dvgrammar.ExpressionValue) error {
+	if lastVarName!="" {
+		context.Scope.Set(lastVarName, v)
+	}
 	return nil
 }

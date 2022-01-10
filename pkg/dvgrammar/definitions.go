@@ -84,7 +84,7 @@ type BuildNode struct {
 type InterOperatorVisitor func([]*ExpressionValue, *BuildNode, *ExpressionContext, string) (*ExpressionValue, error)
 type BracketOperatorVisitor func(*ExpressionValue,*BuildNode, *ExpressionContext, []*BuildNode) (*ExpressionValue, *ExpressionValue, bool, error, bool)
 
-type UnaryVisitor func(*ExpressionValue, *BuildNode, *ExpressionContext, string) (*ExpressionValue, error)
+type UnaryVisitor func(*ExpressionValue, *BuildNode, *ExpressionContext, string, string, *ExpressionValue) (*ExpressionValue, error)
 
 type ExpressionValue struct {
 	DataType int

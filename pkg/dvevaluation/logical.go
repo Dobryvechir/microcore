@@ -23,7 +23,7 @@ func LogicalDataGetter(token *dvgrammar.Token, context *dvgrammar.ExpressionCont
 	return &dvgrammar.ExpressionValue{Value: token.Value, DataType: token.DataType}, nil
 }
 
-func LogicalNotOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+func LogicalNotOperator(value *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string, lastVarName string, lastParent *dvgrammar.ExpressionValue) (*dvgrammar.ExpressionValue, error) {
 	v := !AnyToBoolean(value.Value)
 	value = &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_BOOLEAN}
 	return value, nil

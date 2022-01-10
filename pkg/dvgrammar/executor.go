@@ -10,6 +10,8 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (*Expressio
 	var value *ExpressionValue
 	var err error
 	l := len(tree.Children)
+	var lastVarName string
+	var lastParent *ExpressionValue
 	if tree.Operator != "" {
 		visitor, ok := context.Rules.Visitors[tree.Operator]
 		operator, ok1 := context.Rules.BaseGrammar.Operators[tree.Operator]
@@ -34,18 +36,19 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (*Expressio
 		value = nil
 		hasNoParent := tree.Value.DataType == TYPE_FUNCTION
 		if !hasNoParent {
+			lastVarName = tree.Value.Value
 			value, err = context.Rules.DataGetter(tree.Value, context)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if l > 0 {
-			value, _, err = ExecuteBracketExpression(value, hasNoParent, tree.Children, context)
+			value, lastParent, err = ExecuteBracketExpression(value, hasNoParent, tree.Children, context)
 		}
 	}
 	if len(tree.PostAttributes) != 0 {
 		for _, vl := range tree.PostAttributes {
-			v, err := context.Rules.UnaryPostVisitors[vl](value, tree, context, vl)
+			v, err := context.Rules.UnaryPostVisitors[vl](value, tree, context, vl, lastVarName, lastParent)
 			if err != nil {
 				return nil, err
 			}
@@ -54,7 +57,7 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (*Expressio
 	}
 	if len(tree.PreAttributes) != 0 {
 		for _, vl := range tree.PreAttributes {
-			v, err := context.Rules.UnaryPreVisitors[vl](value, tree, context, vl)
+			v, err := context.Rules.UnaryPreVisitors[vl](value, tree, context, vl, lastVarName, lastParent)
 			if err != nil {
 				return nil, err
 			}

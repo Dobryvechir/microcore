@@ -212,7 +212,11 @@ tokenRunner:
 		if !isOperator && (current.Children != nil || current.Value != nil) {
 			modifier, okModifier := opt.UnaryOperators[operator]
 			if okModifier && modifier.Post {
-				current.PostAttributes = append(current.PostAttributes, operator)
+				node:=current
+				for node.Operator!="" && len(node.Children)>0 {
+					node = node.Children[len(node.Children)-1]
+				}
+				node.PostAttributes = append(node.PostAttributes, operator)
 				continue
 			} else if opt.DefaultOperator != "" {
 				operator = opt.DefaultOperator
