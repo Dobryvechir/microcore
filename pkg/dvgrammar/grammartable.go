@@ -151,14 +151,17 @@ func addTokenControl(tokenMap *TokenMapType, key string, value string) {
 	b := tokenMap[c]
 	if b.IsCommon {
 		kind := b.Kind
+		recongnizers:=b.Recognizers
 		if kind == BYTE_ONLY_INSIDE_STRING {
 			kind = BYTE_OPERATOR
+			recongnizers = nil
 		}
 		b = &TokenBlock{
 			Kind:      kind,
 			Controls:  make([]map[string]string, n),
 			MaxWords:  maxWords,
 			MaxLength: n,
+			Recognizers: recongnizers,
 		}
 		tokenMap[c] = b
 	} else {
