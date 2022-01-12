@@ -53,11 +53,19 @@ type ProxyServerInfo struct {
 	Kind   string `json:"kind"`
 }
 
+type ServerSession struct {
+	Name   string            `json:"name"`
+	Option int               `json:"option"`
+	Params map[string]string `json:"params"`
+	Urls   map[string]string `json:"urls"`
+	Prefix string            `json:"prefix"`
+}
+
 // DvHostServer collects all parameters for a specific host server
 type DvHostServer struct {
 	Hosts                         string                         `json:"hosts"`
 	BaseFolder                    string                         `json:"baseFolder"`
-	Actions                       []*dvcontext.DvAction           `json:"actions"`
+	Actions                       []*dvcontext.DvAction          `json:"actions"`
 	Rewrites                      []DvRewrite                    `json:"rewrites"`
 	DefaultProxyServer            string                         `json:"defaultProxy"`
 	ProxyServers                  []ProxyServerInfo              `json:"proxyServers"`
@@ -83,7 +91,8 @@ type DvHostServer struct {
 	Providers                     []dvproviders.ProviderConfig   `json:"providers"`
 	HostHeader                    string                         `json:"hostHeader"`
 	LogLevel                      string                         `json:"logLevel"`
-	DynamicActions				  bool						     `json:"dynamic"`
+	DynamicActions                bool                           `json:"dynamic"`
+	Session                       *ServerSession                 `json:"session"`
 }
 
 // DvConfig is a full structure of the config for http server

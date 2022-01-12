@@ -3,6 +3,7 @@
 package dvconfig
 
 import (
+	"github.com/Dobryvechir/microcore/pkg/dvsession"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 	"log"
@@ -66,7 +67,7 @@ func prepareProxyInfo(servers []ProxyServerInfo) []*dvcontext.ProxyServerBlock {
 	res := make([]*dvcontext.ProxyServerBlock, 0, n)
 	for i := 0; i < n; i++ {
 		url := dvcontext.GetPurePath(servers[i].Url)
-		if url == "" || len(servers[i].Filter)==0 {
+		if url == "" || len(servers[i].Filter) == 0 {
 			continue
 		}
 		filters := dvurl.PreparseMaskExpressions(servers[i].Filter)
@@ -161,6 +162,9 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 	dvServerInfo.ModuleHandler = dvmodules.RegisterEndPointHandlers(server.Modules)
 
 	dvServerInfo.ActionHandler = dvmodules.DynamicRegisterEndPointActions(server.Actions, server.DynamicActions)
+	if server.Session != nil {
+		dvServerInfo.Session = dvsession.GetServerSessionProvider(server.Session.Name, server.Session.Option, server.Session.Params, server.Session.Urls, server.Session.Prefix)
+	}
 	return dvServerInfo
 }
 

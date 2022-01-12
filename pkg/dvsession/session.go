@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvsession
@@ -21,6 +21,14 @@ const DefaultRetentionTime = 3600 * 3
 const MEMORY_SESSION_ENGINE = "MEMORY"
 const SESSION_RETENTION_TIME = "RETENTION_TIME"
 
+type SessionRequest interface {
+	Init(id string, createOnly bool, updateOnly bool) (SessionStorage, error, bool)
+}
+
+type SessionEngine interface {
+	Init(map[string]string) (SessionRequest, error)
+	Close()
+}
 
 type SessionStorage interface {
 	SetItem(key string, value interface{})
@@ -29,25 +37,14 @@ type SessionStorage interface {
 	Clear()
 	Keys() []string
 	Values() map[string]interface{}
-	GetId() string
-}
-
-type SessionRequest interface {
-	Init(id string) (SessionStorage, error, bool)
-}
-
-type SessionEngine interface {
-	Init(map[string]string) (SessionRequest, error)
-	Close()
 }
 
 var sessionEngines = make(map[string]SessionEngine, 3)
 
 func RegisterSessionEngine(name string, engine SessionEngine) bool {
 	sessionEngines[name] = engine
-    return true
+	return true
 }
-
 
 func GetSessionRequest(name string, params map[string]string, option int) SessionRequest {
 	engine := GetSessionEngine(name, option)

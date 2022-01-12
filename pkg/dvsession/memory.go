@@ -6,6 +6,7 @@ Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvsession
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -68,11 +69,17 @@ type MemorySessionRequest struct {
 	sessionStorages map[string]*MemorySessionStorage
 }
 
-func (req *MemorySessionRequest) Init(id string) (SessionStorage, error, bool) {
+func (req *MemorySessionRequest) Init(id string, createOnly bool, updateOnly bool) (SessionStorage, error, bool) {
 	storage, ok := req.sessionStorages[id]
 	if ok {
-		storage.UpdateAccessTime()
-		return storage, nil, true
+		if createOnly {
+			delete(req.sessionStorages, id)
+		} else {
+			storage.UpdateAccessTime()
+			return storage, nil, true
+		}
+	} else if updateOnly && !createOnly {
+		return nil, fmt.Errorf("Session %s is not present", id), false
 	}
 	storage = &MemorySessionStorage{}
 	storage.Clear()

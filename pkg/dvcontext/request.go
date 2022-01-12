@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvcontext
@@ -51,6 +51,7 @@ type ServerSettings struct {
 	ExpectContinueTimeout int  `json:"expectContinueTimeout"`
 }
 
+
 type MicroCoreInfo struct {
 	sync.RWMutex
 	Client                    *http.Client
@@ -64,7 +65,7 @@ type MicroCoreInfo struct {
 	ProxyName                 string
 	DomainName                string
 	ProxyServers              []*ProxyServerBlock
-	ErrorPolicies	          map[string]*RequestErrorPolicy
+	ErrorPolicies             map[string]*RequestErrorPolicy
 	HeadersStatic             map[string][]string
 	HeadersProxyServer        map[string][]string
 	HeadersStaticOptions      map[string][]string
@@ -79,6 +80,7 @@ type MicroCoreInfo struct {
 	PostProcessorBlocks       []ProcessorBlock
 	HostHeader                string
 	ServerRewrite             RewriteMap
+	Session                   ServerSessionProvider
 	ModuleHandler             HandlerFunc
 	ActionHandler             HandlerFunc
 	LogLevel                  int
@@ -99,6 +101,7 @@ type RequestContext struct {
 	Writer                    http.ResponseWriter
 	Reader                    *http.Request
 	Server                    *MicroCoreInfo
+	Session                   RequestSession
 	Input                     []byte
 	InputStr                  string
 	InputJson                 interface{}
