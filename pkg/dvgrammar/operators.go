@@ -19,6 +19,7 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			Multi:       true,
 			RightToLeft: true,
 			Assignment:  true,
+			LazyLoadedOperands: true,
 		},
 		"+=": &InterOperator{
 			Precedence:  3,

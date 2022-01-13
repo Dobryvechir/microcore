@@ -89,6 +89,7 @@ type UnaryVisitor func(*ExpressionValue, *BuildNode, *ExpressionContext, string,
 type ExpressionValue struct {
 	DataType int
 	Value    interface{}
+	Name     string
 }
 
 type TypeRecognizer struct {

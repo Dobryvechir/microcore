@@ -128,6 +128,20 @@ func (obj *DvObject) ReadAtParent(key string, level int) (res interface{}, ok bo
 	return
 }
 
+func (obj *DvObject) FindFirstNotEmptyString(keys []string) string {
+	n := len(keys)
+	for i := 0; i < n; i++ {
+		v, err := obj.EvaluateAnyTypeExpression(keys[i])
+		if err == nil && v != nil {
+			s := AnyToString(v)
+			if s != "" {
+				return s
+			}
+		}
+	}
+	return ""
+}
+
 func NewDvObjectWithSpecialValues(value interface{}, kind int, proto *DvObject, properties map[string]interface{}) *DvObject {
 	return &DvObject{Value: value, Options: kind, Prototype: proto, Properties: properties}
 }

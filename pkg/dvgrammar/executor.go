@@ -39,7 +39,7 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (*Expressio
 			lastVarName = tree.Value.Value
 			value, err = context.Rules.DataGetter(tree.Value, context)
 			if err != nil {
-				return nil, err
+				return value, err
 			}
 		}
 		if l > 0 {

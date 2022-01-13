@@ -99,6 +99,8 @@ func AnyGetType(v interface{}) int {
 		f = dvgrammar.TYPE_OBJECT
 	case nil:
 		f = dvgrammar.TYPE_UNDEFINED
+	case *dvgrammar.ExpressionValue:
+		f = v.(*dvgrammar.ExpressionValue).DataType
 	}
 	return f
 }

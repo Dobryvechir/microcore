@@ -69,6 +69,18 @@ func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) b
 			return true
 		}
 	}
+	if request.Server!=nil && request.Server.Session!=nil && action.Session!=nil {
+		sessionId :=""
+		if request.PrimaryContextEnvironment!=nil {
+			sessionId = request.PrimaryContextEnvironment.FindFirstNotEmptyString(action.Session.Id)
+		}
+		request.Session, err = request.Server.Session.GetSessionStorage(request, action.Session, sessionId)
+		if err!=nil {
+			dvlog.PrintlnError("Cannot handle session " + err.Error())
+			request.HandleInternalServerError()
+			return true
+		}
+	}
 	return proc(request)
 }
 

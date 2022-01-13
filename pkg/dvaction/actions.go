@@ -203,8 +203,19 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 				dvevaluation.UpdateAnyVariables(dat, data, path, dvevaluation.UPDATE_MODE_REPLACE, nil, env)
 				data = dat
 			}
+			return
 		}
-		if ctx != nil && level != "global" {
+		if level == "session" || level == "session?" {
+			isErrorFatal := level == "session"
+			if ctx.Session == nil {
+				if isErrorFatal {
+					dvlog.PrintlnError("No session available")
+					ctx.HandleInternalServerError()
+				}
+				return
+			}
+			ctx.Session.SetItem(varName, data)
+		} else if ctx != nil && level != "global" {
 			if ctx.LocalContextEnvironment != nil && level != "request" {
 				if level != "" && level[0] >= '1' && level[0] <= '9' {
 					levelVal, err := strconv.Atoi(level)
@@ -231,8 +242,24 @@ func DeleteActionResult(result string, ctx *dvcontext.RequestContext) {
 		var res interface{}
 		var ok bool
 		var env *dvevaluation.DvObject = nil
+		isSession := false
 		if ctx != nil && level != "global" {
-			if ctx.LocalContextEnvironment != nil && level != "request" {
+			if level == "session" || level == "session?" {
+				isErrorFatal := level == "session"
+				if ctx.Session == nil {
+					if isErrorFatal {
+						dvlog.PrintlnError("No session available")
+						ctx.HandleInternalServerError()
+					}
+					return
+				}
+				if path == "" {
+					ctx.Session.RemoveItem(varName)
+				} else {
+					isSession = true
+					env = &dvevaluation.DvObject{Properties: ctx.Session.Values()}
+				}
+			} else if ctx.LocalContextEnvironment != nil && level != "request" {
 				if level != "" && level[0] >= '1' && level[0] <= '9' {
 					levelVal, err := strconv.Atoi(level)
 					if err == nil {
@@ -277,7 +304,11 @@ func DeleteActionResult(result string, ctx *dvcontext.RequestContext) {
 				if err != nil {
 					log.Printf("Cannot remove %s : %v", path, err)
 				} else {
-					env.Set(varName, res)
+					if isSession {
+						ctx.Session.SetItem(varName, res)
+					} else {
+						env.Set(varName, res)
+					}
 				}
 			}
 		}
@@ -327,6 +358,19 @@ func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interfa
 					ok = false
 				}
 				res = rs
+			case "session","session?":
+				isErrorFatal := level == "session"
+				if ctx.Session == nil {
+					if isErrorFatal {
+						dvlog.PrintlnError("No session available")
+						ctx.HandleInternalServerError()
+					}
+					return
+				}
+				res = ctx.Session.GetItem(varName)
+				if path != "" {
+					env = &dvevaluation.DvObject{Properties: ctx.Session.Values()}
+				}
 			default:
 				if ctx.LocalContextEnvironment != nil && level != "request" {
 					if level[0] >= '1' && level[0] <= '9' {
@@ -348,7 +392,6 @@ func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interfa
 		}
 		if ok && path != "" {
 			var err error
-			env := GetEnvironment(ctx)
 			res, _, err = dvjson.ReadPathOfAny(res, path, false, env)
 			if err != nil {
 				res = nil

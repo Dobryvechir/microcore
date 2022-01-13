@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvevaluation
 
@@ -10,15 +10,17 @@ import (
 )
 
 func CalculatorDataGetter(token *dvgrammar.Token, context *dvgrammar.ExpressionContext) (*dvgrammar.ExpressionValue, error) {
+	name := ""
 	if token.DataType == dvgrammar.TYPE_DATA {
 		if newType, ok := reservedWords[token.Value]; ok {
 			return &dvgrammar.ExpressionValue{Value: buildinTypes[token.Value], DataType: newType}, nil
 		} else {
-			v, ok := context.Scope.Get(token.Value)
+			name = token.Value
+			v, ok := context.Scope.Get(name)
 			if !ok {
-				return nil, errors.New(token.Value + " is not defined")
+				return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL, Name: name}, errors.New(token.Value + " is not defined")
 			}
-			return &dvgrammar.ExpressionValue{Value: v, DataType: AnyGetType(v)}, nil
+			return &dvgrammar.ExpressionValue{Value: v, DataType: AnyGetType(v), Name: name}, nil
 		}
 	}
 	var v interface{} = token.Value
@@ -28,7 +30,7 @@ func CalculatorDataGetter(token *dvgrammar.Token, context *dvgrammar.ExpressionC
 	case dvgrammar.TYPE_NUMBER_INT:
 		v, _ = AnyToNumberInt(token.Value)
 	}
-	return &dvgrammar.ExpressionValue{Value: v, DataType: token.DataType}, nil
+	return &dvgrammar.ExpressionValue{Value: v, DataType: token.DataType, Name: name}, nil
 }
 
 var CalculatorOperators = map[string]dvgrammar.InterOperatorVisitor{
@@ -57,6 +59,8 @@ var CalculatorOperators = map[string]dvgrammar.InterOperatorVisitor{
 	"IN":  ProcessorContainsIn,
 	":":   ProcessorColon,
 	"?":   ProcessorQuestion,
+	"=":   ProcessorAssign,
+	"+=":  ProcessorPlusAssign,
 }
 
 func CalculatorEvaluator(data []byte, scope dvgrammar.ScopeInterface, reference *dvgrammar.SourceReference, visitorOptions int) (*dvgrammar.ExpressionValue, error) {
@@ -93,7 +97,7 @@ var CalculatorRules = &dvgrammar.GrammarRuleDefinitions{
 }
 
 func SetNodeValue(tree *dvgrammar.BuildNode, v interface{}, dataType int, context *dvgrammar.ExpressionContext, lastVarName string, lastParent *dvgrammar.ExpressionValue) error {
-	if lastVarName!="" {
+	if lastVarName != "" {
 		context.Scope.Set(lastVarName, v)
 	}
 	return nil
