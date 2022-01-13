@@ -383,6 +383,8 @@ func AnyToDvVariable(v interface{}) *DvVariable {
 	case float64, float32, int64, int32:
 		s := AnyToString(v)
 		return &DvVariable{Kind: FIELD_NUMBER, Value: []byte(s)}
+	case *dvgrammar.ExpressionValue:
+		return AnyToDvVariable(v.(*dvgrammar.ExpressionValue).Value)
 	}
 	return nil
 }
@@ -440,6 +442,8 @@ func AnyToDvGrammarExpressionValue(v interface{}) *dvgrammar.ExpressionValue {
 		return v.(*DvVariable).ToDvGrammarExpressionValue()
 	case int64:
 		return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_NUMBER_INT}
+	case int:
+		return &dvgrammar.ExpressionValue{Value: int64(v.(int)), DataType: dvgrammar.TYPE_NUMBER_INT}
 	case float64:
 		return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_NUMBER}
 	case bool:

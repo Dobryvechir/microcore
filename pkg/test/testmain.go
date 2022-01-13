@@ -6,13 +6,14 @@ Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package main
 
 import (
+	_ "github.com/Dobryvechir/microcore/pkg/dvjsmaster"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
 )
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("S=5;I=3", "I+=12, +S+I", "20", KindInteger)
+	testEvaluationSingle("S=Good-Word", "S.length","9", KindInteger)
 	showResume()
 }
 

@@ -79,5 +79,7 @@ func testEvaluation() {
 	testEvaluationSingle("i=2", "i<10 ? i<7? 1: 2 : 3", "1", KindInteger)
 	testEvaluationSingle("i=8", "i<10 ? i<7? 1: 2 : 3", "2", KindInteger)
 	testEvaluationSingle("i=12", "i<10 ? i<7? 1: 2 : 3", "3", KindInteger)
+	testEvaluationSingle("S=Good-Word", "S.length","9", KindInteger)
+	testEvaluationSingle("S=Good-Word", "v=[S,S,3,4,1];v.length","5", KindInteger)
 	showResume()
 }

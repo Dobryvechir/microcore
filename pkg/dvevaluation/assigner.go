@@ -13,6 +13,7 @@ import (
 
 var ObjectMaster *DvVariable = RegisterMasterVariable("Object", &DvVariable{Kind: FIELD_OBJECT})
 var ArrayMaster *DvVariable = RegisterMasterVariable("Array", &DvVariable{Kind: FIELD_OBJECT})
+var StringMaster *DvVariable = RegisterMasterVariable("String", &DvVariable{Kind: FIELD_OBJECT})
 
 func AssignVariableDirect(parent *DvVariable, val interface{}) error {
 	var value *DvVariable

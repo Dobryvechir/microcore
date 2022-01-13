@@ -7,6 +7,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvconfig"
 	_ "github.com/Dobryvechir/microcore/pkg/dvdbdata"
 	_ "github.com/Dobryvechir/microcore/pkg/dvgeolocation"
+	_ "github.com/Dobryvechir/microcore/pkg/dvjsmaster"
 	_ "github.com/Dobryvechir/microcore/pkg/dvlicense"
 	_ "github.com/Dobryvechir/microcore/pkg/dvoc"
 	_ "github.com/godror/godror"

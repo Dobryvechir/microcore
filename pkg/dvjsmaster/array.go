@@ -27,6 +27,14 @@ func array_init() {
 					Fn: Array_slice,
 				},
 			},
+			{
+				Name: []byte("length"),
+				Kind: dvevaluation.FIELD_FUNCTION,
+				Extra: &dvevaluation.DvFunction {
+					Fn: Array_length,
+					Immediate: true,
+				},
+			},
 		},
 		Kind: dvevaluation.FIELD_OBJECT,
 	}
@@ -38,4 +46,13 @@ func Array_push(context *dvgrammar.ExpressionContext, thisVariable interface{}, 
 
 func Array_slice(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
 	return nil, nil
+}
+
+func Array_length(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	v:=dvevaluation.AnyToDvVariable(thisVariable)
+	n:=0
+	if v!=nil {
+		n=len(v.Fields)
+	}
+	return n, nil
 }

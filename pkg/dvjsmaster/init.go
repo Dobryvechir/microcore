@@ -9,7 +9,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 )
 
-func Init() {
+func Init() bool {
 	object_init()
 	array_init()
 	dvevaluation.Init()
@@ -17,4 +17,8 @@ func Init() {
 	math_init()
 	date_init()
 	json_init()
+	string_init()
+	return true
 }
+
+var inited = Init()
