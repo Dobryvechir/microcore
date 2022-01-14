@@ -195,6 +195,15 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 	env := GetEnvironment(ctx)
 	if result != "" {
 		level, varName, path := GetLevelMainPath(result)
+		if level == "log" || level == "error" {
+			s := result[strings.Index(result, ":")+1:]
+			v := dvevaluation.AnyToString(data)
+			log.Printf(s, v)
+			if level == "error" {
+				ActionInternalException(0, s, v, ctx)
+			}
+			return
+		}
 		if path != "" {
 			dat, ok := ReadActionResult(result, ctx)
 			if !ok {
@@ -358,7 +367,7 @@ func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interfa
 					ok = false
 				}
 				res = rs
-			case "session","session?":
+			case "session", "session?":
 				isErrorFatal := level == "session"
 				if ctx.Session == nil {
 					if isErrorFatal {

@@ -1,0 +1,19 @@
+<h1>validate</h1>
+<pre>
+    validate variables
+{
+    check:[
+       {
+           data: string
+           kind: empty,non-empty,exists,non-exists,condition,not
+           error: string | number (default is 0)
+           part: string, part of error message if the error contains $part
+           code: int, http error code (optional, default is a common http error code)
+       }
+    ],
+    errors:["error message 1","error message 2",...] default errors,
+    code: int, common http error code, (optional, default is 500)
+}
+Example:
+validate:{"check":[{"data":"URL_CODE","kind":"exists"},{"data":"URL_SESSION","kind":"non-empty"}],"code":401,"errors":["Bad request parameters: CODE and SESSION are required"]}
+</pre>

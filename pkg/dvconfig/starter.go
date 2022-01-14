@@ -54,7 +54,11 @@ func ServerStart() {
 			dvparser.SetGlobalPropertiesValue("CURRENT_MICROCORE_CONFIG", string(data))
 		}
 		ProvideServerCommand()
-		dvaction.ExecuteSequence("EXECUTE_"+osargs2, nil, nil)
+		ctx:=&dvcontext.RequestContext{PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject()}
+		dvaction.ExecuteSequence("EXECUTE_"+osargs2, ctx, nil)
+		if ctx.StatusCode>=400 {
+			log.Printf("Error %s ", string(ctx.Output))
+		}
 	default:
 		serverStartByConfigDirect(cf)
 	}

@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvaction
@@ -46,11 +46,11 @@ func readFileActionInit(command string, ctx *dvcontext.RequestContext) ([]interf
 	if config.Kind == "" {
 		config.Kind = "json"
 	}
-	if config.Kind != "json" && config.Kind != "string" && config.Kind != "text" && config.Kind != "remove" && config.Kind != "binary" {
-		log.Printf("Supported file kind is not supported %s (available kind options: json)", command)
+	if config.Kind != "json" && config.Kind != "string" && config.Kind != "text" && config.Kind != "remove" && config.Kind != "binary" && config.Kind != "mkdir" {
+		log.Printf("Supported file kind is not supported %s (available kind options: json,string,text,binary,remove,mkdir)", command)
 		return nil, false
 	}
-	if config.Result == "" && config.Kind != "remove" {
+	if config.Result == "" && config.Kind != "remove" && config.Kind != "mkdir" {
 		log.Printf("Result is not specified in command %s", command)
 		return nil, false
 	}
@@ -69,8 +69,13 @@ func readFileActionRun(data []interface{}) bool {
 func ReadFileByConfigKind(config *ReadFileConfig, ctx *dvcontext.RequestContext) bool {
 	fileNames := dvdir.ReadFileList(config.FileName)
 	n := len(fileNames)
-	if config.Kind == "remove" {
+	switch config.Kind {
+	case "remove":
 		k := dvdir.DeleteFilesIfExist(fileNames)
+		SaveActionResult(config.Result, strconv.Itoa(k)+"/"+strconv.Itoa(n), ctx)
+		return true
+	case "mkdir":
+		k := dvdir.MakeALlDirs(fileNames)
 		SaveActionResult(config.Result, strconv.Itoa(k)+"/"+strconv.Itoa(n), ctx)
 		return true
 	}
@@ -96,7 +101,7 @@ func combineStrings(s string, isMulti bool, config *ReadFileConfig, ctx *dvconte
 		prev, ok := ReadActionResult(config.Result, ctx)
 		if ok && prev != nil {
 			t := dvevaluation.AnyToString(prev)
-			if config.Append<0 {
+			if config.Append < 0 {
 				t, s = s, t
 			}
 			if config.Joiner != "" {

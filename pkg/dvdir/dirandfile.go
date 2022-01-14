@@ -115,8 +115,13 @@ func CopySymLink(source, dest string) error {
 }
 
 func DeleteFileIfExists(fileName string) bool {
-	if Exists(fileName) {
-		err := os.Remove(fileName)
+	dat, err := os.Stat(fileName)
+	if err == nil {
+		if dat.IsDir() {
+			err = os.RemoveAll(fileName)
+		} else {
+			err = os.Remove(fileName)
+		}
 		if err != nil {
 			return false
 		}
@@ -125,10 +130,22 @@ func DeleteFileIfExists(fileName string) bool {
 }
 
 func DeleteFilesIfExist(fileNames []string) int {
-	k:=0
-	n:=len(fileNames)
-	for i:=0;i<n;i++ {
+	k := 0
+	n := len(fileNames)
+	for i := 0; i < n; i++ {
 		if DeleteFileIfExists(fileNames[i]) {
+			k++
+		}
+	}
+	return k
+}
+
+func MakeALlDirs(fileNames []string) int {
+	k := 0
+	n := len(fileNames)
+	for i := 0; i < n; i++ {
+		err := os.MkdirAll(fileNames[i], 0664)
+		if err != nil {
 			k++
 		}
 	}

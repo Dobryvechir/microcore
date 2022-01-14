@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvaction
 
@@ -48,6 +48,7 @@ const (
 	CommandVersion     = "version"
 	CommandDebug       = "debug"
 	CommandDynamic     = "dynamic"
+	CommandValidate    = "validate"
 )
 
 var processFunctions = map[string]ProcessFunction{
@@ -63,6 +64,7 @@ var processFunctions = map[string]ProcessFunction{
 	CommandVar:         {Init: varTransformInit, Run: varTransformRun},
 	CommandStore:       {Init: storeInit, Run: storeRun},
 	CommandDebug:       {Init: debugInit, Run: debugRun},
+	CommandValidate:    {Init: validationInit, Run: validationRun},
 }
 
 var logicProcessFunctions = map[string]ProcessFunction{
