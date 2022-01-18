@@ -205,12 +205,11 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 			return
 		}
 		if path != "" {
-			dat, ok := ReadActionResult(result, ctx)
+			dat, ok := ReadActionResult(varName, ctx)
 			if !ok {
 				data = dvevaluation.CreateDvVariableByPathAndData(path, data, nil)
 			} else {
 				dvevaluation.UpdateAnyVariables(dat, data, path, dvevaluation.UPDATE_MODE_REPLACE, nil, env)
-				data = dat
 			}
 			return
 		}
@@ -366,7 +365,7 @@ func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interfa
 					rs = nil
 					ok = false
 				}
-				res = rs
+				return rs, true
 			case "session", "session?":
 				isErrorFatal := level == "session"
 				if ctx.Session == nil {
@@ -502,4 +501,12 @@ func ActionExternalException(status int, body []byte, ctx *dvcontext.RequestCont
 		return
 	}
 	ActionFinalException(status, body, ctx)
+}
+
+func ActionExceptionByError(comment string, err error, ctx *dvcontext.RequestContext) {
+	longMessage := err.Error()
+	if comment == "" {
+		comment = "Internal System Error"
+	}
+	ActionInternalException(500, comment, longMessage, ctx)
 }

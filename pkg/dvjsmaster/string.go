@@ -8,6 +8,7 @@ package dvjsmaster
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
+	"strings"
 )
 
 func string_init() {
@@ -34,7 +35,17 @@ func string_init() {
 }
 
 func String_contains(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	return nil, nil
+	if thisVariable == nil {
+		return false, nil
+	}
+	s := dvevaluation.AnyToString(thisVariable)
+	n := len(params)
+	if n == 0 || params[0] == nil {
+		return true, nil
+	}
+	s1 := dvevaluation.AnyToString(params[0])
+	b := strings.Contains(s, s1)
+	return b, nil
 }
 
 func String_length(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {

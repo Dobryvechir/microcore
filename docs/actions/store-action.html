@@ -4,11 +4,16 @@ This command stores data to the local file system
     (or other devices in future versions)
 "store" command has the following parameters:
 {
-    "storage" string, the storage, now it is only "fs" (this is the default), which
-       means the data is stored in the local file system
-     "data"   map of string to string, for each key-value pair,
+    "storage" string, the storage, one of the following values:
+          "fs" (the default), which means the data is stored in the local file system
+          "text" the data is stored as string in a local variable
+          "binary" the data is stored as an array of bytes in a local variable
+    "data"   map of string to string, for each key-value pair,
        the value of the variable having the name as the value,
        is stored into the destination specified in the key
+    "format" string, text or yaml or yaml_array, optional, default is text
+    "before" string, string to be inserted into the file before the main part
+    "after" string, string to be inserted into the file after the main part
  }
 Example:
 UPDATE_SAVE_1=store:{"data":{"./data/d1.txt":"A1","./data/d2.txt":"A2"}

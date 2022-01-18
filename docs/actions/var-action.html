@@ -2,6 +2,7 @@
 <pre>
 Make conversions with variables
 {
+   "error_message"  a message to the user in case any functionality below fails
    "parse" map of string to {
          "var": string, the name of the source variable
          "evaluation": int, the number of brackets ({{ }}) to evaluate expression,
@@ -81,12 +82,56 @@ Make conversions with variables
       on map of strings to strings and stored at the variable having the name of the key of the primary map
     "create_array" map of strings to array of strings, creates the array based
       on array of strings and stored at the variable having the name of the key of the primary map
+    "concat_objects" concatenates several objects into a new object
+    {
+       "sources" array of strings specifying variables with objects
+       "dst" string, variable name to store the result
+    }
+    "object_by_array" creates object by array
+      {
+          "src", {<a href="json-source.html">json-source</a>}, the source of information
+          "dst", string, where to write the code
+          "key", string, expression for the key
+          "value", string, expression for the value
+          "key_policy", int, policy in case of error for key
+                   0-skip, 1-empty string, 2-raise error, 3-null
+          "value_policy", int, policy in case of error for value
+                   0-skip, 1-empty string, 2-raise error, 3-null
+      }
+    "object_by_object" creates object by object
+      {
+          "src", {<a href="json-source.html">json-source</a>}, the source of information
+          "dst", string, where to write the code
+          "key", string, expression for the key
+          "value", string, expression for the value
+          "key_policy", int, policy in case of error for key
+                   0-skip, 1-empty string, 2-raise error, 3-null
+          "value_policy", int, policy in case of error for value
+                   0-skip, 1-empty string, 2-raise error, 3-null
+      }
+      For each item within object you can use variables as follows:
+       "this" is item itself
+        if item is object, all its keys are available
+        if item is array, keys are "0", "1", "2",...
+        Otherwise, "_key" contains the key, "_value" contains the value
+    "remove_by_keys" creates object by array
+      {
+          "src", {<a href="json-source.html">json-source</a>}, the source of information
+          "dst", string, where to write the code
+          "keys", array of strings to be deleted
+      }
+    "replace_text" replaces the text by a given map of rules (replacements)
+    {
+       "src", string, a source of text
+       "dst", string, variable name to store the results
+       "rules", object variable name containing the map of replacements
+    }
 }
 Example:
 var:{"clone":{"CLONED_A":"A"},"replace":{"source":"A","reg-expr":"a(x+)b","replacement":"${1}cd"}}
 Note: all variables can contain the following parts in the name:
     [level][variable name][path]
-    [level] and [path] are optional. [level] can be "global" or "request" or number (if it is the number,
+    [level] and [path] are optional. [level] can be "global" or "request" or "session" or "_" or "$" or number (if it is the number,
     it is the number of closures beyond the current environment). "global" means that the change
     is made at the level of global variables and this will effect the following http requests.
     "request" level is the starting level at which the request variables were stored.

@@ -41,6 +41,41 @@ type IncreaseVersionInfo struct {
 	DefVersion string `json:"def_version"`
 }
 
+type ObjectByArrayInfo struct {
+	Src         *JsonRead `json:"src"`
+	Dst         string    `json:"dst"`
+	Key         string    `json:"key"`
+	Value       string    `json:"value"`
+	KeyPolicy   int       `json:"key_policy"`
+	ValuePolicy int       `json:"value_policy"`
+}
+
+type ObjectByObjectInfo struct {
+	Src         *JsonRead `json:"src"`
+	Dst         string    `json:"dst"`
+	Key         string    `json:"key"`
+	Value       string    `json:"value"`
+	KeyPolicy   int       `json:"key_policy"`
+	ValuePolicy int       `json:"value_policy"`
+}
+
+type RemoveByKeysInfo struct {
+	Src  *JsonRead `json:"src"`
+	Dst  string    `json:"dst"`
+	Keys []string  `json:"keys"`
+}
+
+type ReplaceTextInfo struct {
+	Src   string `json:"src"`
+	Dst   string `json:"dst"`
+	Rules string `json:"rules"`
+}
+
+type ConcatObjectInfo struct {
+	Sources []string `json:"sources"`
+	Dst     string   `json:"dst"`
+}
+
 type VarTransformConfig struct {
 	JsonParse       map[string]*JsonParseData        `json:"parse"`
 	Read            map[string]*JsonRead             `json:"read"`
@@ -55,6 +90,12 @@ type VarTransformConfig struct {
 	RemoveVars      []string                         `json:"remove_vars"`
 	CreateObject    map[string]map[string]string     `json:"create_object"`
 	CreateArray     map[string][]string              `json:"create_array"`
+	ConcatObjects   *ConcatObjectInfo                `json:"concat_objects"`
+	ObjectByArray   *ObjectByArrayInfo               `json:"object_by_array"`
+	ObjectByObject  *ObjectByObjectInfo              `json:"object_by_object"`
+	RemoveByKeys    *RemoveByKeysInfo                `json:"remove_by_keys"`
+	ReplaceText     *ReplaceTextInfo                 `json:"replace_text"`
+	ErrorMessage    string                           `json:"error_message"`
 }
 
 func varTransformInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -192,6 +233,18 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 			}
 		}
 	}
+	if config.ReplaceText != nil {
+		v, ok := ReadActionResult(config.ReplaceText.Src, ctx)
+		if ok && v!=nil {
+			s:=dvevaluation.AnyToString(v)
+			mp, ok:=ReadActionResult(config.ReplaceText.Rules, ctx)
+			if ok && mp!=nil {
+				rules:=dvevaluation.AnyToDvVariable(mp)
+				s = dvjson.ReplaceTextByObjectMap(s, rules)
+			}
+			SaveActionResult(config.ReplaceText.Dst, s, ctx)
+		}
+	}
 	if config.IncreaseVersion != nil {
 		for k, v := range config.IncreaseVersion {
 			r, ok := ReadActionResult(v.Var, ctx)
@@ -225,6 +278,73 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 				}
 			}
 			SaveActionResult(kp, f, ctx)
+		}
+	}
+	if config.ConcatObjects != nil {
+		n := len(config.ConcatObjects.Sources)
+		dst := &dvevaluation.DvVariable{
+			Kind:   dvevaluation.FIELD_OBJECT,
+			Fields: make([]*dvevaluation.DvVariable, 0, 128),
+		}
+		for i := 0; i < n; i++ {
+			v, ok := ReadActionResult(config.ConcatObjects.Sources[i], ctx)
+			if !ok || v == nil {
+				continue
+			}
+			src := dvevaluation.AnyToDvVariable(v)
+			dvjson.ConcatObjects(dst, src)
+		}
+		SaveActionResult(config.ConcatObjects.Dst, dst, ctx)
+	}
+	if config.ObjectByArray != nil {
+		r, err := JsonExtract(config.ObjectByArray.Src, env)
+		if err != nil {
+			dvlog.PrintlnError("Error in expression " + config.ObjectByArray.Src.Var + ":" + err.Error())
+			ActionExceptionByError(config.ErrorMessage, err, ctx)
+			return true
+		} else {
+			d := dvevaluation.AnyToDvVariable(r)
+			v, err := dvjson.CreateObjectByArray(d, config.ObjectByArray.Key, config.ObjectByArray.Value, env, config.ObjectByArray.KeyPolicy, config.ObjectByArray.ValuePolicy)
+			if err != nil {
+				ActionExceptionByError(config.ErrorMessage, err, ctx)
+				return true
+			} else {
+				SaveActionResult(config.ObjectByArray.Dst, v, ctx)
+			}
+		}
+	}
+	if config.ObjectByObject != nil {
+		r, err := JsonExtract(config.ObjectByObject.Src, env)
+		if err != nil {
+			dvlog.PrintlnError("Error in expression " + config.ObjectByObject.Src.Var + ":" + err.Error())
+			ActionExceptionByError(config.ErrorMessage, err, ctx)
+			return true
+		} else {
+			d := dvevaluation.AnyToDvVariable(r)
+			v, err := dvjson.CreateObjectByArray(d, config.ObjectByObject.Key, config.ObjectByObject.Value, env, config.ObjectByObject.KeyPolicy, config.ObjectByObject.ValuePolicy)
+			if err != nil {
+				ActionExceptionByError(config.ErrorMessage, err, ctx)
+				return true
+			} else {
+				SaveActionResult(config.ObjectByObject.Dst, v, ctx)
+			}
+		}
+	}
+	if config.RemoveByKeys != nil {
+		r, err := JsonExtract(config.RemoveByKeys.Src, env)
+		if err != nil {
+			dvlog.PrintlnError("Error in expression " + config.RemoveByKeys.Src.Var + ":" + err.Error())
+			ActionExceptionByError(config.ErrorMessage, err, ctx)
+			return true
+		} else {
+			d := dvevaluation.AnyToDvVariable(r)
+			v, err := dvjson.RemoveByKeys(d, config.RemoveByKeys.Keys, env)
+			if err != nil {
+				ActionExceptionByError(config.ErrorMessage, err, ctx)
+				return true
+			} else {
+				SaveActionResult(config.RemoveByKeys.Dst, v, ctx)
+			}
 		}
 	}
 	if config.CreateArray != nil {

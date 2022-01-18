@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2017 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvjson
@@ -124,7 +124,7 @@ func appendYamlEscapedString(res []byte, add []byte) []byte {
 			if b != '.' && b != '+' && b != 'e' && b != '-' {
 				isNumber = false
 			}
-			if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b > 127 || (i > 0 && i < n-1 && (b == '.' || b == '/' || b == '-'))) {
+			if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_' || b > 127 || (i > 0 && i < n-1 && (b == '.' || b == '/' || b == '-'))) {
 				isSimple = false
 				if !isNumber {
 					break
@@ -226,6 +226,33 @@ func PrintToYaml(dvEntry *dvevaluation.DvVariable, indent int) []byte {
 	}
 	if n > 0 && res[n-1] != 10 {
 		res = append(res, byte(10))
+	}
+	return res
+}
+
+func PrintToYamlPlainArray(dvEntry *dvevaluation.DvVariable, indent int) []byte {
+	if dvEntry == nil {
+		return make([]byte, 0)
+	}
+	if dvEntry.Kind != dvevaluation.FIELD_ARRAY {
+		return PrintToYaml(dvEntry, indent)
+	}
+	n := len(dvEntry.Fields)
+	if n == 0 {
+		return make([]byte, 0)
+	}
+	var res []byte = nil
+	for i := 0; i < n; i++ {
+		p := PrintToYaml(dvEntry.Fields[i], indent)
+		if i == 0 || len(res) == 0 {
+			res = p
+		} else {
+			if res[len(res)-1] != 10 {
+				res = append(res, 13, 10)
+			}
+			res = append(res, '-', '-', '-', 13, 10)
+			res = append(res, p...)
+		}
 	}
 	return res
 }

@@ -57,6 +57,9 @@ func IterateFilterOnAnyType(val interface{}, processor FilterProcessor) interfac
 	switch val.(type) {
 	case *dvevaluation.DvVariable:
 		fieldInfo := val.(*dvevaluation.DvVariable)
+		if fieldInfo.Kind == dvevaluation.FIELD_OBJECT {
+			res.Kind = dvevaluation.FIELD_OBJECT
+		}
 		fields := fieldInfo.Fields
 		n := len(fields)
 		res.Fields = make([]*dvevaluation.DvVariable, 0, n)
