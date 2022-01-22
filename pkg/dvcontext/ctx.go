@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	UrlPrefix   = "URL_"
+	UrlPathPrefix   = "URL_PATH_"
 	ErrorPolicy = "ERROR_POLICY"
 )
 
@@ -51,7 +51,7 @@ func (ctx *RequestContext) SetHeaderArray(key string, val []string) {
 
 func (ctx *RequestContext) SetUrlInlineParameters(params map[string]string) {
 	ctx.UrlInlineParams = params
-	ctx.PrimaryContextEnvironment.SetPropertiesWithPrefixFromString(UrlPrefix, params, dvevaluation.TransformUpperCase)
+	ctx.PrimaryContextEnvironment.SetPropertiesWithPrefixFromString(UrlPathPrefix, params, dvevaluation.TransformUpperCase)
 }
 
 func (ctx *RequestContext) GetCurrentErrorPolicy() *RequestErrorPolicy {

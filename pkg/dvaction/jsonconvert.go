@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvaction
@@ -19,6 +19,8 @@ type JsonConvertConfig struct {
 	Merge   []*JsonRead `json:"merge"`
 	Replace []*JsonRead `json:"replace"`
 	Update  []*JsonRead `json:"update"`
+	Push    []*JsonRead `json:"push"`
+	Concat  []*JsonRead `json:"concat"`
 	Remove  []string    `json:"remove"`
 }
 
@@ -29,10 +31,6 @@ func jsonConvertInit(command string, ctx *dvcontext.RequestContext) ([]interface
 	}
 	if config.Source == nil || config.Source.Var == "" {
 		log.Printf("source must be present in %s", command)
-		return nil, false
-	}
-	if config.Result == "" {
-		log.Printf("Result name is not specified in command %s", command)
 		return nil, false
 	}
 	return []interface{}{config, ctx}, true
@@ -91,6 +89,44 @@ func JsonConvertRunByConfig(config *JsonConvertConfig, ctx *dvcontext.RequestCon
 		v := config.Remove[i]
 		src = dvevaluation.RemoveAnyVariable(src, v, env)
 	}
-	env.Set(config.Result, src)
+	s := dvevaluation.AnyToDvVariable(src)
+	n = len(config.Push)
+	for i := 0; i < n; i++ {
+		JsonConvertPush(config.Push[i], s, env)
+	}
+	n = len(config.Concat)
+	for i := 0; i < n; i++ {
+		JsonConvertConcat(config.Concat[i], s, env)
+	}
+	SaveActionResult(config.Result, s, ctx)
 	return true
+}
+
+func JsonConvertPush(push *JsonRead, dst *dvevaluation.DvVariable, env *dvevaluation.DvObject) {
+	src, err := JsonExtract(push, env)
+	if err != nil {
+		dvlog.PrintlnError("Error in json extracting by " + push.Var)
+		return
+	}
+	if src != nil && dst != nil && dst.Kind == dvevaluation.FIELD_ARRAY {
+		s := dvevaluation.AnyToDvVariable(src)
+		dst.Fields = append(dst.Fields, s)
+	}
+}
+
+func JsonConvertConcat(push *JsonRead, dst *dvevaluation.DvVariable, env *dvevaluation.DvObject) {
+	src, err := JsonExtract(push, env)
+	if err != nil {
+		dvlog.PrintlnError("Error in json extracting by " + push.Var)
+		return
+	}
+	if src != nil && dst != nil && dst.Kind == dvevaluation.FIELD_ARRAY {
+		s := dvevaluation.AnyToDvVariable(src)
+		if s!=nil && s.Kind==dvevaluation.FIELD_ARRAY {
+			n:=len(s.Fields)
+			for i:=0;i<n;i++ {
+				dst.Fields = append(dst.Fields, s.Fields[i])
+			}
+		}
+	}
 }

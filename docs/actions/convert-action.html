@@ -10,7 +10,12 @@ It has the parameters as follows:
     "replace" array of {<a href="json-source.html">json source</a>}
     "update" array of {<a href="json-source.html">json source</a>}
     "remove" array of strings, each string identifies the path to be removed
+    "push" array of {<a href="json-source.html">json source</a>}, to array next elements are added,
+    "concat" array of {<a href="json-source.html">json source</a>} concatenation of arrays
 }
 Example:
-    CONVERT_ACTION_1=convert:{"source":"JSON_SRC", "remove":["0.value"],"return":"JSON_RESULT"}
+    ACTION_CONVERT_1=convert:{"source":"JSON_SRC", "remove":["0.value"],"return":"JSON_RESULT"}
+    ACTION_CONVERT_2=convert:{"source":"S", "add":[{"var":"X"}],"result":"S"}
+    ACTION_CONVERT_3=convert:{"source":"S.0.value", "replace":[{"var":"X"}],"result":"Y.pool.0"}
+    ACTION_CONVERT_4=convert:{"source":"S", "update":[{"var":"X"}],"result":"S"}
 </pre>

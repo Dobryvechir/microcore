@@ -17,7 +17,7 @@ func collectRequestParameters(request *dvcontext.RequestContext) error {
 	action := request.Action
 	bodyParams := action.Body
 	method := request.Reader.Method
-	if bodyParams != nil && method != "GET" {
+	if method != "GET" {
 		body, err := ioutil.ReadAll(request.Reader.Body)
 		if err != nil {
 			return err
@@ -28,9 +28,11 @@ func collectRequestParameters(request *dvcontext.RequestContext) error {
 			request.PrimaryContextEnvironment.Set(dvcontext.BODY_STRING, request.InputStr)
 			if len(request.InputStr) > 0 && (request.InputStr[0] == '[' || request.InputStr[0] == '{') {
 				request.InputJson, err = dvjson.JsonFullParser(request.Input)
-				if err != nil {
+				if err == nil {
 					request.PrimaryContextEnvironment.Set(dvcontext.BODY_JSON, request.InputJson)
-					dvevaluation.CollectJsonVariables(request.InputJson, bodyParams, request.PrimaryContextEnvironment, true)
+					if bodyParams != nil {
+						dvevaluation.CollectJsonVariables(request.InputJson, bodyParams, request.PrimaryContextEnvironment, true)
+					}
 				}
 			}
 		}

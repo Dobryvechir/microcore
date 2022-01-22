@@ -124,7 +124,7 @@ func CompareJsonByConfig(config *CompareJsonConfig, ctx *dvcontext.RequestContex
 	}
 	added, removed, updated, unchanged, counterparts := dvjson.FindDifferenceForAnyType(sample, ref,
 		config.Added != "", config.Removed != "", config.Updated != "", config.Unchanged != "",
-		config.UpdatedRef != "", config.UnchangedAsUpdated)
+		config.UpdatedRef != "", config.UnchangedAsUpdated, false)
 	env := ctx.LocalContextEnvironment.Properties
 	if added != nil {
 		env[config.Added] = added

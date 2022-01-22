@@ -76,6 +76,13 @@ type ConcatObjectInfo struct {
 	Dst     string   `json:"dst"`
 }
 
+type AssignInfo struct {
+	Var       string `json:"var"`
+	Condition string `json:"condition"`
+	IfNotSet  string `json:"if_not_set"`
+	IfEmpty   string `json:"if_empty"`
+}
+
 type VarTransformConfig struct {
 	JsonParse       map[string]*JsonParseData        `json:"parse"`
 	Read            map[string]*JsonRead             `json:"read"`
@@ -83,6 +90,7 @@ type VarTransformConfig struct {
 	Transform       map[string]string                `json:"transform"`
 	Clone           map[string]string                `json:"clone"`
 	DefaultString   map[string]string                `json:"default_string"`
+	Assign          map[string]*AssignInfo           `json:"assign"`
 	DefaultAny      map[string]string                `json:"default_any"`
 	FindRegExpr     map[string]*PlaceRegExpression   `json:"find"`
 	ReplaceRegExpr  map[string]*ReplaceRegExpression `json:"replace"`
@@ -187,6 +195,41 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 			}
 		}
 	}
+	if config.Assign != nil {
+		for k, v := range config.Assign {
+			if v != nil {
+				name := v.Condition
+				if name == "" {
+					name = v.Var
+				}
+				r, ok := ReadActionResult(name, ctx)
+				if !ok {
+					if v.IfNotSet != "" {
+						r, ok = ReadActionResult(v.IfNotSet, ctx)
+					}
+					if !ok && v.IfEmpty != "" {
+						r, ok = ReadActionResult(v.IfEmpty, ctx)
+						SaveActionResult(k, r, ctx)
+						continue
+					}
+				}
+				if ok {
+					if v.IfEmpty != "" && !dvevaluation.AnyToBoolean(r) {
+						b, ok := ReadActionResult(v.IfEmpty, ctx)
+						if ok {
+							r = b
+						}
+					} else if v.Condition != "" && v.Var != "" {
+						b, ok := ReadActionResult(v.Var, ctx)
+						if ok {
+							r = b
+						}
+					}
+					SaveActionResult(k, r, ctx)
+				}
+			}
+		}
+	}
 	if config.DefaultString != nil {
 		for k, v := range config.DefaultString {
 			_, ok := ReadActionResult(k, ctx)
@@ -235,11 +278,11 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	}
 	if config.ReplaceText != nil {
 		v, ok := ReadActionResult(config.ReplaceText.Src, ctx)
-		if ok && v!=nil {
-			s:=dvevaluation.AnyToString(v)
-			mp, ok:=ReadActionResult(config.ReplaceText.Rules, ctx)
-			if ok && mp!=nil {
-				rules:=dvevaluation.AnyToDvVariable(mp)
+		if ok && v != nil {
+			s := dvevaluation.AnyToString(v)
+			mp, ok := ReadActionResult(config.ReplaceText.Rules, ctx)
+			if ok && mp != nil {
+				rules := dvevaluation.AnyToDvVariable(mp)
 				s = dvjson.ReplaceTextByObjectMap(s, rules)
 			}
 			SaveActionResult(config.ReplaceText.Dst, s, ctx)
@@ -270,6 +313,9 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 					vs, ok := ReadActionResult(v, ctx)
 					if ok {
 						t := dvevaluation.AnyToDvVariable(vs)
+						if t==nil {
+							t = &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_NULL}
+						}
 						t.Name = []byte(k)
 						f.Fields = append(f.Fields, t)
 					} else {

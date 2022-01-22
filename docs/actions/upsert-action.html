@@ -1,0 +1,14 @@
+<h1>upsert</h1>
+<pre>
+It updates or insert items from one array into another array of the same structure. Its parameters
+    are as follows:
+{
+     "change"   {<a href="json-source.html">json source to be compared (new data)</a>}
+         "change.ids" is used to detect identical items. By default it is ["id"]
+     "stored" {<a href="json-source.html">json reference to be compared (old object in database)</a>}
+         "stored.ids" is used to detect identical items. By default it is ["id"]
+         "stored.destination" is used to detect the place where to write back the result, by default, it is a value from var.
+}
+Example:
+UPDATE_STEP_1=upsert:{"sample":{"var":"S","ids":["name","key"]},"ref":{"var":"T","ids":["name","key"]}},"added":"RESULT"}
+</pre>

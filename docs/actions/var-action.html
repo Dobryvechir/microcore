@@ -3,6 +3,14 @@
 Make conversions with variables
 {
    "error_message"  a message to the user in case any functionality below fails
+    "assign" map of string to {
+           "var" another variable
+           "if_not_set", if "var" is not set
+           "if_empty", if var (or with if_not_set) is empty
+           "condition", string, if it is not empty, it converts the assign into the ternary operator
+               condition (or if_not_set if condition is not set) ? var : if_empty
+    }
+    assigns one variable (optionally with path and level) to another variable (optionally with path and level)
    "parse" map of string to {
          "var": string, the name of the source variable
          "evaluation": int, the number of brackets ({{ }}) to evaluate expression,

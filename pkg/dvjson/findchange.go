@@ -81,7 +81,7 @@ func FindChangeInArray(src *dvevaluation.DvVariable, ref *dvevaluation.DvVariabl
 		ref.CreateQuickInfoForObjectType()
 	}
 	added, removed, updated, _, counterParts := src.FindDifferenceByQuickMap(ref,
-		true, true, true, false, true, false)
+		true, true, true, false, true, false, false)
 	na := len(added.Fields)
 	nr := len(removed.Fields)
 	nu := len(updated.Fields)

@@ -132,7 +132,7 @@ func matchMaskMiddle(url string, parts []*dvcontext.MaskInfoPart, start int, isC
 			if parts[i].Kind == dvcontext.MaskCondition {
 				trackNew.posInfo = append(trackNew.posInfo, pos+start|(m<<urlMatchLenOffset))
 			}
-			res, trackNew = matchMaskMiddle(url[start+pos+m:], parts[i+1:], start+pos+m, isCaseInsensitive, trackNew)
+			res, trackNew = matchMaskMiddle(url[pos+m:], parts[i+1:], start+pos+m, isCaseInsensitive, trackNew)
 			if res {
 				return true, trackNew
 			}

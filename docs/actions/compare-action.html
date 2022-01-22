@@ -1,0 +1,23 @@
+<h1>compare</h1>
+<pre>
+Compares 2 objects or arrays and provides the sources of updated, created, unchanged, removed. Its parameters
+    are as follows:
+{
+     "sample"   {<a href="json-source.html">json source to be compared</a>}
+     "ref" {<a href="json-source.html">json reference to be compared</a>}
+     "added" string, variable name to store added values (if it is empty, added values are not collected)
+             The added items are from the json reference.
+     "removed" string, variable name to store removed values (if it is empty, removed values are not collected)
+             The removed items are from the source.
+     "updated" string, variable name to store updated values (if it is empty, updated values are not collected).
+             The updated items are form the json reference.
+     "unchanged" string, variable name to store unchanged values (if it is empty, unchanged values are not collected)
+             The unchanged values are from the json reference (the same as from the source).
+     "updatedRef" string, variable name to store updated counterparts (if it is empty, updated values are not collected).
+             The updated counterparts are form the source and are placed at the same index as updated values
+             from the json reference.
+     "unchangedAsUpdated" true/false, false is default, if true, the unchanged are treated as the updated.
+}
+Example:
+UPDATE_STEP_1=compare:{"sample":{"var":"S","ids":["name","key"]},"ref":{"var":"T","ids":["name","key"]}},"added":"RESULT"}
+</pre>

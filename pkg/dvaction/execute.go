@@ -42,6 +42,7 @@ const (
 	CommandSwitch      = "switch"
 	CommandRange       = "range"
 	CommandReturn      = "return"
+	CommandVoid        = "void"
 	CommandCompareJson = "compare"
 	CommandVar         = "var"
 	CommandStore       = "store"
@@ -49,6 +50,7 @@ const (
 	CommandDebug       = "debug"
 	CommandDynamic     = "dynamic"
 	CommandValidate    = "validate"
+	CommandUpsert      = "upsert"
 )
 
 var processFunctions = map[string]ProcessFunction{
@@ -65,6 +67,7 @@ var processFunctions = map[string]ProcessFunction{
 	CommandStore:       {Init: storeInit, Run: storeRun},
 	CommandDebug:       {Init: debugInit, Run: debugRun},
 	CommandValidate:    {Init: validationInit, Run: validationRun},
+	CommandUpsert:      {Init: upsertJsonInit, Run: upsertJsonRun},
 }
 
 var logicProcessFunctions = map[string]ProcessFunction{

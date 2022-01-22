@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvevaluation
@@ -29,6 +29,9 @@ func SquareBracketNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvg
 			r, err := t.ExecuteExpression(context)
 			if err != nil {
 				return nil, nil, false, err, false
+			}
+			if r == nil {
+				continue
 			}
 			vl := AnyToDvVariable(r.Value)
 			val.Fields[i] = vl

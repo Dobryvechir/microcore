@@ -205,13 +205,17 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 			return
 		}
 		if path != "" {
-			dat, ok := ReadActionResult(varName, ctx)
+			name := varName
+			if level != "" {
+				name = level + ":" + name
+			}
+			dat, ok := ReadActionResult(name, ctx)
 			if !ok {
 				data = dvevaluation.CreateDvVariableByPathAndData(path, data, nil)
 			} else {
 				dvevaluation.UpdateAnyVariables(dat, data, path, dvevaluation.UPDATE_MODE_REPLACE, nil, env)
+				return
 			}
-			return
 		}
 		if level == "session" || level == "session?" {
 			isErrorFatal := level == "session"

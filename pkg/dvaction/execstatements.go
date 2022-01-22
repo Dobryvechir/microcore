@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvaction
@@ -26,6 +26,7 @@ var execStatementProcessFunctions = map[string]ProcessFunction{
 	CommandRange:   {Init: execRangeInit, Run: execRangeRun},
 	CommandSwitch:  {Init: execSwitchInit, Run: execSwitchRun},
 	CommandReturn:  {Init: execReturnInit, Run: execReturnRun},
+	CommandVoid:    {Init: voidInit, Run: voidRun},
 }
 
 func execCallInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -125,7 +126,7 @@ func execIfEmptyRun(data []interface{}) bool {
 }
 
 func ExecIfEmpty(config *ExecIfEmptyConfig, ctx *dvcontext.RequestContext) bool {
-	res, ok := ctx.LocalContextEnvironment.Get(config.Source)
+	res, ok := ReadActionResult(config.Source, ctx)
 	if !ok || dvjson.IsEmptyAny(res) {
 		ExecCall(config.Then, ctx)
 	} else {
@@ -314,5 +315,13 @@ func ExecReturn(config *ExecReturnConfig, ctx *dvcontext.RequestContext) bool {
 
 func ExecReturnShort(result string, ctx *dvcontext.RequestContext) bool {
 	ExecuteReturnSubsequence(ctx, result)
+	return true
+}
+
+func voidInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+	return []interface{}{ctx}, true
+}
+
+func voidRun(data []interface{}) bool {
 	return true
 }

@@ -48,7 +48,7 @@ func CountChildren(val interface{}) int {
 
 func FindDifferenceForAnyType(itemAny interface{}, otherAny interface{},
 	fillAdded bool, fillRemoved bool, fillUpdated bool, fillUnchanged bool,
-	fillUpdatedCounterpart bool, unchangedAsUpdated bool) (added *dvevaluation.DvVariable, removed *dvevaluation.DvVariable,
+	fillUpdatedCounterpart bool, unchangedAsUpdated bool, useIndex bool) (added *dvevaluation.DvVariable, removed *dvevaluation.DvVariable,
 	updated *dvevaluation.DvVariable, unchanged *dvevaluation.DvVariable, counterparts *dvevaluation.DvVariable) {
 	var item, other *dvevaluation.DvVariable
 	switch itemAny.(type) {
@@ -59,14 +59,14 @@ func FindDifferenceForAnyType(itemAny interface{}, otherAny interface{},
 	case *dvevaluation.DvVariable:
 		other = otherAny.(*dvevaluation.DvVariable)
 	}
-	if item.QuickSearch == nil {
+	if item != nil && item.QuickSearch == nil {
 		item.CreateQuickInfoForObjectType()
 	}
-	if other.QuickSearch == nil {
+	if other != nil && other.QuickSearch == nil {
 		other.CreateQuickInfoForObjectType()
 	}
 	return item.FindDifferenceByQuickMap(other, fillAdded, fillRemoved,
-		fillUpdated, fillUnchanged, fillUpdatedCounterpart, unchangedAsUpdated)
+		fillUpdated, fillUnchanged, fillUpdatedCounterpart, unchangedAsUpdated, useIndex)
 }
 
 func CreateQuickInfoByKeysForAny(data interface{}, ids []string) {

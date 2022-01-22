@@ -77,7 +77,7 @@ func (item *DvVariable) ContainsItemIn(v interface{}) bool {
 
 func (item *DvVariable) FindDifferenceByQuickMap(other *DvVariable,
 	fillAdded bool, fillRemoved bool, fillUpdated bool, fillUnchanged bool,
-	fillUpdatedCounterpart bool, unchangedAsUpdated bool) (added *DvVariable, removed *DvVariable,
+	fillUpdatedCounterpart bool, unchangedAsUpdated bool, useIndex bool) (added *DvVariable, removed *DvVariable,
 	updated *DvVariable, unchanged *DvVariable, counterparts *DvVariable) {
 	if unchangedAsUpdated {
 		fillUnchanged = false
@@ -116,6 +116,16 @@ func (item *DvVariable) FindDifferenceByQuickMap(other *DvVariable,
 	if fillUpdatedCounterpart {
 		counterparts = &DvVariable{Fields: make([]*DvVariable, 0, m), Kind: kind}
 	}
+	if useIndex && n2 > 0 {
+		for i := 0; i < n1; i++ {
+			f := other.Fields[i]
+			if f == nil {
+				f = &DvVariable{Kind: FIELD_NULL}
+				other.Fields[i] = f
+			}
+			f.Extra = i
+		}
+	}
 	if n2 == 0 {
 		if n1 == 0 {
 			return
@@ -129,6 +139,9 @@ func (item *DvVariable) FindDifferenceByQuickMap(other *DvVariable,
 	}
 	for k, v := range item.QuickSearch.Looker {
 		v1, ok := other.QuickSearch.Looker[k]
+		if v == nil {
+			v = &DvVariable{Kind: FIELD_NULL}
+		}
 		if ok {
 			dif := 1
 			if !unchangedAsUpdated {
@@ -136,10 +149,13 @@ func (item *DvVariable) FindDifferenceByQuickMap(other *DvVariable,
 			}
 			if dif == 0 {
 				if fillUnchanged {
-					unchanged.Fields = append(unchanged.Fields, v)
+					unchanged.Fields = append(unchanged.Fields, v1)
 				}
 			} else {
 				if fillUpdated {
+					if useIndex {
+						v.Extra = v1.Extra
+					}
 					updated.Fields = append(updated.Fields, v)
 				}
 				if fillUpdatedCounterpart {
@@ -733,6 +749,7 @@ func (item *DvVariable) InsertAtSimplePath(path string, child *DvVariable) bool 
 			item.Fields = append(item.Fields, itemAdd)
 			if isLast {
 				itemAdd.CloneExceptKey(child, false)
+				itemAdd.Name = []byte(current)
 			} else {
 				itemAdd.Name = []byte(current)
 				return itemAdd.InsertAtSimplePath(next, child)
@@ -940,4 +957,3 @@ func (item *DvVariable) ToDvGrammarExpressionValue() *dvgrammar.ExpressionValue 
 	}
 	return &dvgrammar.ExpressionValue{Value: item, DataType: dvgrammar.TYPE_OBJECT}
 }
-
