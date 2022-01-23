@@ -50,12 +50,12 @@ func findChangeRun(data []interface{}) bool {
 }
 
 func FindChangeByConfig(config *FindChangeConfig, ctx *dvcontext.RequestContext) bool {
-	src, err := JsonExtract(config.Sample, ctx.LocalContextEnvironment)
+	src, err := JsonExtract(config.Sample, ctx)
 	if err != nil {
 		dvlog.PrintlnError("Error in json extracting by " + config.Sample.Var)
 		return true
 	}
-	ref, err := JsonExtract(config.Ref, ctx.LocalContextEnvironment)
+	ref, err := JsonExtract(config.Ref, ctx)
 	if err != nil {
 		dvlog.PrintlnError("Error in json extracting by " + config.Ref.Var)
 		return true

@@ -51,7 +51,7 @@ func execCallRun(data []interface{}) bool {
 }
 
 func ExecCall(config *ExecCallConfig, ctx *dvcontext.RequestContext) bool {
-	if config.Action != "" {
+	if config!=nil && config.Action != "" {
 		ExecuteAddSubsequence(ctx, config.Action, config.Params, config.Result)
 	}
 	return true

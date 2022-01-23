@@ -55,7 +55,7 @@ func pagingRun(data []interface{}) bool {
 }
 
 func PagingRunByConfig(config *PagingConfig, ctx *dvcontext.RequestContext) bool {
-	src, err := JsonExtract(config.Source, ctx.LocalContextEnvironment)
+	src, err := JsonExtract(config.Source, ctx)
 	if err != nil {
 		dvlog.PrintlnError("Error in json extracting by " + config.Source.Var)
 		return true

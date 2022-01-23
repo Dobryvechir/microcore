@@ -7,7 +7,6 @@ package dvaction
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
@@ -62,15 +61,16 @@ func compareJsonRun(data []interface{}) bool {
 	return CompareJsonByConfig(config, ctx)
 }
 
-func JsonExtract(info *JsonRead, env *dvevaluation.DvObject) (interface{}, error) {
+func JsonExtract(info *JsonRead, ctx *dvcontext.RequestContext) (interface{}, error) {
 	return JsonExtractExtended(info.Var, info.Path, info.Filter, info.Sort, info.AfterPath,
-		info.NoReadOfUndefined, info.ErrorSignificant, info.Ids, info.Convert, env)
+		info.NoReadOfUndefined, info.ErrorSignificant, info.Ids, info.Convert, ctx)
 }
 
 func JsonExtractExtended(place string, path string, filter string, sort []string,
 	afterPath string, noReadOfUndefined bool, errorSignificant bool, ids []string, convert string,
-	env *dvevaluation.DvObject) (interface{}, error) {
-	val, ok := env.Get(place)
+	ctx *dvcontext.RequestContext) (interface{}, error) {
+	val, ok := ReadActionResult(place, ctx)
+	env := GetEnvironment(ctx)
 	if !ok {
 		return nil, nil
 	}
@@ -112,12 +112,12 @@ func JsonExtractExtended(place string, path string, filter string, sort []string
 }
 
 func CompareJsonByConfig(config *CompareJsonConfig, ctx *dvcontext.RequestContext) bool {
-	sample, err := JsonExtract(config.Sample, ctx.LocalContextEnvironment)
+	sample, err := JsonExtract(config.Sample, ctx)
 	if err != nil {
 		dvlog.PrintlnError("Error in json extracting by " + config.Sample.Var)
 		return true
 	}
-	ref, err := JsonExtract(config.Ref, ctx.LocalContextEnvironment)
+	ref, err := JsonExtract(config.Ref, ctx)
 	if err != nil {
 		dvlog.PrintlnError("Error in json extracting by " + config.Ref.Var)
 		return true

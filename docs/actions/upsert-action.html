@@ -7,7 +7,7 @@ It updates or insert items from one array into another array of the same structu
          "change.ids" is used to detect identical items. By default it is ["id"]
      "stored" {<a href="json-source.html">json reference to be compared (old object in database)</a>}
          "stored.ids" is used to detect identical items. By default it is ["id"]
-         "stored.destination" is used to detect the place where to write back the result, by default, it is a value from var.
+         "stored.destination" is used to detect the place where to write back the result
 }
 Example:
 UPDATE_STEP_1=upsert:{"sample":{"var":"S","ids":["name","key"]},"ref":{"var":"T","ids":["name","key"]}},"added":"RESULT"}

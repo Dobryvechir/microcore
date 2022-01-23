@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvaction
@@ -44,12 +44,12 @@ func upsertJsonRun(data []interface{}) bool {
 }
 
 func UpsertJsonByConfig(config *UpsertJsonConfig, ctx *dvcontext.RequestContext) bool {
-	sample, err := JsonExtract(config.Sample, ctx.LocalContextEnvironment)
+	sample, err := JsonExtract(config.Sample, ctx)
 	if err != nil {
 		dvlog.PrintlnError("Error in json extracting by " + config.Sample.Var)
 		return true
 	}
-	ref, err := JsonExtract(config.Ref, ctx.LocalContextEnvironment)
+	ref, err := JsonExtract(config.Ref, ctx)
 	if err != nil {
 		dvlog.PrintlnError("Error in json extracting by " + config.Ref.Var)
 		return true
@@ -72,10 +72,6 @@ func UpsertJsonByConfig(config *UpsertJsonConfig, ctx *dvcontext.RequestContext)
 			res.Fields = append(res.Fields, added.Fields[i])
 		}
 	}
-	place := config.Ref.Destination
-	if place == "" {
-		place = config.Ref.Var
-	}
-	SaveActionResult(place, res, ctx)
+	SaveActionResult(config.Ref.Destination, res, ctx)
 	return true
 }

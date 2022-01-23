@@ -18,7 +18,7 @@ const (
 	ERROR_POLICY_NULL  = 3
 )
 
-func createLocalVariables(env *dvevaluation.DvObject, dat *dvevaluation.DvVariable) []string {
+func CreateLocalVariables(env *dvevaluation.DvObject, dat *dvevaluation.DvVariable) []string {
 	locales := make([]string, 1, 16)
 	locales[0] = "this"
 	env.Set(locales[0], dat)
@@ -52,7 +52,7 @@ func createLocalVariables(env *dvevaluation.DvObject, dat *dvevaluation.DvVariab
 	return locales
 }
 
-func removeLocalVariables(env *dvevaluation.DvObject, locals []string) {
+func RemoveLocalVariables(env *dvevaluation.DvObject, locals []string) {
 	n := len(locals)
 	for i := 0; i < n; i++ {
 		env.Delete(locals[i])
@@ -68,7 +68,7 @@ func CreateObjectByArray(obj *dvevaluation.DvVariable, key string, value string,
 	var v, k interface{}
 createObjCycle:
 	for i := 0; i < n; i++ {
-		locals := createLocalVariables(env, obj.Fields[i])
+		locals := CreateLocalVariables(env, obj.Fields[i])
 		v, err = env.EvaluateAnyTypeExpression(value)
 		if err != nil {
 			switch valuePolicy {
@@ -103,7 +103,7 @@ createObjCycle:
 		}
 		r.Name = dvevaluation.AnyToByteArray(k)
 		res.Fields = append(res.Fields, r)
-		removeLocalVariables(env, locals)
+		RemoveLocalVariables(env, locals)
 	}
 	return
 }

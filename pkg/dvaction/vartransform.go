@@ -148,7 +148,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 	}
 	if config.Read != nil {
 		for k, v := range config.Read {
-			r, err := JsonExtract(v, env)
+			r, err := JsonExtract(v, ctx)
 			if err != nil {
 				dvlog.PrintlnError("Error in expression " + k + ":" + err.Error())
 			} else {
@@ -313,7 +313,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 					vs, ok := ReadActionResult(v, ctx)
 					if ok {
 						t := dvevaluation.AnyToDvVariable(vs)
-						if t==nil {
+						if t == nil {
 							t = &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_NULL}
 						}
 						t.Name = []byte(k)
@@ -343,7 +343,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 		SaveActionResult(config.ConcatObjects.Dst, dst, ctx)
 	}
 	if config.ObjectByArray != nil {
-		r, err := JsonExtract(config.ObjectByArray.Src, env)
+		r, err := JsonExtract(config.ObjectByArray.Src, ctx)
 		if err != nil {
 			dvlog.PrintlnError("Error in expression " + config.ObjectByArray.Src.Var + ":" + err.Error())
 			ActionExceptionByError(config.ErrorMessage, err, ctx)
@@ -360,7 +360,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 		}
 	}
 	if config.ObjectByObject != nil {
-		r, err := JsonExtract(config.ObjectByObject.Src, env)
+		r, err := JsonExtract(config.ObjectByObject.Src, ctx)
 		if err != nil {
 			dvlog.PrintlnError("Error in expression " + config.ObjectByObject.Src.Var + ":" + err.Error())
 			ActionExceptionByError(config.ErrorMessage, err, ctx)
@@ -377,7 +377,7 @@ func VarTransformRunByConfig(config *VarTransformConfig, ctx *dvcontext.RequestC
 		}
 	}
 	if config.RemoveByKeys != nil {
-		r, err := JsonExtract(config.RemoveByKeys.Src, env)
+		r, err := JsonExtract(config.RemoveByKeys.Src, ctx)
 		if err != nil {
 			dvlog.PrintlnError("Error in expression " + config.RemoveByKeys.Src.Var + ":" + err.Error())
 			ActionExceptionByError(config.ErrorMessage, err, ctx)
