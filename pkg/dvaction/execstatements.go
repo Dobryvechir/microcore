@@ -7,6 +7,7 @@ package dvaction
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
@@ -22,6 +23,7 @@ var execStatementProcessFunctions = map[string]ProcessFunction{
 	CommandCall:    {Init: execCallInit, Run: execCallRun},
 	CommandIf:      {Init: execIfInit, Run: execIfRun},
 	CommandIfEmpty: {Init: execIfEmptyInit, Run: execIfEmptyRun},
+	CommandIfArray: {Init: execIfArrayInit, Run: execIfArrayRun},
 	CommandFor:     {Init: execForInit, Run: execForRun},
 	CommandRange:   {Init: execRangeInit, Run: execRangeRun},
 	CommandSwitch:  {Init: execSwitchInit, Run: execSwitchRun},
@@ -51,7 +53,7 @@ func execCallRun(data []interface{}) bool {
 }
 
 func ExecCall(config *ExecCallConfig, ctx *dvcontext.RequestContext) bool {
-	if config!=nil && config.Action != "" {
+	if config != nil && config.Action != "" {
 		ExecuteAddSubsequence(ctx, config.Action, config.Params, config.Result)
 	}
 	return true
@@ -131,6 +133,61 @@ func ExecIfEmpty(config *ExecIfEmptyConfig, ctx *dvcontext.RequestContext) bool 
 		ExecCall(config.Then, ctx)
 	} else {
 		ExecCall(config.Else, ctx)
+	}
+	return true
+}
+
+type ExecIfArrayConfig struct {
+	Source string          `json:"source"`
+	Then   *ExecCallConfig `json:"then"`
+	Else   *ExecCallConfig `json:"else"`
+	Ensure string          `json:"ensure"`
+}
+
+func execIfArrayInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+	config := &ExecIfArrayConfig{}
+	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
+		return nil, false
+	}
+	if config.Source == "" {
+		log.Printf("source must be specified in %s", command)
+		return nil, false
+	}
+	return []interface{}{config, ctx}, true
+}
+
+func execIfArrayRun(data []interface{}) bool {
+	config := data[0].(*ExecIfArrayConfig)
+	var ctx *dvcontext.RequestContext = nil
+	if data[1] != nil {
+		ctx = data[1].(*dvcontext.RequestContext)
+	}
+	return ExecIfArray(config, ctx)
+}
+
+func ExecIfArray(config *ExecIfArrayConfig, ctx *dvcontext.RequestContext) bool {
+	var dv *dvevaluation.DvVariable = nil
+	res, ok := ReadActionResult(config.Source, ctx)
+	isArray := ok
+	if isArray {
+		dv = dvevaluation.AnyToDvVariable(res)
+		isArray = dv != nil && dv.Kind == dvevaluation.FIELD_ARRAY
+	}
+	if isArray {
+		ExecCall(config.Then, ctx)
+		if config.Ensure != "" {
+			SaveActionResult(config.Ensure, dv, ctx)
+		}
+	} else {
+		ExecCall(config.Else, ctx)
+		if config.Ensure != "" {
+			if dv == nil {
+				dv = &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_NULL}
+			}
+			wrapper := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: make([]*dvevaluation.DvVariable, 1, 8)}
+			wrapper.Fields[0] = dv
+			SaveActionResult(config.Ensure, wrapper, ctx)
+		}
 	}
 	return true
 }

@@ -1,0 +1,20 @@
+<h1>ifarray</h1>
+<pre>
+Verifies whether condition is variable is an array, it executes
+    one subsequence, in the other case, another subsequence
+Ifempty command has the following parameters:
+{
+     "source"   string, the name of the variable, which can optionally include the level and
+               the path
+     "then" {<a href="call-action.html">call parameters</a>} in case it is empty
+     "else" {<a href="call-action.html">call parameters</a>} in case it is not empty
+     "ensure"  string, a variable where an array must be saved, whether original array or a newly
+       created array with one single field
+}
+Example:
+UPDATE_STEP_1=ifarray:{"source":"SOURCE.0.value",
+    "then":{"action":"EMPTY_CASE_ACTION", "params":{"A1":"5","A2":"6"},"result":"A3"},
+    "else":{"action":"NON_EMPTY_CASE"}, "ensure": "NEW_DATA"}
+ACTION_EMPTY_CASE_ACTION_1=void:
+ACTION_NON_EMPTY_CASE_1=void:
+</pre>

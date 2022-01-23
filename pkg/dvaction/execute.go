@@ -38,6 +38,7 @@ const (
 	CommandCall        = "call"
 	CommandIf          = "if"
 	CommandIfEmpty     = "ifempty"
+	CommandIfArray     = "ifarray"
 	CommandFor         = "for"
 	CommandSwitch      = "switch"
 	CommandRange       = "range"
