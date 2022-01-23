@@ -117,7 +117,7 @@ func (item *DvVariable) FindDifferenceByQuickMap(other *DvVariable,
 		counterparts = &DvVariable{Fields: make([]*DvVariable, 0, m), Kind: kind}
 	}
 	if useIndex && n2 > 0 {
-		for i := 0; i < n1; i++ {
+		for i := 0; i < n2; i++ {
 			f := other.Fields[i]
 			if f == nil {
 				f = &DvVariable{Kind: FIELD_NULL}
