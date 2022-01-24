@@ -37,6 +37,12 @@ func RegisterMasterVariable(name string, variable *DvVariable) *DvVariable {
 	return variable
 }
 
+func ProvideRootValues(env *DvObject) {
+    for k,v:=range registeredMasterObjects {
+		env.Set(k,v)
+	}
+}
+
 func (dv *DvVariable) GetDvObjectByPrototypes() *DvObject {
 	if dv==nil || dv.Prototype==nil || dv.Prototype.Fields==nil {
 		return nil

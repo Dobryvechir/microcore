@@ -131,6 +131,15 @@ func ParentheseParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgramma
 				value, toStop, err = dv.Extra.(*DvFunctionObject).ExecuteDvFunctionWithTreeArguments(tree.Children, context, rest)
 				parentValue = parent
 				return
+			case *DvFunction:
+				functionObject := &DvFunctionObject{
+					SelfRef:  nil,
+					Context:  context,
+					Executor: dv.Extra.(*DvFunction),
+				}
+				value, toStop, err = functionObject.ExecuteDvFunctionWithTreeArguments(tree.Children, context, rest)
+				parentValue = parent
+				return
 			}
 		}
 

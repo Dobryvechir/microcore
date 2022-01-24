@@ -6,10 +6,9 @@ Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvsession
 
 import (
-	"crypto/rand"
 	"errors"
-	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvcrypt"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 	"log"
 	"strings"
@@ -82,7 +81,7 @@ func (action *SessionRequestBlock) GetSessionStorage(ctx *dvcontext.RequestConte
 		return nil, errors.New("Session is not available for this url")
 	}
 	if isCreateOnly {
-		sessionId = PseudoUuid()
+		sessionId = dvcrypt.GetRandomUuid()
 	} else if sessionId == "" {
 		if !isErrorFatal {
 			return nil, nil
@@ -125,17 +124,6 @@ func (block *SessionActionBlock) SetSessionVariables(ctx *dvcontext.RequestConte
 			ctx.PrimaryContextEnvironment.Set(pref+k, v)
 		}
 	}
-}
-
-func PseudoUuid() (uuid string) {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return
-	}
-	uuid = fmt.Sprintf("%8X-%4X-%4X-%4X-%12X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
-	return
 }
 
 func (block *SessionActionBlock) SetItem(key string, value interface{}) {

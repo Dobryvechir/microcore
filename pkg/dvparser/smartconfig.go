@@ -719,6 +719,8 @@ func ReadPropertiesFileWithEnvironmentVariables(currentDir string, propertiesNam
 	dvlog.SetCurrentNamespace(currentDir)
 	GlobalProperties = LinearSmartConfigFromEnvironment()
 	initializeRegisteredFunctions()
+	GlobalPropertiesAsDvObject = dvevaluation.NewDvObjectFrom2Maps(nil, GlobalProperties)
+	dvevaluation.ProvideRootValues(GlobalPropertiesAsDvObject)
 	GeneralFilePaths = make([]string, 1, 4)
 	GeneralFilePaths[0] = currentDir
 	err := setFilePaths()
@@ -729,7 +731,6 @@ func ReadPropertiesFileWithEnvironmentVariables(currentDir string, propertiesNam
 	if filename == "" {
 		return nil
 	}
-	GlobalPropertiesAsDvObject = dvevaluation.NewDvObjectFrom2Maps(nil, GlobalProperties)
 	configInfo := ConfigInfo{ParamMap: GlobalPropertiesAsDvObject, FilePaths: GeneralFilePaths}
 	LinearSmartConfigFromFile(filename, &configInfo, -1)
 	if configInfo.Err != nil {

@@ -6,7 +6,9 @@ Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvjsmaster
 
 import (
+	"github.com/Dobryvechir/microcore/pkg/dvcrypt"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"strconv"
 	"strings"
 )
@@ -20,19 +22,30 @@ const (
 
 func math_init() {
 	MathMaster = dvevaluation.RegisterMasterVariable("Math", &dvevaluation.DvVariable{
-		Fields: make([]*dvevaluation.DvVariable,0,7),
+		Fields: make([]*dvevaluation.DvVariable, 0, 7),
 		Kind:   dvevaluation.FIELD_OBJECT,
 		Prototype: &dvevaluation.DvVariable{
 			Fields: []*dvevaluation.DvVariable{
 				{
 					Name: []byte("compareVersions"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Extra:   Math_CompareVersions,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_CompareVersions,
+					},
 				},
 				{
 					Name: []byte("increaseVersion"),
 					Kind: dvevaluation.FIELD_FUNCTION,
-					Extra:   Math_IncreaseVersion,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_IncreaseVersion,
+					},
+				},
+				{
+					Name: []byte("generateUUID"),
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_GenerateUUID,
+					},
 				},
 			},
 			Kind: dvevaluation.FIELD_OBJECT,
@@ -40,45 +53,44 @@ func math_init() {
 	})
 }
 
-func Math_CompareVersions(context *dvevaluation.DvContext, thisVariable *dvevaluation.DvVariable,
-	params []*dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
+func Math_CompareVersions(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
 	n := len(params)
 	s1 := ""
 	s2 := ""
 	defVersion := ""
 	if n >= 1 {
-		s1 = string(params[0].Value)
+		s1 = dvevaluation.AnyToString(params[0])
 	}
 	if n >= 2 {
-		s2 = string(params[1].Value)
+		s2 = dvevaluation.AnyToString(params[1])
 	}
 	if n >= 3 {
-		defVersion = string(params[2].Value)
+		defVersion = dvevaluation.AnyToString(params[2])
 	}
 	comp := MathCompareVersions(s1, s2, defVersion)
 	res := strconv.Itoa(comp)
-	return &dvevaluation.DvVariable{Value: []byte(res), Kind: dvevaluation.FIELD_NUMBER}, nil
+	return res, nil
 }
 
-func Math_IncreaseVersion(context *dvevaluation.DvContext, thisVariable *dvevaluation.DvVariable, params []*dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
+func Math_IncreaseVersion(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
 	n := len(params)
 	s := ""
 	limit := 0
 	defVersion := ""
 	if n >= 1 {
-		s = string(params[0].Value)
+		s = dvevaluation.AnyToString(params[0])
 	}
 	if n >= 2 {
-		lim, err := strconv.Atoi(string(params[1].Value))
-		if err != nil && lim > 0 {
-			limit = lim
+		lim, ok := dvevaluation.AnyToNumberInt(params[1])
+		if ok && lim > 0 {
+			limit = int(lim)
 		}
 	}
 	if n >= 3 {
-		defVersion = string(params[2].Value)
+		defVersion = dvevaluation.AnyToString(params[2])
 	}
 	version := MathIncreaseVersion(s, limit, defVersion)
-	return &dvevaluation.DvVariable{Value: []byte(version), Kind: dvevaluation.FIELD_STRING}, nil
+	return version, nil
 }
 
 func MathSplitVersion(s string, defVersion string) []string {
@@ -175,4 +187,9 @@ func MathIncreaseVersion(s string, limit int, defVersion string) string {
 		}
 	}
 	return MathJoinVersion(v)
+}
+
+func Math_GenerateUUID(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	uuid := dvcrypt.GetRandomUuid()
+	return uuid, nil
 }

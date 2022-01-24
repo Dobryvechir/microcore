@@ -337,6 +337,9 @@ func (item *DvVariable) ReadSimpleChild(fieldName string) *DvVariable {
 			return item.Fields[i]
 		}
 	}
+	if item.Prototype != nil {
+		return item.Prototype.ReadSimpleChild(fieldName)
+	}
 	return nil
 }
 
@@ -956,4 +959,57 @@ func (item *DvVariable) ToDvGrammarExpressionValue() *dvgrammar.ExpressionValue 
 		}
 	}
 	return &dvgrammar.ExpressionValue{Value: item, DataType: dvgrammar.TYPE_OBJECT}
+}
+
+func (item *DvVariable) AssignToSubField(field string, value string, env *DvObject) error {
+	if item == nil || item.Fields == nil {
+		return nil
+	}
+	n := len(item.Fields)
+	name := []byte(field)
+	p := item.IndexOfByKey(name)
+	if p < 0 {
+		if value == "delete" {
+			return nil
+		}
+		p = n
+		item.Fields = append(item.Fields, &DvVariable{Kind: FIELD_NULL, Name: name})
+	}
+	if value == "delete" {
+		if p == n-1 {
+			item.Fields = item.Fields[:p]
+		} else {
+			item.Fields = append(item.Fields[:p], item.Fields[p+1:]...)
+		}
+	} else {
+		var r *DvVariable
+		if value == "" {
+			r = &DvVariable{Kind: FIELD_NULL}
+		} else {
+			v, err := env.EvaluateAnyTypeExpression(value)
+			if err != nil {
+				return err
+			}
+			r = AnyToDvVariable(v)
+			if r == nil {
+				r = &DvVariable{Kind: FIELD_NULL}
+			}
+		}
+		r.Name = item.Fields[p].Name
+		item.Fields[p] = r
+	}
+	return nil
+}
+
+func (item *DvVariable) IndexOfByKey(field []byte) int {
+	if item == nil {
+		return -1
+	}
+	n := len(item.Fields)
+	for i := 0; i < n; i++ {
+		if item.Fields[i] != nil && bytes.Equal(item.Fields[i].Name, field) {
+			return i
+		}
+	}
+	return -1
 }

@@ -27,7 +27,11 @@ func ProcessorAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildN
 	if valueLeft == nil || valueLeft.Name == "" {
 		return nil, errors.New("Invalid left-hand side in assignment")
 	}
-	context.Scope.Set(valueLeft.Name, valueRight.Value)
+	var valueRightDirect interface{} = nil
+	if valueRight!=nil {
+		valueRightDirect = valueRight.Value
+	}
+	context.Scope.Set(valueLeft.Name, valueRightDirect)
 	return valueRight, nil
 }
 

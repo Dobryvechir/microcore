@@ -13,7 +13,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("S=Good-Word", "S.length","9", KindInteger)
+	testEvaluationSingle("S=Good-Word", "[].length","0", KindInteger)
 	showResume()
 }
 

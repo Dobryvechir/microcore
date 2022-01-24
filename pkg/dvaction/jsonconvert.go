@@ -30,6 +30,7 @@ type JsonConvertConfig struct {
 	Push    []*JsonRead     `json:"push"`
 	Concat  []*JsonRead     `json:"concat"`
 	Remove  []string        `json:"remove"`
+	ForEach *ForEachBlock   `json:"for_each"`
 	Filter  *FilterOutBlock `json:"filter"`
 }
 
@@ -108,6 +109,9 @@ func JsonConvertRunByConfig(config *JsonConvertConfig, ctx *dvcontext.RequestCon
 		JsonConvertConcat(config.Concat[i], s, ctx)
 	}
 	FilterOutByConditionSetUnset(env, s, config.Filter)
+	if config.ForEach != nil {
+		config.ForEach.ForEachProcessing(s, env, ctx)
+	}
 	SaveActionResult(config.Result, s, ctx)
 	return true
 }

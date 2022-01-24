@@ -436,7 +436,15 @@ func ProcessorEqual(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNo
 	if l != 2 {
 		return nil, errors.New("Only 2 parameters are allowed for " + operator)
 	}
-	res := AnyCompareAnyWithTypes(values[0].DataType, values[0].Value, values[1].DataType, values[1].Value) == 0
+	leftValue := values[0]
+	rightValue := values[1]
+	if leftValue == nil {
+		leftValue = &dvgrammar.ExpressionValue{Value: nil, DataType: dvgrammar.TYPE_NULL}
+	}
+	if rightValue == nil {
+		rightValue = &dvgrammar.ExpressionValue{Value: nil, DataType: dvgrammar.TYPE_NULL}
+	}
+	res := AnyCompareAnyWithTypes(leftValue.DataType, leftValue.Value, rightValue.DataType, rightValue.Value) == 0
 	return &dvgrammar.ExpressionValue{Value: res, DataType: dvgrammar.TYPE_BOOLEAN}, nil
 }
 

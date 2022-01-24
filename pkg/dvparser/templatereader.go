@@ -104,6 +104,7 @@ func RemoveGlobalPropertiesValue(key string) {
 func GetGlobalPropertiesAsDvObject() *dvevaluation.DvObject {
 	if GlobalPropertiesAsDvObject == nil {
 		GlobalPropertiesAsDvObject = dvevaluation.NewDvObjectWithGlobalPrototype(GlobalProperties)
+		dvevaluation.ProvideRootValues(GlobalPropertiesAsDvObject)
 	}
 	return GlobalPropertiesAsDvObject
 }
