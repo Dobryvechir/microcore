@@ -62,6 +62,13 @@ func math_init() {
 						Fn: Math_Abs,
 					},
 				},
+				{
+					Name: []byte("acos"),
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Acos,
+					},
+				},
 			},
 			Kind: dvevaluation.FIELD_OBJECT,
 		},
@@ -226,5 +233,15 @@ func Math_Abs(context *dvgrammar.ExpressionContext, thisVariable interface{}, pa
 	}
 	val := dvevaluation.AnyToNumber(params[0])
 	res:=math.Abs(val)
+	return res, nil
+}
+
+func Math_Acos(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Acos(val)
 	return res, nil
 }
