@@ -9,6 +9,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvcrypt"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -45,6 +46,20 @@ func math_init() {
 					Kind: dvevaluation.FIELD_FUNCTION,
 					Extra: &dvevaluation.DvFunction{
 						Fn: Math_GenerateUUID,
+					},
+				},
+				{
+					Name: []byte("validUUID"),
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_ValidUUID,
+					},
+				},
+				{
+					Name: []byte("abs"),
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Abs,
 					},
 				},
 			},
@@ -192,4 +207,24 @@ func MathIncreaseVersion(s string, limit int, defVersion string) string {
 func Math_GenerateUUID(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
 	uuid := dvcrypt.GetRandomUuid()
 	return uuid, nil
+}
+
+func Math_ValidUUID(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return false, nil
+	}
+	uuid := dvevaluation.AnyToString(params[0])
+	res := dvcrypt.IsValidUUID(uuid)
+	return res, nil
+}
+
+func Math_Abs(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Abs(val)
+	return res, nil
 }

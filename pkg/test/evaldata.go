@@ -83,5 +83,8 @@ func testEvaluation() {
 	testEvaluationSingle("S=Good-Word", "v=[S,S,3,4,1];v.length","5", KindInteger)
 	testEvaluationSingle("S=Good-Word", "v=[];v.length","0", KindInteger)
 	testEvaluationSingle("", "v=Math.generateUUID();v.length","36", KindInteger)
+	testEvaluationSingle("", "v=Math.generateUUID();Math.validUUID(v)","true", KindBoolean)
+    testEvaluationSingle("S=e1234567-8978-0987-5678-0987654321Ab", "Math.validUUID(S)","true", KindBoolean)
+	testEvaluationSingle("S=h1234567-8978-0987-5678-0987654321Ab", "Math.validUUID(S)","false", KindBoolean)
 	showResume()
 }

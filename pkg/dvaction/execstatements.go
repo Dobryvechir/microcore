@@ -11,6 +11,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
+	"strings"
 )
 
 type ExecCallConfig struct {
@@ -54,9 +55,28 @@ func execCallRun(data []interface{}) bool {
 
 func ExecCall(config *ExecCallConfig, ctx *dvcontext.RequestContext) bool {
 	if config != nil && config.Action != "" {
-		ExecuteAddSubsequence(ctx, config.Action, config.Params, config.Result)
+		if config.Action == "return" {
+			SetReturnParameters(config.Params, ctx)
+			ExecReturnShort(config.Result, ctx)
+		} else {
+			ExecuteAddSubsequence(ctx, config.Action, config.Params, config.Result)
+		}
 	}
 	return true
+}
+
+func SetReturnParameters(params map[string]string, ctx *dvcontext.RequestContext) {
+	for k, v := range params {
+		p := k
+		if !strings.Contains(k, ":") {
+			p = "1:" + k
+		}
+		data, ok := ReadActionResult(v, ctx)
+		if !ok {
+			data = nil
+		}
+		SaveActionResult(p, data, ctx)
+	}
 }
 
 type ExecIfConfig struct {

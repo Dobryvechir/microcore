@@ -362,3 +362,58 @@ func ReplaceWordBySpaceOrSemicolonOrEnd(src string, repl string, pos int) string
 	}
 	return src[:pos] + repl + src[endPos:]
 }
+
+func SeparateChildExpression(name string) (res []string) {
+	res = make([]string, 0, 7)
+	n := len(name)
+	if n == 0 {
+		return
+	}
+	pos := 0
+	for pos < n {
+		for pos < n && (name[pos] <= ' ' || name[pos] == '.') {
+			pos++
+		}
+		if pos == n {
+			break
+		}
+		c := name[pos]
+		if c == '[' || c == '{' {
+			endPos, err := ReadInsideBrackets(name, pos)
+			if err != nil {
+				res = append(res, name[pos:])
+				return
+			}
+			endPos++
+			if endPos < n && name[endPos] == '?' {
+				endPos++
+			}
+			res = append(res, name[pos:endPos])
+			pos = endPos
+		} else {
+			endPos := pos + 1
+			var err error
+			for ; endPos < n; endPos++ {
+				c := name[endPos]
+				if c == '.' || c == '[' || c == '{' {
+					break
+				}
+				if c == '(' {
+					endPos, err = ReadInsideBrackets(name, pos)
+					if err != nil {
+						res = append(res, name[pos:])
+						return
+					}
+					endPos++
+					if endPos < n && name[endPos] == '?' {
+						endPos++
+					}
+					break
+				}
+			}
+			res = append(res, name[pos:endPos])
+			pos = endPos
+		}
+	}
+	return
+}

@@ -17,6 +17,24 @@ func GetUuidByByteArray(b []byte) string {
 	return uuid
 }
 
+func IsValidUUID(uuid string) bool {
+	n := len(uuid)
+	if n != 36 {
+		return false
+	}
+	for i := 0; i < n; i++ {
+		c := uuid[i]
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if c != '-' {
+				return false
+			}
+		} else if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F') {
+			return false
+		}
+	}
+	return true
+}
+
 func PutUInt64ToByteArray(b []byte, a uint64) {
 	for i := 0; i < 8; i++ {
 		b[i] = byte(a & 255)

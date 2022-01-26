@@ -10,6 +10,8 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
+	"strconv"
 	"strings"
 )
 
@@ -32,7 +34,7 @@ type ConditionBlock struct {
 
 type ForEachBlock struct {
 	PreCondition string            `json:"pre_condition"`
-	WildCardPath string            `json:"wild_card_path"`
+	WildCardPath string            `json:"path"`
 	Blocks       []*ConditionBlock `json:"blocks"`
 }
 
@@ -48,6 +50,68 @@ func (proc *ForEachBlock) ForEachProcessing(src *dvevaluation.DvVariable, env *d
 	if proc == nil || src == nil {
 		return
 	}
+	if proc.WildCardPath == "" {
+		proc.ForEachProcessingWithoutPath(src, env, ctx)
+		return
+	}
+	pathes := dvtextutils.SeparateChildExpression(proc.WildCardPath)
+	forEachPath := &dvevaluation.DvVariable{
+		Kind:   dvevaluation.FIELD_ARRAY,
+		Fields: make([]*dvevaluation.DvVariable, 0, 16),
+	}
+	env.Set("FOR_EACH_PATH", forEachPath)
+	proc.ForEachProcessingWithPath(forEachPath, pathes, src, env, ctx)
+}
+
+func (proc *ForEachBlock) ForEachProcessingWithPath(forEachPath *dvevaluation.DvVariable, pathes []string, src *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext) {
+	if len(pathes) == 0 {
+		proc.ForEachProcessingWithoutPath(src, env, ctx)
+		return
+	}
+	path := strings.TrimSpace(pathes[0])
+	rest := pathes[1:]
+	if path == "" {
+		proc.ForEachProcessingWithPath(forEachPath, rest, src, env, ctx)
+		return
+	}
+	if path == "*" {
+		n := len(src.Fields)
+		forEachPath.Fields = append(forEachPath.Fields, &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING})
+		m := len(forEachPath.Fields) - 1
+		for i := 0; i < n; i++ {
+			f := src.Fields[i]
+			if f != nil {
+				if src.Kind == dvevaluation.FIELD_OBJECT {
+					forEachPath.Fields[m].Value = f.Name
+				} else {
+					forEachPath.Fields[m].Value = []byte(strconv.Itoa(i))
+				}
+				proc.ForEachProcessingWithPath(forEachPath, rest, f, env, ctx)
+			}
+		}
+		forEachPath.Fields = forEachPath.Fields[:m]
+	} else {
+		f, _, err := src.ReadPath(path, false, env)
+		if err != nil {
+			dvlog.PrintfError("Error forEach %v", err)
+			return
+		}
+		if f != nil {
+			forEachPath.Fields = append(forEachPath.Fields, &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING})
+			m := len(forEachPath.Fields) - 1
+			if src.Kind == dvevaluation.FIELD_OBJECT {
+				forEachPath.Fields[m].Value = f.Name
+			} else {
+				i := src.IndexOf(f)
+				forEachPath.Fields[m].Value = []byte(strconv.Itoa(i))
+			}
+			proc.ForEachProcessingWithPath(forEachPath, rest, f, env, ctx)
+			forEachPath.Fields = forEachPath.Fields[:m]
+		}
+	}
+}
+
+func (proc *ForEachBlock) ForEachProcessingWithoutPath(src *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext) {
 	env.Set("_root", src)
 	if proc.PreCondition != "" {
 		b, err := env.EvaluateBooleanExpression(proc.PreCondition)

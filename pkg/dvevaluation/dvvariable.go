@@ -415,15 +415,16 @@ func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver)
 		if err != nil {
 			return nil, nil, err
 		}
+		insideStr:=childName[pos+1:endPos]
 		endPos++
 		if endPos < n && childName[endPos] == '?' {
 			strict = false
 			endPos++
 		}
 		if c == '[' {
-			data, err = ExpressionEvaluation(childName[pos+1:endPos], resolver)
+			data, err = ExpressionEvaluation(insideStr, resolver)
 		} else {
-			item, err = FindItemByExpression(childName[pos+1:endPos], resolver, item, strict)
+			item, err = FindItemByExpression(insideStr, resolver, item, strict)
 			fn = fnResolvedSign
 		}
 		if err != nil {
@@ -434,7 +435,7 @@ func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver)
 		i := pos
 		for ; i < n; i++ {
 			c := childName[i]
-			if c == '.' || c == '[' {
+			if c == '.' || c == '[' || c == '{' {
 				break
 			}
 			if c == '(' {
