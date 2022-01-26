@@ -415,7 +415,7 @@ func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver)
 		if err != nil {
 			return nil, nil, err
 		}
-		insideStr:=childName[pos+1:endPos]
+		insideStr := childName[pos+1 : endPos]
 		endPos++
 		if endPos < n && childName[endPos] == '?' {
 			strict = false
@@ -994,6 +994,10 @@ func (item *DvVariable) AssignToSubField(field string, value string, env *DvObje
 			r = AnyToDvVariable(v)
 			if r == nil {
 				r = &DvVariable{Kind: FIELD_NULL}
+			} else {
+				other := &DvVariable{}
+				other.CloneExceptKey(r, true)
+				r = other
 			}
 		}
 		r.Name = item.Fields[p].Name

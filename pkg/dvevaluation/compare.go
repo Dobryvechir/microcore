@@ -73,7 +73,7 @@ func CompareByComparisonType(compareType int, value1 interface{}, value2 interfa
 	return res
 }
 
-func getCompareType(kind int) int {
+func getCompareType(kind int, val interface{}) int {
 	res := COMPARE_NOT
 	switch kind {
 	case dvgrammar.TYPE_STRING:
@@ -85,6 +85,23 @@ func getCompareType(kind int) int {
 		dvgrammar.TYPE_BOOLEAN,
 		dvgrammar.TYPE_NULL:
 		res = COMPARE_AS_INTEGERS
+	default:
+		switch val.(type) {
+		case string:
+			res = COMPARE_AS_STRINGS
+		case int:
+			res = COMPARE_AS_INTEGERS
+		case *DvVariable:
+			v:=val.(*DvVariable)
+			switch v.Kind {
+			case FIELD_STRING:
+				res = COMPARE_AS_STRINGS
+			case FIELD_NUMBER:
+				res = COMPARE_AS_NUMBERS
+			case FIELD_BOOLEAN, FIELD_NULL:
+				res = COMPARE_AS_INTEGERS
+			}
+		}
 	}
 	return res
 }
@@ -94,8 +111,8 @@ func AnyCompareAnyWithTypes(kind1 int, value1 interface{}, kind2 int, value2 int
 	if value1 == value2 {
 		return 0
 	}
-	compareType := getCompareType(kind1)
-	compareType1 := getCompareType(kind2)
+	compareType := getCompareType(kind1, value1)
+	compareType1 := getCompareType(kind2, value2)
 	if compareType1 < compareType {
 		compareType = compareType1
 	}
