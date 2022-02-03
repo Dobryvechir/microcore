@@ -29,6 +29,13 @@ func string_init() {
 					Immediate: true,
 				},
 			},
+			{
+				Name: []byte("endsWith"),
+				Kind: dvevaluation.FIELD_FUNCTION,
+				Extra: &dvevaluation.DvFunction{
+					Fn: String_endsWith,
+				},
+			},
 		},
 		Kind: dvevaluation.FIELD_OBJECT,
 	}
@@ -52,4 +59,25 @@ func String_length(context *dvgrammar.ExpressionContext, thisVariable interface{
 	s := dvevaluation.AnyToString(thisVariable)
 	n := len(s)
 	return n, nil
+}
+
+func String_endsWith(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	if thisVariable == nil {
+		return false, nil
+	}
+	s := dvevaluation.AnyToString(thisVariable)
+	n := len(params)
+	if n == 0 || params[0] == nil {
+		return true, nil
+	}
+	s1 := dvevaluation.AnyToString(params[0])
+	if n >= 2 && params[1] != nil {
+		p, ok := dvevaluation.AnyToNumberInt(params[1])
+		if ok && p >= 0 && p < int64(len(s)) {
+			m := int(p)
+			s = s[:m]
+		}
+	}
+	b := strings.HasSuffix(s, s1)
+	return b, nil
 }

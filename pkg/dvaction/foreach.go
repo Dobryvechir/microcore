@@ -24,10 +24,12 @@ type ConditionBlock struct {
 	Condition          string             `json:"condition"`
 	SetList            []string           `json:"set"`
 	UnsetList          []string           `json:"unset"`
-	AssignSuccess      []*AssignmentBlock `json:"assign_success"`
-	AssignFailure      []*AssignmentBlock `json:"assign_failure"`
-	WholeAssignSuccess string             `json:"whole_success"`
-	WholeAssignFailure string             `json:"whole_failure"`
+	AssignSuccess      []*AssignmentBlock `json:"then_assign"`
+	AssignFailure      []*AssignmentBlock `json:"else_assign"`
+	WholeAssignSuccess string             `json:"then_to_whole"`
+	WholeAssignFailure string             `json:"else_to_whole"`
+	Match              string             `json:"match"`
+	Item               string             `json:"item"`
 	setMap             map[string]int
 	unsetMap           map[string]int
 }
@@ -172,6 +174,34 @@ func (proc *ForEachBlock) ForEachProcessingWithoutPath(src *dvevaluation.DvVaria
 }
 
 func (b *ConditionBlock) Process(f *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext, fields []string) int {
+	if b.Match == "" {
+		return b.ProcessSingle(f, env, ctx, fields)
+	}
+	if b.Item == "" {
+		b.Item = "_item"
+	}
+	indexName := b.Item + "_index"
+	d, ok := env.Get(b.Match)
+	if !ok || d == nil {
+		return ACT_NORMAL
+	}
+	v := dvevaluation.AnyToDvVariable(d)
+	if v == nil || v.Fields == nil {
+		return ACT_NORMAL
+	}
+	n := len(v.Fields)
+	for i := 0; i < n; i++ {
+		env.Set(b.Item, v.Fields[i])
+		env.Set(indexName, i)
+		p := b.ProcessSingle(f, env, ctx, fields)
+		if p != ACT_NORMAL {
+			return p
+		}
+	}
+	return ACT_NORMAL
+}
+
+func (b *ConditionBlock) ProcessSingle(f *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext, fields []string) int {
 	success := b.EvaluateSuccess(env, ctx, fields)
 	if success {
 		AssignVariables(f, env, ctx, b.AssignSuccess)

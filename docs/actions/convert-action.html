@@ -18,6 +18,36 @@ It has the parameters as follows:
      } filters out the object or array by the condition and/or set/unset fields
     "push" array of {<a href="json-source.html">json source</a>}, to array next elements are added,
     "concat" array of {<a href="json-source.html">json source</a>} concatenation of arrays
+    "replace_block" {
+         "find_object" string name of the variable of object to be found
+         "find_condition" string, condition to be verified
+         "is_last" bool, the search is done until the last is found if true
+         "replace_with" object to replace with
+         "replace_mode" string: "before", "after" or "at" the place to replace, "after" is default
+         "in_default" string: "ignore", "push","unshift", "error", the default is "error"
+    }
+    "for_each" {
+        "pre_condition" string, optional, if not empty and evaluated false, the for_each is not executed
+        "path" a path to find, including .*. in the path (for example, *.*.roles)
+        "blocks", array of {
+             "condition", string, condition to be verified
+             "set", list of string, names of variables to be checked as set
+             "unset", list of string, names of variables to be checked as unset
+             "match", string, a variable name of another array or object to match, in this case,
+                   the matching condition must be in the condition
+             "item", name to present an item of the match, by default it is _item
+          These 3 condition above are evaluated (each of them is optional) and depending on it the following
+          assignments are performed:
+             "then_to_whole", string, to be evaluated and assigned to the whole object
+             "else_to_whole", string, to be evaluated and assigned to the whole object
+               (if "delete" is used in expression, it means to delete this object)
+             "then_assign",
+             "else_assign" as {
+                "field" string, a field name
+                "value" string, a value to be evaluated
+             }
+        }
+    }
 }
 Example:
     ACTION_CONVERT_1=convert:{"source":"JSON_SRC", "remove":["0.value"],"return":"JSON_RESULT"}

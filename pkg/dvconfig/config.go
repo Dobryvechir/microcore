@@ -90,6 +90,7 @@ type DvHostServer struct {
 	PostProcessors                []dvprocessors.ProcessorConfig `json:"postProcessors"`
 	Providers                     []dvproviders.ProviderConfig   `json:"providers"`
 	HostHeader                    string                         `json:"hostHeader"`
+	SecurityInfo                  *dvcontext.SecurityServerInfo  `json:"security"`
 	LogLevel                      string                         `json:"logLevel"`
 	DynamicActions                bool                           `json:"dynamic"`
 	Session                       *ServerSession                 `json:"session"`

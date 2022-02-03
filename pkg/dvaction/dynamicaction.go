@@ -100,6 +100,8 @@ func ConvertToAction(v *dvevaluation.DvVariable) *dvcontext.DvAction {
 		InnerParams: v.ReadChildStringValue("params"),
 		Conditions:  v.ReadChildMapValue("conditions"),
 		Validations: readValidations(v),
+		Roles: v.ReadChildStringValue("roles"),
+		Auth: v.ReadChildStringValue("auth"),
 	}
 	if len(action.Name) < 5 || len(action.Url) < 5 {
 		log.Printf("Too small name or url %v", action)

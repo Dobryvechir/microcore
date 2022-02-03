@@ -359,6 +359,24 @@ func (item *DvVariable) ReadChildStringValue(fieldName string) string {
 	return dvtextutils.GetUnquotedString(subItem.GetStringValue())
 }
 
+func (item *DvVariable) ReadChildStringArrayValue(fieldName string) []string {
+	subItem, _, err := item.ReadChild(fieldName, nil)
+	if err != nil || subItem == nil || subItem.Fields == nil {
+		return nil
+	}
+	n := len(subItem.Fields)
+	res := make([]string, n)
+	for i := 0; i < n; i++ {
+		s := subItem.Fields[i]
+		if s == nil {
+			res[i] = ""
+		} else {
+			res[i] = dvtextutils.GetUnquotedString(s.GetStringValue())
+		}
+	}
+	return res
+}
+
 func (item *DvVariable) ReadChildMapValue(fieldName string) map[string]string {
 	subItem, _, err := item.ReadChild(fieldName, nil)
 	if err != nil || subItem == nil || subItem.Kind != FIELD_OBJECT || len(subItem.Fields) == 0 {

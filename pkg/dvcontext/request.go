@@ -39,6 +39,11 @@ type RewriteMapItem struct {
 	Src    string
 }
 
+type SecurityServerInfo struct {
+	RolePrefix      string   `json:"role_prefix"`
+	SuperAdminRoles []string `json:"super_admin_roles"`
+}
+
 type RewriteMap map[string][]*RewriteMapItem
 
 type ServerSettings struct {
@@ -50,7 +55,6 @@ type ServerSettings struct {
 	ResponseHeaderTimeout int  `json:"responseHeaderTimeout"`
 	ExpectContinueTimeout int  `json:"expectContinueTimeout"`
 }
-
 
 type MicroCoreInfo struct {
 	sync.RWMutex
@@ -81,6 +85,7 @@ type MicroCoreInfo struct {
 	HostHeader                string
 	ServerRewrite             RewriteMap
 	Session                   ServerSessionProvider
+	SecurityInfo              *SecurityServerInfo
 	ModuleHandler             HandlerFunc
 	ActionHandler             HandlerFunc
 	LogLevel                  int

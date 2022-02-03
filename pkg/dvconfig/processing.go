@@ -165,6 +165,7 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 	if server.Session != nil {
 		dvServerInfo.Session = dvsession.GetServerSessionProvider(server.Session.Name, server.Session.Option, server.Session.Params, server.Session.Urls, server.Session.Prefix)
 	}
+	dvServerInfo.SecurityInfo = server.SecurityInfo
 	return dvServerInfo
 }
 

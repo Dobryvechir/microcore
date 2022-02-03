@@ -262,6 +262,11 @@ func (ctx *RequestContext) HandleInternalServerError() {
 	ctx.HandleCommunication()
 }
 
+func (ctx *RequestContext) HandleHttpError(statusCode int) {
+	ctx.StatusCode = statusCode
+	ctx.HandleCommunication()
+}
+
 func (ctx *RequestContext) HandleFileNotFound() {
 	ctx.StatusCode = 404
 	ctx.HandleCommunication()

@@ -1,7 +1,7 @@
 // package dvsecurity provides server security, including sessions, login, jwt token
 // MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
-package dvsecurity
+package dvsession
 
 import (
 	"encoding/json"

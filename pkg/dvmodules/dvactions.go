@@ -5,9 +5,13 @@
 package dvmodules
 
 import (
+	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
+	"github.com/Dobryvechir/microcore/pkg/dvsecurity"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"github.com/Dobryvechir/microcore/pkg/dvurl"
 	"strings"
 )
@@ -62,6 +66,27 @@ func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) b
 		request.HandleInternalServerError()
 		return true
 	}
+	if len(action.Roles) > 0 {
+		action.Auth = "required"
+	} else {
+		action.Auth = strings.ToLower(action.Auth)
+	}
+	if action.Auth != "" {
+		roles, err := AnalyzeAuthToken(request)
+		if err != nil {
+			if action.Auth == "required" {
+				request.HandleHttpError(401)
+				return true
+			}
+		} else {
+			storeRoles(request, roles)
+			ok := checkRoles(request, action.Roles)
+			if !ok {
+				request.HandleHttpError(403)
+				return true
+			}
+		}
+	}
 	if len(action.Validations) > 0 {
 		res := ValidateRequest(action.Validations, request.PrimaryContextEnvironment)
 		if res != "" {
@@ -69,19 +94,117 @@ func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) b
 			return true
 		}
 	}
-	if request.Server!=nil && request.Server.Session!=nil && action.Session!=nil {
-		sessionId :=""
-		if request.PrimaryContextEnvironment!=nil {
+	if request.Server != nil && request.Server.Session != nil && action.Session != nil {
+		sessionId := ""
+		if request.PrimaryContextEnvironment != nil {
 			sessionId = request.PrimaryContextEnvironment.FindFirstNotEmptyString(action.Session.Id)
 		}
 		request.Session, err = request.Server.Session.GetSessionStorage(request, action.Session, sessionId)
-		if err!=nil {
+		if err != nil {
 			dvlog.PrintlnError("Cannot handle session " + err.Error())
 			request.HandleInternalServerError()
 			return true
 		}
 	}
 	return proc(request)
+}
+
+func AnalyzeAuthToken(ctx *dvcontext.RequestContext) (*dvevaluation.DvVariable, error) {
+	s := strings.TrimSpace(ctx.Reader.Header.Get("Authorization"))
+	if s == "" {
+		return nil, errors.New("No Authorization Header")
+	}
+	p := strings.Index(s, " ")
+	if p < 0 || strings.ToLower(s[:p]) != "bearer" {
+		return nil, errors.New("Unaccepted Authorization Header")
+	}
+	tokenRaw := strings.TrimSpace(s[p+1:])
+	token, err := dvsecurity.DecodeMainTokenPart(tokenRaw)
+	if err != nil {
+		return nil, err
+	}
+	tokenDv, err := dvjson.JsonFullParser([]byte(token))
+	if err != nil {
+		return nil, err
+	}
+	roles, _, err := tokenDv.ReadPath("realm_access.roles", false, ctx.PrimaryContextEnvironment)
+	if err != nil || roles == nil || roles.Kind != dvevaluation.FIELD_ARRAY {
+		return nil, errors.New("Unaccepted token")
+	}
+	return roles, nil
+}
+
+func storeRoles(ctx *dvcontext.RequestContext, roles *dvevaluation.DvVariable) {
+	n := len(roles.Fields)
+	fields := make([]*dvevaluation.DvVariable, n)
+	for i := 0; i < n; i++ {
+		f := roles.Fields[i]
+		if f == nil {
+			continue
+		}
+		fields[i] = &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING, Name: f.Value, Value: f.Value}
+	}
+	roleDv := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_OBJECT, Fields: fields}
+	ctx.PrimaryContextEnvironment.Set("ROLES", roleDv)
+	ctx.PrimaryContextEnvironment.Set("USER_ROLES", roles)
+}
+
+func HasAnyRoleOf(ctx *dvcontext.RequestContext, roles []string) bool {
+	roleList, ok := ctx.PrimaryContextEnvironment.Get("ROLES")
+	if !ok {
+		return false
+	}
+	r := dvevaluation.AnyToDvVariable(roleList)
+	if r == nil {
+		return false
+	}
+	n := len(r.Fields)
+	m := len(roles)
+	if n == 0 || m == 0 {
+		return false
+	}
+	for i := 0; i < n; i++ {
+		v := r.Fields[i]
+		if v == nil || v.Kind != dvevaluation.FIELD_STRING || len(v.Value) == 0 {
+			continue
+		}
+		s := string(v.Value)
+		for j := 0; j < m; j++ {
+			if roles[j] == s {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func checkRoles(ctx *dvcontext.RequestContext, roles string) bool {
+	roles = strings.TrimSpace(roles)
+	if roles == "" {
+		return true
+	}
+	var superAdminRoles []string = nil
+	if ctx.Server != nil && ctx.Server.SecurityInfo != nil {
+		superAdminRoles = ctx.Server.SecurityInfo.SuperAdminRoles
+		if len(superAdminRoles) > 0 && HasAnyRoleOf(ctx, superAdminRoles) {
+			return true
+		}
+		prefix := ctx.Server.SecurityInfo.RolePrefix
+		if prefix != "" {
+			roleList := dvtextutils.ConvertToNonEmptyList(roles)
+			if len(roleList) > 0 && dvtextutils.CheckSimplePrefixedWordsWithDash(roleList, prefix) {
+				return HasAnyRoleOf(ctx, roleList)
+			}
+		}
+	}
+	if roles == "*" {
+		return false
+	}
+	val, err := ctx.PrimaryContextEnvironment.EvaluateBooleanExpression(roles)
+	if err != nil {
+		return false
+	}
+	return val
 }
 
 func RegisterEndPointActions(actions []*dvcontext.DvAction) (dvcontext.HandlerFunc, map[string]*dvurl.UrlPool) {

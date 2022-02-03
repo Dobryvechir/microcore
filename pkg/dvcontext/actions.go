@@ -4,7 +4,6 @@ MicroCore Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddo
 
 package dvcontext
 
-
 type DvAction struct {
 	Name        string                `json:"name"`
 	Typ         string                `json:"type"`
@@ -20,6 +19,8 @@ type DvAction struct {
 	Validations []*ValidatePattern    `json:"validations"`
 	ErrorPolicy string                `json:"error-policy"`
 	Session     *SessionActionRequest `json:"session"`
+	Roles       string                `json:"roles"`
+	Auth        string                `json:"auth"`
 }
 
 func (action *DvAction) CloneFrom(other *DvAction) {
@@ -37,4 +38,6 @@ func (action *DvAction) CloneFrom(other *DvAction) {
 	action.Validations = other.Validations
 	action.ErrorPolicy = other.ErrorPolicy
 	action.Session = other.Session
+	action.Roles = other.Roles
+	action.Auth = other.Auth
 }

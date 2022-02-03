@@ -11,6 +11,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
+	"strings"
 )
 
 type FilterOutBlock struct {
@@ -20,18 +21,28 @@ type FilterOutBlock struct {
 	NoEmpty   bool     `json:"no_empty"`
 }
 
+type ConvertReplaceBlock struct {
+	FindObject    string `json:"find_object"`
+	FindCondition string `json:"find_condition"`
+	IsLast        bool   `json:"is_last"`
+	ReplaceWith   string `json:"replace_with"`
+	ReplaceMode   string `json:"replace_mode"`
+	InDefault     string `json:"in_default"`
+}
+
 type JsonConvertConfig struct {
-	Source  *JsonRead       `json:"source"`
-	Result  string          `json:"result"`
-	Add     []*JsonRead     `json:"add"`
-	Merge   []*JsonRead     `json:"merge"`
-	Replace []*JsonRead     `json:"replace"`
-	Update  []*JsonRead     `json:"update"`
-	Push    []*JsonRead     `json:"push"`
-	Concat  []*JsonRead     `json:"concat"`
-	Remove  []string        `json:"remove"`
-	ForEach *ForEachBlock   `json:"for_each"`
-	Filter  *FilterOutBlock `json:"filter"`
+	Source       *JsonRead            `json:"source"`
+	Result       string               `json:"result"`
+	Add          []*JsonRead          `json:"add"`
+	Merge        []*JsonRead          `json:"merge"`
+	Replace      []*JsonRead          `json:"replace"`
+	Update       []*JsonRead          `json:"update"`
+	Push         []*JsonRead          `json:"push"`
+	Concat       []*JsonRead          `json:"concat"`
+	Remove       []string             `json:"remove"`
+	ForEach      *ForEachBlock        `json:"for_each"`
+	Filter       *FilterOutBlock      `json:"filter"`
+	ReplaceBlock *ConvertReplaceBlock `json:"replace_block"`
 }
 
 func jsonConvertInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -111,6 +122,12 @@ func JsonConvertRunByConfig(config *JsonConvertConfig, ctx *dvcontext.RequestCon
 	FilterOutByConditionSetUnset(env, s, config.Filter)
 	if config.ForEach != nil {
 		config.ForEach.ForEachProcessing(s, env, ctx)
+	}
+	if config.ReplaceBlock != nil {
+		ok := replaceBlockConvert(config.ReplaceBlock, s, env, ctx)
+		if !ok {
+			return true
+		}
 	}
 	SaveActionResult(config.Result, s, ctx)
 	return true
@@ -223,4 +240,119 @@ func JsonConvertConcat(push *JsonRead, dst *dvevaluation.DvVariable, ctx *dvcont
 			}
 		}
 	}
+}
+
+func findObjectOrCondition(obj string, condition string, isLast bool, v *dvevaluation.DvVariable, env *dvevaluation.DvObject) int {
+	if v == nil {
+		return -1
+	}
+	n := len(v.Fields)
+	if n == 0 {
+		return -1
+	}
+	if obj != "" {
+		d, ok := env.Get(obj)
+		if !ok || d == nil {
+			return -1
+		}
+		dv := dvevaluation.AnyToDvVariable(d)
+		if dv == nil {
+			return -1
+		}
+		for i := 0; i < n; i++ {
+			if v.Fields[i] == dv {
+				return i
+			}
+		}
+		return -1
+	}
+	if condition == "" {
+		return -1
+	}
+	res := -1
+	for i := 0; i < n; i++ {
+		fields := dvjson.CreateLocalVariables(env, v.Fields[i])
+		r, err := env.EvaluateBooleanExpression(condition)
+		dvjson.RemoveLocalVariables(env, fields)
+		if err == nil && r {
+			res = i
+			if !isLast {
+				break
+			}
+		}
+	}
+	return res
+}
+
+func replaceBlockConvert(block *ConvertReplaceBlock, v *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext) bool {
+	ind := findObjectOrCondition(block.FindObject, block.FindCondition, block.IsLast, v, env)
+	if ind < 0 {
+		return inDefaultReplace(block.InDefault, block.ReplaceWith, v, env, ctx)
+	}
+	return replaceByMode(block.ReplaceWith, block.ReplaceMode, v, env, ind)
+}
+
+func inDefaultReplace(inDefault string, replaceWith string, v *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext) bool {
+	var atEnd bool
+	switch strings.ToLower(strings.TrimSpace(inDefault)) {
+	case "ignore":
+		return true
+	case "push":
+		atEnd = true
+	case "unshift":
+		atEnd = false
+	default:
+		dvlog.PrintlnError("Not resolved replacement " + replaceWith)
+		ctx.HandleInternalServerError()
+		return false
+	}
+	r, ok := env.Get(replaceWith)
+	if !ok || v == nil {
+		return true
+	}
+	d := dvevaluation.AnyToDvVariable(r)
+	if atEnd || len(v.Fields) == 0 {
+		v.Fields = append(v.Fields, d)
+	} else {
+		n := len(v.Fields)
+		v.Fields = append(v.Fields, d)
+		m := v.Fields[0]
+		v.Fields[0] = d
+		for i := 1; i <= n; i++ {
+			d = v.Fields[i]
+			v.Fields[i] = m
+			m = d
+		}
+	}
+	return true
+}
+
+func replaceByMode(replaceWith string, replaceMode string, v *dvevaluation.DvVariable, env *dvevaluation.DvObject, ind int) bool {
+	r, ok := env.Get(replaceWith)
+	if !ok || v == nil {
+		return true
+	}
+	d := dvevaluation.AnyToDvVariable(r)
+	switch strings.ToLower(strings.TrimSpace(replaceMode)) {
+	case "at":
+		v.Fields[ind] = d
+		return true
+	case "before":
+	default:
+		ind++
+	}
+	n := len(v.Fields)
+	if ind >= n {
+		v.Fields = append(v.Fields, d)
+		return true
+	}
+	v.Fields = append(v.Fields, d)
+	m := v.Fields[ind]
+	v.Fields[ind] = d
+	for ind++; ind <= n; ind++ {
+		d = v.Fields[ind]
+		v.Fields[ind] = m
+		m = d
+	}
+	return true
 }

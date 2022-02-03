@@ -5,6 +5,8 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 
 package dvtextutils
 
+import "strings"
+
 var JsonEscapeTable = map[byte]byte{
 	'\\':     '\\',
 	'"':      '"',
@@ -300,4 +302,54 @@ func QuoteEscapedJsonBytesToString(b []byte) string {
 
 func QuoteEscapedJsonString(s string) string {
 	return QuoteEscapedJsonBytesToString([]byte(s))
+}
+
+func IsSimpleWord(s string) bool {
+	n := len(s)
+	for i := 0; i < n; i++ {
+		c := s[i]
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || i != 0 && c >= '0' && c <= '9' || c == '_') {
+			return false
+		}
+	}
+	return true
+}
+
+func IsSimpleWordWithDash(s string) bool {
+	n := len(s)
+	for i := 0; i < n; i++ {
+		c := s[i]
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || i != 0 && c >= '0' && c <= '9' || c == '_' || c == '-') {
+			return false
+		}
+	}
+	return true
+}
+
+func CheckSimplePrefixedWords(list []string, prefix string) bool {
+	n := len(list)
+	for i := 0; i < n; i++ {
+		s := list[i]
+		if prefix != "" && !strings.HasPrefix(s, prefix) {
+			return false
+		}
+		if !IsSimpleWord(s) {
+			return false
+		}
+	}
+	return true
+}
+
+func CheckSimplePrefixedWordsWithDash(list []string, prefix string) bool {
+	n := len(list)
+	for i := 0; i < n; i++ {
+		s := list[i]
+		if prefix != "" && !strings.HasPrefix(s, prefix) {
+			return false
+		}
+		if !IsSimpleWordWithDash(s) {
+			return false
+		}
+	}
+	return true
 }

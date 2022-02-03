@@ -1,5 +1,5 @@
 // package dvsecurity provides server security, including sessions, login, jwt token
-// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+// MicroCore Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
 package dvsecurity
 
@@ -7,6 +7,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"strconv"
 	"strings"
@@ -54,4 +55,12 @@ func DecodeJwtBase64(s string) (string, error) {
 		return "", err
 	}
 	return string(res), nil
+}
+
+func DecodeMainTokenPart(s string) (string, error) {
+	t := strings.Split(s, ".")
+	if len(t) != 3 || len(t[1]) == 0 {
+		return "", errors.New("Strange token")
+	}
+	return DecodeJwtBase64(t[1])
 }
