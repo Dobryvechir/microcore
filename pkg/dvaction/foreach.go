@@ -16,22 +16,25 @@ import (
 )
 
 type AssignmentBlock struct {
-	Field string `json:"field"`
-	Value string `json:"value"`
+	Source string `json:"source"`
+	Field  string `json:"field"`
+	Value  string `json:"value"`
 }
 
 type ConditionBlock struct {
-	Condition          string             `json:"condition"`
-	SetList            []string           `json:"set"`
-	UnsetList          []string           `json:"unset"`
-	AssignSuccess      []*AssignmentBlock `json:"then_assign"`
-	AssignFailure      []*AssignmentBlock `json:"else_assign"`
-	WholeAssignSuccess string             `json:"then_to_whole"`
-	WholeAssignFailure string             `json:"else_to_whole"`
-	Match              string             `json:"match"`
-	Item               string             `json:"item"`
-	setMap             map[string]int
-	unsetMap           map[string]int
+	Condition       string             `json:"condition"`
+	SetList         []string           `json:"set"`
+	UnsetList       []string           `json:"unset"`
+	ThenAssign      []*AssignmentBlock `json:"then_assign"`
+	ElseAssign      []*AssignmentBlock `json:"else_assign"`
+	ThenWholeAssign string             `json:"then_to_whole"`
+	ElseWholeAssign string             `json:"else_to_whole"`
+	ThenCollection  *Collection        `json:"then_collection"`
+	ElseCollection  *Collection        `json:"else_collection"`
+	Match           string             `json:"match"`
+	Item            string             `json:"item"`
+	setMap          map[string]int
+	unsetMap        map[string]int
 }
 
 type ForEachBlock struct {
@@ -48,24 +51,45 @@ const (
 	ACT_REPLACE_BREAK
 )
 
+func preinitializeCollections(blocks []*ConditionBlock, env *dvevaluation.DvObject) {
+	n := len(blocks)
+	for i := 0; i < n; i++ {
+		b := blocks[i]
+		if b != nil {
+			if b.ThenCollection != nil {
+				b.ThenCollection.Initialize(env)
+			}
+			if b.ElseCollection != nil {
+				b.ElseCollection.Initialize(env)
+			}
+		}
+	}
+}
+
 func (proc *ForEachBlock) ForEachProcessing(src *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext) {
 	if proc == nil || src == nil {
 		return
 	}
+	preinitializeCollections(proc.Blocks, env)
 	if proc.WildCardPath == "" {
 		proc.ForEachProcessingWithoutPath(src, env, ctx)
 		return
 	}
 	pathes := dvtextutils.SeparateChildExpression(proc.WildCardPath)
-	forEachPath := &dvevaluation.DvVariable{
+	forEachPathKeys := &dvevaluation.DvVariable{
 		Kind:   dvevaluation.FIELD_ARRAY,
 		Fields: make([]*dvevaluation.DvVariable, 0, 16),
 	}
-	env.Set("FOR_EACH_PATH", forEachPath)
-	proc.ForEachProcessingWithPath(forEachPath, pathes, src, env, ctx)
+	env.Set("FOR_EACH_PATH_KEYS", forEachPathKeys)
+	forEachPathValues := &dvevaluation.DvVariable{
+		Kind:   dvevaluation.FIELD_ARRAY,
+		Fields: make([]*dvevaluation.DvVariable, 0, 16),
+	}
+	env.Set("FOR_EACH_PATH_VALUES", forEachPathValues)
+	proc.ForEachProcessingWithPath(forEachPathKeys, forEachPathValues, pathes, src, env, ctx)
 }
 
-func (proc *ForEachBlock) ForEachProcessingWithPath(forEachPath *dvevaluation.DvVariable, pathes []string, src *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext) {
+func (proc *ForEachBlock) ForEachProcessingWithPath(forEachPathKeys *dvevaluation.DvVariable, forEachPathValues *dvevaluation.DvVariable, pathes []string, src *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext) {
 	if len(pathes) == 0 {
 		proc.ForEachProcessingWithoutPath(src, env, ctx)
 		return
@@ -73,25 +97,50 @@ func (proc *ForEachBlock) ForEachProcessingWithPath(forEachPath *dvevaluation.Dv
 	path := strings.TrimSpace(pathes[0])
 	rest := pathes[1:]
 	if path == "" {
-		proc.ForEachProcessingWithPath(forEachPath, rest, src, env, ctx)
+		proc.ForEachProcessingWithPath(forEachPathKeys, forEachPathValues, rest, src, env, ctx)
 		return
 	}
 	if path == "*" {
 		n := len(src.Fields)
-		forEachPath.Fields = append(forEachPath.Fields, &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING})
-		m := len(forEachPath.Fields) - 1
+		forEachPathKeys.Fields = append(forEachPathKeys.Fields, &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING})
+		forEachPathValues.Fields = append(forEachPathValues.Fields, nil)
+		m := len(forEachPathKeys.Fields) - 1
 		for i := 0; i < n; i++ {
 			f := src.Fields[i]
 			if f != nil {
 				if src.Kind == dvevaluation.FIELD_OBJECT {
-					forEachPath.Fields[m].Value = f.Name
+					forEachPathKeys.Fields[m].Value = f.Name
 				} else {
-					forEachPath.Fields[m].Value = []byte(strconv.Itoa(i))
+					forEachPathKeys.Fields[m].Value = []byte(strconv.Itoa(i))
 				}
-				proc.ForEachProcessingWithPath(forEachPath, rest, f, env, ctx)
+				forEachPathValues.Fields[m] = f
+				proc.ForEachProcessingWithPath(forEachPathKeys, forEachPathValues, rest, f, env, ctx)
 			}
 		}
-		forEachPath.Fields = forEachPath.Fields[:m]
+		forEachPathKeys.Fields = forEachPathKeys.Fields[:m]
+		forEachPathValues.Fields = forEachPathValues.Fields[:m]
+	} else if path != "" && path[0] == '{' && path[len(path)-1] == '}' {
+		n := len(src.Fields)
+		forEachPathKeys.Fields = append(forEachPathKeys.Fields, &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING})
+		forEachPathValues.Fields = append(forEachPathValues.Fields, nil)
+		m := len(forEachPathKeys.Fields) - 1
+		path = path[1 : len(path)-1]
+		for i := 0; i < n; i++ {
+			f := src.Fields[i]
+			if f != nil {
+				if applyFilter(f, i, env, path) {
+					if src.Kind == dvevaluation.FIELD_OBJECT {
+						forEachPathKeys.Fields[m].Value = f.Name
+					} else {
+						forEachPathKeys.Fields[m].Value = []byte(strconv.Itoa(i))
+					}
+					forEachPathValues.Fields[m] = f
+					proc.ForEachProcessingWithPath(forEachPathKeys, forEachPathValues, rest, f, env, ctx)
+				}
+			}
+		}
+		forEachPathKeys.Fields = forEachPathKeys.Fields[:m]
+		forEachPathValues.Fields = forEachPathValues.Fields[:m]
 	} else {
 		f, _, err := src.ReadPath(path, false, env)
 		if err != nil {
@@ -99,16 +148,19 @@ func (proc *ForEachBlock) ForEachProcessingWithPath(forEachPath *dvevaluation.Dv
 			return
 		}
 		if f != nil {
-			forEachPath.Fields = append(forEachPath.Fields, &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING})
-			m := len(forEachPath.Fields) - 1
+			forEachPathKeys.Fields = append(forEachPathKeys.Fields, &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING})
+			forEachPathValues.Fields = append(forEachPathValues.Fields, nil)
+			m := len(forEachPathKeys.Fields) - 1
 			if src.Kind == dvevaluation.FIELD_OBJECT {
-				forEachPath.Fields[m].Value = f.Name
+				forEachPathKeys.Fields[m].Value = f.Name
 			} else {
 				i := src.IndexOf(f)
-				forEachPath.Fields[m].Value = []byte(strconv.Itoa(i))
+				forEachPathKeys.Fields[m].Value = []byte(strconv.Itoa(i))
 			}
-			proc.ForEachProcessingWithPath(forEachPath, rest, f, env, ctx)
-			forEachPath.Fields = forEachPath.Fields[:m]
+			forEachPathValues.Fields[m] = f
+			proc.ForEachProcessingWithPath(forEachPathKeys, forEachPathValues, rest, f, env, ctx)
+			forEachPathKeys.Fields = forEachPathKeys.Fields[:m]
+			forEachPathValues.Fields = forEachPathValues.Fields[:m]
 		}
 	}
 }
@@ -204,11 +256,17 @@ func (b *ConditionBlock) Process(f *dvevaluation.DvVariable, env *dvevaluation.D
 func (b *ConditionBlock) ProcessSingle(f *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext, fields []string) int {
 	success := b.EvaluateSuccess(env, ctx, fields)
 	if success {
-		AssignVariables(f, env, ctx, b.AssignSuccess)
-		return ActCalculation(env, ctx, b.WholeAssignSuccess)
+		AssignVariables(f, env, ctx, b.ThenAssign)
+		if b.ThenCollection != nil {
+			b.ThenCollection.AddItemSecondary(env)
+		}
+		return ActCalculation(env, ctx, b.ThenWholeAssign)
 	}
-	AssignVariables(f, env, ctx, b.AssignFailure)
-	return ActCalculation(env, ctx, b.WholeAssignFailure)
+	AssignVariables(f, env, ctx, b.ElseAssign)
+	if b.ElseCollection != nil {
+		b.ElseCollection.AddItemSecondary(env)
+	}
+	return ActCalculation(env, ctx, b.ElseWholeAssign)
 }
 
 func (b *ConditionBlock) EvaluateSuccess(env *dvevaluation.DvObject, ctx *dvcontext.RequestContext, fields []string) bool {
@@ -282,9 +340,28 @@ func (b *ConditionBlock) EvaluateSuccess(env *dvevaluation.DvObject, ctx *dvcont
 
 func AssignVariables(f *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext, assigns []*AssignmentBlock) {
 	n := len(assigns)
+	var err error
+	var d *dvevaluation.DvVariable
 	for i := 0; i < n; i++ {
 		a := assigns[i]
-		err := f.AssignToSubField(a.Field, a.Value, env)
+		if a.Source == "" {
+			err = f.AssignToSubField(a.Field, a.Value, env)
+		} else {
+			v, ok := ReadActionResult(a.Source, ctx)
+			if !ok || v == nil {
+				d = nil
+			} else {
+				d = dvevaluation.AnyToDvVariable(v)
+			}
+			if d == nil {
+				d = &dvevaluation.DvVariable{
+					Kind:   dvevaluation.FIELD_OBJECT,
+					Fields: make([]*dvevaluation.DvVariable, 0, 7),
+				}
+			}
+			err = d.AssignToSubField(a.Field, a.Value, env)
+			SaveActionResult(a.Source, d, ctx)
+		}
 		if err != nil {
 			dvlog.PrintfError("Error %s : %s: %v", a.Field, a.Value, err)
 		}
@@ -313,4 +390,19 @@ func ActCalculation(env *dvevaluation.DvObject, ctx *dvcontext.RequestContext, w
 	}
 	env.Set("this", v)
 	return act
+}
+
+func applyFilter(f *dvevaluation.DvVariable, ind int, env *dvevaluation.DvObject, filter string) bool {
+	env.Set("__index", ind)
+	nm := string(f.Name)
+	if nm != "" {
+		env.Set("__key", nm)
+	}
+	fields := dvjson.CreateLocalVariables(env, f)
+	r, err := env.EvaluateBooleanExpression(filter)
+	dvjson.RemoveLocalVariables(env, fields)
+	if err == nil && r {
+		return true
+	}
+	return false
 }

@@ -59,6 +59,33 @@ func (item *DvVariable) CreateQuickInfoByKeys(ids []string) {
 	}
 }
 
+func (item *DvVariable) CreateQuickInfoForSingleItemByKeys(ids []string) string {
+	m := len(ids)
+	if m == 0 {
+		ids = []string{"id"}
+		m = 1
+	}
+	key := ""
+	if item != nil {
+		item.CreateQuickInfoForObjectType()
+		for j := 0; j < m; j++ {
+			id := ids[j]
+			fc := item.QuickSearch.Looker[id]
+			v := ""
+			if fc != nil {
+				v = string(fc.Value)
+			}
+			if j == 0 {
+				key = v
+			} else {
+				key = key + MapKeySeparator + v
+			}
+		}
+		item.QuickSearch.Key = key
+	}
+	return key
+}
+
 func (item *DvVariable) CreateQuickInfoForObjectType() {
 	if item != nil {
 		if item.QuickSearch == nil {

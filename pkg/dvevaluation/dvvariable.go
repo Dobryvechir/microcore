@@ -959,6 +959,55 @@ func (item *DvVariable) MergeArraysByIds(other *DvVariable, ids []string, mode i
 	}
 }
 
+func (item *DvVariable) MergeItemIntoArraysByIds(other *DvVariable, ids []string, mode int,init bool) {
+	if item == nil || other == nil {
+		return
+	}
+	if init {
+		item.CreateQuickInfoByKeys(ids)
+	}
+	key := other.CreateQuickInfoForSingleItemByKeys(ids)
+	lookerMain := item.QuickSearch.Looker
+	if m, ok := lookerMain[key]; ok {
+		switch mode {
+		case UPDATE_MODE_REPLACE:
+			m.CloneExceptKey(other, true)
+		case UPDATE_MODE_APPEND, UPDATE_MODE_MERGE_MAX, UPDATE_MODE_MERGE_MIN:
+			n := len(other.Fields)
+			looker := m.QuickSearch.Looker
+			for i := 0; i < n; i++ {
+				f := other.Fields[i]
+				if f == nil {
+					continue
+				}
+				name := string(f.Name)
+				p := looker[name]
+				if p == nil {
+					m.Fields = append(m.Fields, f)
+				} else {
+					v1 := string(f.Value)
+					v2 := string(p.Value)
+					switch mode {
+					case UPDATE_MODE_APPEND:
+						p.Value = []byte(v1 + "; " + v2)
+					case UPDATE_MODE_MERGE_MAX:
+						if v2 > v1 {
+							p.Value = []byte(v2)
+						}
+					case UPDATE_MODE_MERGE_MIN:
+						if v2 < v1 {
+							p.Value = []byte(v2)
+						}
+					}
+				}
+			}
+		}
+	} else {
+		item.Fields = append(item.Fields, other)
+		lookerMain[key] = other
+	}
+}
+
 func (item *DvVariable) ToDvGrammarExpressionValue() *dvgrammar.ExpressionValue {
 	if item == nil || item.Kind == FIELD_NULL || item.Kind == FIELD_UNDEFINED {
 		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}
@@ -985,7 +1034,14 @@ func (item *DvVariable) AssignToSubField(field string, value string, env *DvObje
 		return nil
 	}
 	n := len(item.Fields)
+	var err error
 	name := []byte(field)
+	if strings.HasPrefix(field, "$:") {
+		field, err = env.CalculateString(field[2:])
+		if err!=nil {
+			return err
+		}
+	}
 	p := item.IndexOfByKey(name)
 	if p < 0 {
 		if value == "delete" {
