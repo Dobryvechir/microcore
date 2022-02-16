@@ -89,6 +89,14 @@ func SquareBracketParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgra
 
 func CurlyBraceNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
 	n := len(tree.Children)
+	if n==0 {
+		d:=&DvVariable{
+			Kind: FIELD_OBJECT,
+			Fields: make([]*DvVariable,0,16),
+		}
+		value = AnyToDvGrammarExpressionValue(d)
+		return
+	}
 	for i := 0; i < n; i++ {
 		value, err = tree.Children[i].ExecuteExpression(context)
 		if err != nil {

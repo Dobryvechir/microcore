@@ -176,10 +176,13 @@ tokenRunner:
 					fullTreeForestClean(forest, tree)
 					return nil, err
 				}
-				subForest, err := buildExpressionTree(tokens[i+1:pos], opt)
-				if err != nil {
-					fullTreeForestClean(forest, tree)
-					return nil, err
+				var subForest []*BuildNode
+				if i+1 < pos {
+					subForest, err = buildExpressionTree(tokens[i+1:pos], opt)
+					if err != nil {
+						fullTreeForestClean(forest, tree)
+						return nil, err
+					}
 				}
 				i = pos
 				node := &BuildNode{
@@ -212,8 +215,8 @@ tokenRunner:
 		if !isOperator && (current.Children != nil || current.Value != nil) {
 			modifier, okModifier := opt.UnaryOperators[operator]
 			if okModifier && modifier.Post {
-				node:=current
-				for node.Operator!="" && len(node.Children)>0 {
+				node := current
+				for node.Operator != "" && len(node.Children) > 0 {
 					node = node.Children[len(node.Children)-1]
 				}
 				node.PostAttributes = append(node.PostAttributes, operator)

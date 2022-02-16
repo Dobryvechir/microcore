@@ -7,13 +7,14 @@ package main
 
 import (
 	_ "github.com/Dobryvechir/microcore/pkg/dvjsmaster"
+	_ "github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
 )
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("S=Good-Word", "[].length","0", KindInteger)
+	testEvaluationSingle("S=Good-Word", "{}", "{}", KindInteger)
 	showResume()
 }
 

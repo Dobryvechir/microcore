@@ -12,6 +12,7 @@ type Collection struct {
 	Unique    []string           `json:"unique"`
 	Assign    []*AssignmentBlock `json:"assign"`
 	MergeMode int                `json:"merge_mode"`
+	Append    bool               `json:"append"`
 }
 
 func (collection *Collection) AddItem(env *dvevaluation.DvObject) {
@@ -35,6 +36,15 @@ func (collection *Collection) AddItem(env *dvevaluation.DvObject) {
 
 func (collection *Collection) Initialize(env *dvevaluation.DvObject) {
 	item := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: make([]*dvevaluation.DvVariable, 0, 64)}
+	if collection.Append {
+		v, ok := env.Get(collection.Source)
+		if ok && v != nil {
+			d := dvevaluation.AnyToDvVariable(v)
+			if d != nil && d.Kind == dvevaluation.FIELD_ARRAY {
+				item = d
+			}
+		}
+	}
 	env.Set(collection.Source, item)
 	item.CreateQuickInfoByKeys(collection.Unique)
 }
