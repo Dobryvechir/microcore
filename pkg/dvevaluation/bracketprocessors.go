@@ -89,10 +89,35 @@ func SquareBracketParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgra
 
 func CurlyBraceNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
 	n := len(tree.Children)
-	if n==0 {
-		d:=&DvVariable{
-			Kind: FIELD_OBJECT,
-			Fields: make([]*DvVariable,0,16),
+	if n == 0 {
+		d := &DvVariable{
+			Kind:   FIELD_OBJECT,
+			Fields: make([]*DvVariable, 0, 16),
+		}
+		value = AnyToDvGrammarExpressionValue(d)
+		return
+	}
+	isObject := true
+	for i := 0; i < n; i++ {
+		if !isObjectLike(tree.Children[i]) {
+			isObject = false
+			break
+		}
+	}
+	if isObject {
+		d := &DvVariable{
+			Kind:   FIELD_OBJECT,
+			Fields: make([]*DvVariable, 0, n),
+		}
+		for i := 0; i < n; i++ {
+			v, ok, err1 := ConvertToObjectKeyPair(tree.Children[i], context)
+			if err1 != nil {
+				err = err1
+				return
+			}
+			if ok {
+				d.Fields = append(d.Fields, v)
+			}
 		}
 		value = AnyToDvGrammarExpressionValue(d)
 		return
@@ -106,6 +131,63 @@ func CurlyBraceNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgram
 	noNextParent = true
 	parent = nil
 	return
+}
+
+func isSimpleKey(node *dvgrammar.BuildNode) string {
+	if node.Operator=="" && len(node.Children)==0 && node.Value!=nil {
+		if node.Value.DataType==dvgrammar.TYPE_STRING || node.Value.DataType==dvgrammar.TYPE_DATA {
+			return node.Value.Value
+		}
+	}
+	return ""
+}
+
+func isObjectLike(node *dvgrammar.BuildNode) bool {
+	if node.Operator == ":" && len(node.Children) == 2 {
+		k := isSimpleKey(node.Children[0])
+		if k != "" {
+			return true
+		}
+	} else {
+		k := isSimpleKey(node)
+		if k != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func ConvertToObjectKeyPair(node *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext) (*DvVariable, bool, error) {
+	if node.Operator == ":" && len(node.Children) == 2 {
+		k := isSimpleKey(node.Children[0])
+		if k != "" {
+			v, err := node.Children[1].ExecuteExpression(context)
+			if err != nil {
+				return nil, false, err
+			}
+			d := AnyToDvVariable(v)
+			if d == nil {
+				d = &DvVariable{Kind: FIELD_NULL}
+			}
+			d.Name = []byte(k)
+			return d, true, nil
+		}
+	} else {
+		k := isSimpleKey(node)
+		if k != "" {
+			v, ok := context.Scope.Get(k)
+			if !ok {
+				return nil, false, errors.New("Undefined " + k)
+			}
+			d := AnyToDvVariable(v)
+			if d == nil {
+				d = &DvVariable{Kind: FIELD_NULL}
+			}
+			d.Name = []byte(k)
+			return d, true, nil
+		}
+	}
+	return nil, false, nil
 }
 
 func CurlyBraceParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {

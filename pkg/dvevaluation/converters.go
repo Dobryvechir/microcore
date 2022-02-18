@@ -376,6 +376,16 @@ func AnyToDvVariable(v interface{}) *DvVariable {
 	switch v.(type) {
 	case *DvVariable:
 		return v.(*DvVariable)
+	case bool:
+		d := &DvVariable{
+			Kind: FIELD_BOOLEAN,
+		}
+		if v.(bool) {
+			d.Value = []byte("true")
+		} else {
+			d.Value = []byte("false")
+		}
+		return d
 	case string:
 		return &DvVariable{Kind: FIELD_STRING, Value: []byte(v.(string))}
 	case int:
