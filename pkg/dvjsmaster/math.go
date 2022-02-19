@@ -69,6 +69,92 @@ func math_init() {
 						Fn: Math_Acos,
 					},
 				},
+				{
+					Name: []byte("acosh"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Acosh,
+					},
+				},
+		                {
+					Name: []byte("asin"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Asin,
+					},
+				},
+		                {
+					Name: []byte("asinh"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Asinh,
+					},
+				},
+                                {
+					Name: []byte("atan"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Atan,
+					},
+				},
+                                {
+					Name: []byte("atanh"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Atanh,
+					},
+				},
+                                {
+					Name: []byte("cbrt"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Cbrt,
+					},
+				},
+                                {
+					Name: []byte("ceil"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Ceil,
+					},
+				},                                 
+                                {
+					Name: []byte("cos"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Cos,
+					},
+				},
+                                {
+					Name: []byte("cosh"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Cosh,
+					},
+				},
+                                {
+					Name: []byte("exp"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Exp,
+					},
+				},
+                                {
+					Name: []byte("expm1"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Expm1,
+					},
+				},
+                                {
+					Name: []byte("floor"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Floor,
+					},
+				},
+                                
+                                                                
 			},
 			Kind: dvevaluation.FIELD_OBJECT,
 		},
@@ -243,5 +329,125 @@ func Math_Acos(context *dvgrammar.ExpressionContext, thisVariable interface{}, p
 	}
 	val := dvevaluation.AnyToNumber(params[0])
 	res:=math.Acos(val)
+	return res, nil
+}
+
+func Math_Acosh(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Acosh(val)
+	return res, nil
+}
+
+func Math_Asin(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Asin(val)
+	return res, nil
+}
+
+func Math_Asinh(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Asinh(val)
+	return res, nil
+}
+
+func Math_Atan(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Atan(val)
+	return res, nil
+}
+
+func Math_Atanh(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Atanh(val)
+	return res, nil
+}
+
+func Math_Cbrt(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Cbrt(val)
+	return res, nil
+}
+
+func Math_Ceil(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Ceil(val)
+	return res, nil
+}
+
+func Math_Cos(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Cos(val)
+	return res, nil
+}
+
+func Math_Cosh(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Cosh(val)
+	return res, nil
+}
+
+func Math_Exp(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Exp(val)
+	return res, nil
+}
+
+func Math_Expm1(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Expm1(val)
+	return res, nil
+}
+
+func Math_Floor(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Floor(val)
 	return res, nil
 }
