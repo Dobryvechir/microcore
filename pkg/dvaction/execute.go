@@ -48,8 +48,6 @@ const (
 	CommandVar         = "var"
 	CommandStore       = "store"
 	CommandVersion     = "version"
-	CommandDebug       = "debug"
-	CommandDynamic     = "dynamic"
 	CommandValidate    = "validate"
 	CommandUpsert      = "upsert"
 )
@@ -66,7 +64,6 @@ var processFunctions = map[string]ProcessFunction{
 	CommandCompareJson: {Init: compareJsonInit, Run: compareJsonRun},
 	CommandVar:         {Init: varTransformInit, Run: varTransformRun},
 	CommandStore:       {Init: storeInit, Run: storeRun},
-	CommandDebug:       {Init: debugInit, Run: debugRun},
 	CommandValidate:    {Init: validationInit, Run: validationRun},
 	CommandUpsert:      {Init: upsertJsonInit, Run: upsertJsonRun},
 }
@@ -74,7 +71,6 @@ var processFunctions = map[string]ProcessFunction{
 var logicProcessFunctions = map[string]ProcessFunction{
 	CommandPaging:  {Init: pagingInit, Run: pagingRun},
 	CommandVersion: {Init: versionInit, Run: versionRun},
-	CommandDynamic: {Init: dynamicActionInit, Run: dynamicActionRun},
 }
 
 const (
@@ -417,7 +413,6 @@ var ocExecutorRegistrationConfig = &dvmodules.HookRegistrationConfig{
 
 func RegisterOC() bool {
 	AddProcessFunctions(execStatementProcessFunctions)
-	AddProcessFunctions(logicProcessFunctions)
 	dvmodules.RegisterActionProcessor("", fireAction, false)
 	dvmodules.RegisterActionProcessor("static", fireStaticAction, false)
 	dvmodules.RegisterActionProcessor("switch", fireSwitchAction, false)

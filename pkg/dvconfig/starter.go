@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvconfig
@@ -8,6 +8,7 @@ package dvconfig
 import (
 	"encoding/json"
 	"github.com/Dobryvechir/microcore/pkg/dvaction"
+	_ "github.com/Dobryvechir/microcore/pkg/dvaction/dvdynamic"
 	"log"
 	"net/http"
 	"strings"
@@ -54,9 +55,9 @@ func ServerStart() {
 			dvparser.SetGlobalPropertiesValue("CURRENT_MICROCORE_CONFIG", string(data))
 		}
 		ProvideServerCommand()
-		ctx:=&dvcontext.RequestContext{PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject()}
+		ctx := &dvcontext.RequestContext{PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject()}
 		dvaction.ExecuteSequence("EXECUTE_"+osargs2, ctx, nil)
-		if ctx.StatusCode>=400 {
+		if ctx.StatusCode >= 400 {
 			log.Printf("Error %s ", string(ctx.Output))
 		}
 	default:

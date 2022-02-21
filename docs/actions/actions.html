@@ -47,7 +47,7 @@ Actions are described in the configuration as follows:
         blocks
     </li>
     <li><a href="upsert-action.html">upsert</a> update or insert a json array of items into another array of
-         items with the same structure
+        items with the same structure
     </li>
     <li><a href="var-action.html">var</a> assignment variables from other variables or expressions</li>
     <li><a href="call-action.html">call</a> calls another series of actions</li>
@@ -60,9 +60,11 @@ Actions are described in the configuration as follows:
     <li><a href="switch-action.html">switch</a> calls one of many series based on the conditions</li>
     <li><a href="range-action.html">range</a> executes a cycle based on the range</li>
     <li><a href="return-action.html">return</a> returns parameters from the call</li>
-    <li><a href="dynamic-action.html">dynamic</a> dynamically creates actions and sets properties based on variables</li>
+    <li><a href="dynamic-action.html">dynamic</a> dynamically creates actions and sets properties based on variables
+    </li>
     <li><a href="validate-action.html">validate</a> validates variables</li>
-    <li><a href="void-action.html">void</a> this can be used to comment some actions temporarily, just to omit this step</li>
+    <li><a href="void-action.html">void</a> this can be used to comment some actions temporarily, just to omit this step
+    </li>
 </ol>
 <pre>
     Many of the actions have a "result" field to store the result of the execution.
@@ -97,4 +99,19 @@ Actions are described in the configuration as follows:
          "result": "global:MY_RESULT"
               value will be available for all action steps and not only in this
               http request, but in all further work of the server
+</pre>
+<pre>
+    When actions are described in properties, you can set them either in short form as follows:
+ACTION_B_1=net:{}
+    or specifying (idle time in seconds),(pause time in seconds),(total time in seconds)
+The short form above is equivalent to
+ACTION_B_1=0,0,0,net:{}
+You can specify a delay before executing the command (for example, 5 seconds):
+ACTION_B_1=5,0,0,net:{}
+You can specify parameters for repeated execution in case of failure
+ACTION_B_1=5,2,10,net:{}
+In the example above we make a delay of 5 seconds before the execution.
+In case of failure we make a pause of 2 seconds and repeat the same.
+The engine will repeat it until the success within 10 seconds. If there are no success within 10 seconds,
+    the result is failure.
 </pre>

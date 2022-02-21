@@ -14,7 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("S=Good-Word", "{'a':'good',S,b:true}", "{\n  \"a\": \"good\",\n  \"S\": \"Good-Word\",\n  \"b\": true\n}", KindANY)
+	testEvaluationSingle("S=Good-Word", "K=['a','good',S,5,true];K[2:4]", "[\n  \"Good-Word\",\n  5\n]", KindInteger)
 	showResume()
 }
 
