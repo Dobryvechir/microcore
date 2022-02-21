@@ -413,6 +413,7 @@ var ocExecutorRegistrationConfig = &dvmodules.HookRegistrationConfig{
 
 func RegisterOC() bool {
 	AddProcessFunctions(execStatementProcessFunctions)
+	AddProcessFunctions(logicProcessFunctions)
 	dvmodules.RegisterActionProcessor("", fireAction, false)
 	dvmodules.RegisterActionProcessor("static", fireStaticAction, false)
 	dvmodules.RegisterActionProcessor("switch", fireSwitchAction, false)
