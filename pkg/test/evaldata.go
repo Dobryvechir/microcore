@@ -94,5 +94,18 @@ func testEvaluation() {
 	testEvaluationSingle("", "Math.abs(3)","3", KindFloat)
 	testEvaluationSingle("", "Math.abs(-3)","3", KindFloat)
 	testEvaluationSingle("", "Math.acos(0.5)","1.0471975511965976", KindFloat)
+	testEvaluationSingle("", "Math.acosh(2)","1.3169578969248166", KindFloat)
+        testEvaluationSingle("", "Math.asin(1)","1.5707963267948966", KindFloat)
+        testEvaluationSingle("", "Math.asinh(1)","0.881373587019543", KindFloat)
+        testEvaluationSingle("", "Math.atan(1)","0.7853981633974483", KindFloat)
+        testEvaluationSingle("", "Math.atanh(0.5)","0.5493061443340548", KindFloat)
+        testEvaluationSingle("", "Math.cbrt(2)","1.2599210498948732", KindFloat)
+        testEvaluationSingle("", "Math.ceil(7.5)","8", KindFloat)
+        testEvaluationSingle("", "Math.cos(1)","0.5403023058681398", KindFloat)
+        testEvaluationSingle("", "Math.cosh(1)","1.5430806348152437", KindFloat)
+        testEvaluationSingle("", "Math.exp(1)","2.718281828459045", KindFloat)
+        testEvaluationSingle("", "Math.expm1(1)","1.718281828459045", KindFloat)
+        testEvaluationSingle("", "Math.floor(45.95)","45", KindFloat)
+ 
 	showResume()
 }
