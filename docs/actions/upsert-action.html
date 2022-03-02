@@ -8,7 +8,11 @@ It updates or insert items from one array into another array of the same structu
      "stored" {<a href="json-source.html">json reference to be compared (old object in database)</a>}
          "stored.ids" is used to detect identical items. By default it is ["id"]
          "stored.destination" is used to detect the place where to write back the result
+    "disable_insert", int, optional (default is 0), if it is greater than 0, the insert is not performed,
+             if it is between 400 and 600, it is considered as a http error code in case of the insert.
+    "disable_update", int, optional (default is 0), if it is greater than 0, the update is not performed,
+             if it is between 400 and 600, it is considered as a http error code in case of the update.
 }
 Example:
-UPDATE_STEP_1=upsert:{"sample":{"var":"S","ids":["name","key"]},"ref":{"var":"T","ids":["name","key"]}},"added":"RESULT"}
+UPDATE_STEP_1=upsert:{"change":{"var":"S","ids":["name","key"]}},"stored":{"var":"T","ids":["name","key"]}}
 </pre>

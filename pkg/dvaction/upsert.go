@@ -14,8 +14,10 @@ import (
 )
 
 type UpsertJsonConfig struct {
-	Sample *JsonRead `json:"change"`
-	Ref    *JsonRead `json:"stored"`
+	Sample        *JsonRead `json:"change"`
+	Ref           *JsonRead `json:"stored"`
+	DisableUpdate int       `json:"disable_update"`
+	DisableInsert int       `json:"disable_insert"`
 }
 
 func upsertJsonInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -60,16 +62,33 @@ func UpsertJsonByConfig(config *UpsertJsonConfig, ctx *dvcontext.RequestContext)
 		false, false, true)
 	if updated != nil {
 		n := len(updated.Fields)
-		for i := 0; i < n; i++ {
-			f := updated.Fields[i]
-			ind := f.Extra.(int)
-			res.Fields[ind] = f
+		if n != 0 {
+			if config.DisableUpdate > 0 {
+				if config.DisableUpdate >= 400 && config.DisableUpdate < 600 && ctx != nil {
+					ctx.SetHttpErrorCode(config.DisableUpdate, "Contains update")
+					return true
+				}
+			} else {
+				for i := 0; i < n; i++ {
+					f := updated.Fields[i]
+					ind := f.Extra.(int)
+					res.Fields[ind] = f
+				}
+			}
 		}
 	}
 	if added != nil {
 		n := len(added.Fields)
-		for i := 0; i < n; i++ {
-			res.Fields = append(res.Fields, added.Fields[i])
+		if n > 0 {
+			if config.DisableInsert > 0 {
+				if config.DisableInsert >= 400 && config.DisableInsert < 600 && ctx != nil {
+					ctx.SetHttpErrorCode(config.DisableInsert, "Contains insert")
+				}
+			} else {
+				for i := 0; i < n; i++ {
+					res.Fields = append(res.Fields, added.Fields[i])
+				}
+			}
 		}
 	}
 	SaveActionResult(config.Ref.Destination, res, ctx)
