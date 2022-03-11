@@ -57,6 +57,9 @@ func IterateFilterOnAnyType(val interface{}, processor FilterProcessor) interfac
 	switch val.(type) {
 	case *dvevaluation.DvVariable:
 		fieldInfo := val.(*dvevaluation.DvVariable)
+		if fieldInfo==nil {
+			return res
+		}
 		if fieldInfo.Kind == dvevaluation.FIELD_OBJECT {
 			res.Kind = dvevaluation.FIELD_OBJECT
 		}

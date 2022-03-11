@@ -104,3 +104,12 @@ func (obj *DvObject) EvaluateAnyTypeExpression(s string) (interface{}, error) {
 	}
 	return expr.FinalResult, nil
 }
+
+func (obj *DvObject) EvaluateStringTypeExpression(s string) (string, error) {
+	v, err := obj.EvaluateAnyTypeExpression(s)
+	if err != nil {
+		return "", err
+	}
+	r := AnyToString(v)
+	return r, nil
+}

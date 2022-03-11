@@ -972,7 +972,7 @@ func (item *DvVariable) MergeItemIntoArraysByIds(other *DvVariable, ids []string
 		switch mode {
 		case UPDATE_MODE_REPLACE:
 			m.CloneExceptKey(other, true)
-		case UPDATE_MODE_APPEND, UPDATE_MODE_MERGE_MAX, UPDATE_MODE_MERGE_MIN:
+		case UPDATE_MODE_APPEND, UPDATE_MODE_MERGE_MAX, UPDATE_MODE_MERGE_MIN, UPDATE_MODE_ADD_BY_KEYS,UPDATE_MODE_MERGE:
 			n := len(other.Fields)
 			looker := m.QuickSearch.Looker
 			for i := 0; i < n; i++ {
@@ -985,9 +985,11 @@ func (item *DvVariable) MergeItemIntoArraysByIds(other *DvVariable, ids []string
 				if p == nil {
 					m.Fields = append(m.Fields, f)
 				} else {
-					v1 := string(f.Value)
-					v2 := string(p.Value)
+					v1 := string(p.Value)
+					v2 := string(f.Value)
 					switch mode {
+					case UPDATE_MODE_ADD_BY_KEYS:
+						p.CloneExceptKey(f, true)
 					case UPDATE_MODE_APPEND:
 						p.Value = []byte(v1 + "; " + v2)
 					case UPDATE_MODE_MERGE_MAX:
@@ -1035,13 +1037,13 @@ func (item *DvVariable) AssignToSubField(field string, value string, env *DvObje
 	}
 	n := len(item.Fields)
 	var err error
-	name := []byte(field)
 	if strings.HasPrefix(field, "$:") {
-		field, err = env.CalculateString(field[2:])
+		field, err = env.EvaluateStringTypeExpression(field[2:])
 		if err!=nil {
 			return err
 		}
 	}
+	name := []byte(field)
 	p := item.IndexOfByKey(name)
 	if p < 0 {
 		if value == "delete" {

@@ -60,7 +60,10 @@ It has the parameters as follows:
                    }
                    "merge_mode" int
                        this describes how to merge values if "unique" fields are the same
+                       0 - replace the whole item with a new one
                        1 - append as strings with "; " as a separator
+                       2 - add new subitems, replace old subitems if the keys coincide
+                       3 - add new subitems, keeping old subitems if the keys coincide
                        4 - collect the minimum value as a string
                        5 - collect the maximum value as a string
                    "append" true/false, if true, old values are kept in the collection which existed before
