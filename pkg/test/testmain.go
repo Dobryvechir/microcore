@@ -14,7 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("S=Good-Word", "{'a':'good',S,b:true}", "{\n  \"a\": \"good\",\n  \"S\": \"Good-Word\",\n  \"b\": true\n}", KindANY)
+        testEvaluationSingle("", "Math.sign(-10)","-1", KindInteger)
 	showResume()
 }
 

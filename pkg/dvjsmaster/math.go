@@ -153,8 +153,132 @@ func math_init() {
 						Fn: Math_Floor,
 					},
 				},
-                                
-                                                                
+                                {
+					Name: []byte("log"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Log,
+					},
+				},
+                                {
+					Name: []byte("log1p"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Log1p,
+					},
+				},
+                                {
+					Name: []byte("log10"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Log10,
+					},
+				},
+                                {
+					Name: []byte("log2"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Log2,
+					},
+				},
+                                {
+					Name: []byte("round"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Round,
+					},
+				},  
+                                {
+					Name: []byte("sign"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Sign,
+					},
+				},
+                                {
+					Name: []byte("sin"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Sin,
+					},
+				},
+                                {
+					Name: []byte("sinh"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Sinh,
+					},
+				},
+                                {
+					Name: []byte("sqrt"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Sqrt,
+					},
+				},
+                                {
+					Name: []byte("tan"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Tan,
+					},
+				},
+                                {
+					Name: []byte("tanh"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Tanh,
+					},
+				},
+                                {
+					Name: []byte("trunc"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Trunc,
+					},
+				},
+                                {
+					Name: []byte("E"),                      
+					Kind: dvevaluation.FIELD_NUMBER,
+					Value: []byte("2.718281828459045"),
+				},
+                                {
+					Name: []byte("LN10"),                      
+					Kind: dvevaluation.FIELD_NUMBER,
+					Value: []byte("2.302585092994046"),
+				},
+                                {
+					Name: []byte("LN2"),                      
+					Kind: dvevaluation.FIELD_NUMBER,
+					Value: []byte("0.6931471805599453"),
+				},
+                                {
+					Name: []byte("LOG10E"),                      
+					Kind: dvevaluation.FIELD_NUMBER,
+					Value: []byte("0.4342944819032518"),
+				},
+                                {
+					Name: []byte("LOG2E"),                      
+					Kind: dvevaluation.FIELD_NUMBER,
+					Value: []byte("1.4426950408889634"),
+				},
+                                {
+					Name: []byte("PI"),                      
+					Kind: dvevaluation.FIELD_NUMBER,
+					Value: []byte("3.14159265359"),
+				},
+                                {
+					Name: []byte("SQRT1_2"),                      
+					Kind: dvevaluation.FIELD_NUMBER,
+					Value: []byte("0.7071067811865476"),
+				},
+                                {
+					Name: []byte("SQRT2"),                      
+					Kind: dvevaluation.FIELD_NUMBER,
+					Value: []byte("1.4142135623730951"),
+				},
+
+
 			},
 			Kind: dvevaluation.FIELD_OBJECT,
 		},
@@ -449,5 +573,132 @@ func Math_Floor(context *dvgrammar.ExpressionContext, thisVariable interface{}, 
 	}
 	val := dvevaluation.AnyToNumber(params[0])
 	res:=math.Floor(val)
+	return res, nil
+}
+
+func Math_Log(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Log(val)
+	return res, nil
+}
+
+func Math_Log1p(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Log1p(val)
+	return res, nil
+}
+
+func Math_Log10(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Log10(val)
+	return res, nil
+}
+
+func Math_Log2(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Log2(val)
+	return res, nil
+}
+
+func Math_Round(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Round(val)
+	return res, nil
+}
+
+func Math_Sign(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:= 0
+        if val < 0 {
+         res = -1
+        } else if val > 0 {
+           res = 1
+        } else if val == -0 {
+           res = -0
+        }
+	return res, nil
+}
+
+func Math_Sin(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Sin(val)
+	return res, nil
+}
+
+func Math_Sinh(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Sinh(val)
+	return res, nil
+}
+
+func Math_Sqrt(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Sqrt(val)
+	return res, nil
+}
+
+func Math_Tan(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Tan(val)
+	return res, nil
+}
+
+func Math_Tanh(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Tanh(val)
+	return res, nil
+}
+
+func Math_Trunc(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	val := dvevaluation.AnyToNumber(params[0])
+	res:=math.Trunc(val)
 	return res, nil
 }

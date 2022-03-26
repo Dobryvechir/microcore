@@ -1,2 +1,1 @@
 go build
-echo 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
