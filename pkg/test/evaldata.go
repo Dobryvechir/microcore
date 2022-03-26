@@ -52,6 +52,9 @@ func testEvaluation() {
 	testEvaluationSingle("", "1<2 ? 'A' : 'B'", "A", KindString)
 	testEvaluationSingle("", "{}", "{}", KindDvVariable)
 	testEvaluationSingle("S=Good-Word", "{'a':'good',S,b:true}", "{\n  \"a\": \"good\",\n  \"S\": \"Good-Word\",\n  \"b\": true\n}", KindANY)
+	testEvaluationSingle("S=Good-Word", "K={'a':'good',S,b:true};K['a']", "good", KindString)
+	testEvaluationSingle("S=Good-Word", "K=['a','good',S,5,true];K[3]", "5", KindInteger)
+	testEvaluationSingle("S=Good-Word", "K=['a','good',S,5,true];K[2:4]", "[\n  \"Good-Word\",\n  5\n]", KindInteger)
 
 	testEvaluationSingle("S=5", "S+1", "51", KindString)
 	testEvaluationSingle("S=5", "+S+1", "6", KindInteger)

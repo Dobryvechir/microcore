@@ -233,6 +233,11 @@ func urlActionVerifier(context interface{}, resolver *dvurl.UrlResolver, urlData
 	requestContext := context.(*dvcontext.RequestContext)
 	requestContext.SetUrlInlineParameters(urlData.UrlKeys)
 	action := resolver.Handler.(*dvcontext.DvAction)
+	method := strings.ToUpper(requestContext.Reader.Method)
+	if method == "OPTIONS" {
+		requestContext.HandleHttpError(200)
+		return true
+	}
 	return FireAction(action, requestContext)
 }
 
@@ -240,10 +245,18 @@ func getActionHandlerFunc(base map[string]*dvurl.UrlPool) dvcontext.HandlerFunc 
 	return func(context *dvcontext.RequestContext) bool {
 		method := strings.ToUpper(context.Reader.Method)
 		urlPool := base[method]
+		urls := context.Urls
 		if urlPool == nil {
+			if method == "OPTIONS" {
+				for _, v := range base {
+					ok, _ := dvurl.UrlSearch(context, v, urls, urlActionVerifier, context.PrimaryContextEnvironment)
+					if ok {
+						return true
+					}
+				}
+			}
 			return false
 		}
-		urls := context.Urls
 		ok, _ := dvurl.UrlSearch(context, urlPool, urls, urlActionVerifier, context.PrimaryContextEnvironment)
 		return ok
 	}

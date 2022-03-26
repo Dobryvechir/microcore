@@ -1,11 +1,12 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
-package dvaction
+package dvdynamic
 
 import (
+	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
@@ -15,13 +16,13 @@ import (
 	"strings"
 )
 
-func dynamicActionInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func DynamicActionInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
 	if cmd == "" {
 		log.Printf("Empty parameters in %s", command)
 		return nil, false
 	}
-	env := GetEnvironment(ctx)
+	env := dvaction.GetEnvironment(ctx)
 	v, ok := env.Get(cmd)
 	if !ok {
 		log.Printf("Unknown variable in %s", command)
@@ -30,7 +31,7 @@ func dynamicActionInit(command string, ctx *dvcontext.RequestContext) ([]interfa
 	return []interface{}{v, ctx}, true
 }
 
-func dynamicActionRun(data []interface{}) bool {
+func DynamicActionRun(data []interface{}) bool {
 	v := data[0]
 	var ctx *dvcontext.RequestContext = nil
 	if data[1] != nil {
@@ -48,7 +49,7 @@ func DynamicActionByConfig(config *dvevaluation.DvVariable, ctx *dvcontext.Reque
 	if config == nil {
 		return true
 	}
-	env := GetEnvironment(ctx)
+	env := dvaction.GetEnvironment(ctx)
 	name := "production"
 	if dvparser.IsDevelopment() {
 		name = "development"

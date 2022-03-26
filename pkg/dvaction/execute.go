@@ -48,8 +48,6 @@ const (
 	CommandVar         = "var"
 	CommandStore       = "store"
 	CommandVersion     = "version"
-	CommandDebug       = "debug"
-	CommandDynamic     = "dynamic"
 	CommandValidate    = "validate"
 	CommandUpsert      = "upsert"
 )
@@ -66,7 +64,6 @@ var processFunctions = map[string]ProcessFunction{
 	CommandCompareJson: {Init: compareJsonInit, Run: compareJsonRun},
 	CommandVar:         {Init: varTransformInit, Run: varTransformRun},
 	CommandStore:       {Init: storeInit, Run: storeRun},
-	CommandDebug:       {Init: debugInit, Run: debugRun},
 	CommandValidate:    {Init: validationInit, Run: validationRun},
 	CommandUpsert:      {Init: upsertJsonInit, Run: upsertJsonRun},
 }
@@ -74,7 +71,6 @@ var processFunctions = map[string]ProcessFunction{
 var logicProcessFunctions = map[string]ProcessFunction{
 	CommandPaging:  {Init: pagingInit, Run: pagingRun},
 	CommandVersion: {Init: versionInit, Run: versionRun},
-	CommandDynamic: {Init: dynamicActionInit, Run: dynamicActionRun},
 }
 
 const (
@@ -88,6 +84,7 @@ const (
 	ExSeqCurrentLevel          = ExSeqPrefix + "CURRENT_LEVEL"
 	ExSeqReturnAllDefaultNames = ""
 	ExSeqReturnSingleDefault   = "RETURN"
+	ExActionLog                = "__ACTION_LOG__"
 )
 
 func AddProcessFunction(key string, processor ProcessFunction) {
@@ -114,7 +111,7 @@ func getWaitKeys() string {
 	return res
 }
 
-func ExecuteProcessFunction(fn *ProcessFunction, pauseTime int, totalTime int, command string, group *sync.WaitGroup, ctx *dvcontext.RequestContext) bool {
+func ExecuteProcessFunction(fn *ProcessFunction, pauseTime int, totalTime int, command string, group *sync.WaitGroup, ctx *dvcontext.RequestContext, debugList string) bool {
 	data, ok := fn.Init(command, ctx)
 	if !ok {
 		return false
@@ -127,6 +124,9 @@ func ExecuteProcessFunction(fn *ProcessFunction, pauseTime int, totalTime int, c
 			group.Add(1)
 		}
 		if fn.Run(data) {
+			if debugList != "" {
+				DebugShowVariablesByEnvList(ctx, debugList)
+			}
 			return true
 		}
 		if pauseTime <= 0 {
@@ -157,7 +157,7 @@ func ExecuteSingleCommand(pauseTime int, totalTime int, prefix string, command s
 		dvlog.PrintfError("in %s the first parameter must start with either %s, not with %s", command, getWaitKeys(), kind)
 		return false
 	}
-	return ExecuteProcessFunction(&waiter, pauseTime, totalTime, command, nil, nil)
+	return ExecuteProcessFunction(&waiter, pauseTime, totalTime, command, nil, nil, "")
 }
 
 func ExecuteReturnSubsequence(ctx *dvcontext.RequestContext, retValue string) {
@@ -252,9 +252,17 @@ func ExecuteSequence(startActionName string, ctx *dvcontext.RequestContext, init
 	if ctx == nil {
 		ctx = &dvcontext.RequestContext{PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject()}
 	}
-	_, ok := ctx.PrimaryContextEnvironment.Get(startActionName + "_LOG")
+	debug, ok := ctx.PrimaryContextEnvironment.Get(startActionName + "_LOG")
 	if ok {
 		ActionLog = true
+		debugMode := 0
+		switch debug.(type) {
+		case string:
+			if strings.ToLower(debug.(string)) == "debug" {
+				debugMode = 1
+			}
+		}
+		ctx.PrimaryContextEnvironment.Set(ExActionLog, debugMode)
 	}
 	if ActionLog {
 		dvlog.Printf(startActionName, "ExecuteSequence %s\n", startActionName)
@@ -269,6 +277,17 @@ func ExecuteSequenceCycle(ctx *dvcontext.RequestContext, cycleLevel int) bool {
 	var err error
 	if cycleLevel < 0 {
 		cycleLevel = ctx.PrimaryContextEnvironment.GetInt(ExSeqLevel)
+	}
+	debugMode := -1
+	if ActionLog {
+		debug, ok := ctx.PrimaryContextEnvironment.Get(ExActionLog)
+		if ok {
+			ActionLog = true
+			switch debug.(type) {
+			case int:
+				debugMode = debug.(int)
+			}
+		}
 	}
 	for true {
 		level := ctx.PrimaryContextEnvironment.GetInt(ExSeqLevel)
@@ -290,8 +309,13 @@ func ExecuteSequenceCycle(ctx *dvcontext.RequestContext, cycleLevel int) bool {
 			ExecuteReturnSubsequence(ctx, ExSeqReturnSingleDefault)
 			continue
 		}
-		if ActionLog {
+		debugList := ""
+		if debugMode >= 0 {
 			dvlog.Printf(p, "Executing %s %s\n", p, waitCommandRaw)
+			if debugMode >= 1 {
+				DebugShowVariablesByEnvList(ctx, p+"_SHOW_BEFORE")
+				debugList = p + "_SHOW_AFTER"
+			}
 		}
 		if ctx == nil {
 			waitCommand, err = dvparser.ConvertByteArrayByGlobalProperties([]byte(waitCommandRaw), waitCommandRaw)
@@ -386,10 +410,10 @@ func ExecuteSequenceCycle(ctx *dvcontext.RequestContext, cycleLevel int) bool {
 			ok = true
 			go func() {
 				defer wg.Done()
-				ExecuteProcessFunction(&waiter, pauseTime, totalTime, waitCommand, &wg, ctx)
+				ExecuteProcessFunction(&waiter, pauseTime, totalTime, waitCommand, &wg, ctx, debugList)
 			}()
 		} else {
-			ok = ExecuteProcessFunction(&waiter, pauseTime, totalTime, waitCommand, &wg, ctx)
+			ok = ExecuteProcessFunction(&waiter, pauseTime, totalTime, waitCommand, &wg, ctx, debugList)
 		}
 		if !ok && strict {
 			return false

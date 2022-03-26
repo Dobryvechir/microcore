@@ -1,4 +1,0 @@
-create variable BODY which is the object, which would allows to get all parameters
-BODY.user.name
-BODY?.user?.name
-if no ? and not defined, 404 Bad parameters

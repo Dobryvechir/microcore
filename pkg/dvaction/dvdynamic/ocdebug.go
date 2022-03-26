@@ -3,9 +3,10 @@ MicroCore
 Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
-package dvaction
+package dvdynamic
 
 import (
+	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
@@ -26,10 +27,10 @@ var debugActionList = map[string]DebugActionFn{
 	"EXIT":             RunExit,
 }
 
-func debugInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
+func DebugInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
 	config := &DebugConfig{}
 	key, okay := dvparser.GlobalProperties["DEBUG_KEY"]
-	if !okay || key == "" || !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
+	if !okay || key == "" || !dvaction.DefaultInitWithObject(command, config, dvaction.GetEnvironment(ctx)) {
 		return nil, false
 	}
 	currentKey, okey := ctx.PrimaryContextEnvironment.Properties["URL_PARAM_KEY"]
@@ -55,7 +56,7 @@ func debugInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bo
 	return []interface{}{config, ctx, fn}, true
 }
 
-func debugRun(data []interface{}) bool {
+func DebugRun(data []interface{}) bool {
 	config := data[0].(*DebugConfig)
 	var ctx *dvcontext.RequestContext = nil
 	if data[1] != nil {
