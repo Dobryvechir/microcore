@@ -250,7 +250,10 @@ func ExecuteAddSubsequenceShort(ctx *dvcontext.RequestContext, actionName string
 
 func ExecuteSequence(startActionName string, ctx *dvcontext.RequestContext, initialParams map[string]string) bool {
 	if ctx == nil {
-		ctx = &dvcontext.RequestContext{PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject()}
+		ctx = &dvcontext.RequestContext{
+			Id: dvcontext.GetUniqueId(),
+			PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject(),
+		}
 	}
 	debug, ok := ctx.PrimaryContextEnvironment.Get(startActionName + "_LOG")
 	if ok {
@@ -446,6 +449,7 @@ func RegisterOC() bool {
 	dvmodules.RegisterActionProcessor("static", fireStaticAction, false)
 	dvmodules.RegisterActionProcessor("switch", fireSwitchAction, false)
 	dvmodules.RegisterActionProcessor("security", securityEndPointHandler, false)
+	dvmodules.RegisterActionProcessor("sse", fireSseAction, false)
 	return dvmodules.SubscribeForEvents(ocExecutorRegistrationConfig, false)
 }
 

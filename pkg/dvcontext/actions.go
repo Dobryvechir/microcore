@@ -21,6 +21,31 @@ type DvAction struct {
 	Session     *SessionActionRequest `json:"session"`
 	Roles       string                `json:"roles"`
 	Auth        string                `json:"auth"`
+	SseWs       *SSEWSControl         `json:"sse_ws"`
+}
+
+type Stage struct {
+	Action    string `json:"action"`
+	Condition string `json:"condition"`
+	Result    string `json:"result"`
+}
+
+type SSEDelta struct {
+	ActionDelta      string   `json:"action_delta"`
+	ActionFull       string   `json:"action_full"`
+	ActionFullResult string   `json:"action_full_result"`
+	Places           []string `json:"places"`
+}
+
+type SSEWSControl struct {
+	Delta           *SSEDelta `json:"delta"`
+	Start           *Stage    `json:"start"`
+	Mid             *Stage    `json:"mid"`
+	End             *Stage    `json:"end"`
+	Interval        int       `json:"interval"`
+	TimeOut         int       `json:"time_out"`
+	HeartBeat       int       `json:"heart_beat"`
+	ServeMidAtStart bool      `json:"serve_mid_at_start"`
 }
 
 func (action *DvAction) CloneFrom(other *DvAction) {
@@ -40,4 +65,5 @@ func (action *DvAction) CloneFrom(other *DvAction) {
 	action.Session = other.Session
 	action.Roles = other.Roles
 	action.Auth = other.Auth
+	action.SseWs = other.SseWs
 }

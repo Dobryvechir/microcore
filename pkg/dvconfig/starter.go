@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	_ "github.com/Dobryvechir/microcore/pkg/dvaction/dvdynamic"
+	"github.com/Dobryvechir/microcore/pkg/dvssews"
 	"log"
 	"net/http"
 	"strings"
@@ -55,7 +56,10 @@ func ServerStart() {
 			dvparser.SetGlobalPropertiesValue("CURRENT_MICROCORE_CONFIG", string(data))
 		}
 		ProvideServerCommand()
-		ctx := &dvcontext.RequestContext{PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject()}
+		ctx := &dvcontext.RequestContext{
+			Id:                        dvcontext.GetUniqueId(),
+			PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject(),
+		}
 		dvaction.ExecuteSequence("EXECUTE_"+osargs2, ctx, nil)
 		if ctx.StatusCode >= 400 {
 			log.Printf("Error %s ", string(ctx.Output))
@@ -108,6 +112,7 @@ func ServerStartByConfig(cf *DvConfig) {
 func serverStartByConfigDirect(cf *DvConfig) {
 	dvlog.StartingLogFile()
 	dvcom.ProcessHosts(cf.Hosts, false)
+	dvssews.SetParallelProcessingParameters(cf.ParallelProcessing)
 	dvmodules.MakeModuleGlobalInitialization(cf.Modules)
 	dvmodules.MakeHookGlobalInitialization(cf.Hooks)
 	dvprocessors.MakeProcessorGlobalInitialization(cf.Processors)

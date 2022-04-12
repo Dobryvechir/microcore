@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const (
@@ -33,6 +34,8 @@ var isRecord = false
 
 var recordNo int
 var recordPath string
+var uniqueId int64 = 0
+var idMutex sync.Mutex
 
 func (request *RequestContext) HandleCommunication() {
 	if request.DataType == "" {
@@ -270,4 +273,12 @@ func (ctx *RequestContext) HandleHttpError(statusCode int) {
 func (ctx *RequestContext) HandleFileNotFound() {
 	ctx.StatusCode = 404
 	ctx.HandleCommunication()
+}
+
+func GetUniqueId() int64 {
+	idMutex.Lock()
+	v := uniqueId
+	uniqueId++
+	idMutex.Unlock()
+	return v
 }

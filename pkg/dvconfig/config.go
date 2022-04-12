@@ -98,20 +98,21 @@ type DvHostServer struct {
 
 // DvConfig is a full structure of the config for http server
 type DvConfig struct {
-	Namespace      string                       `json:"namespace"`
-	Listen         string                       `json:"listen"`
-	RootFolder     string                       `json:"rootFolder"`
-	LogLevel       string                       `json:"logLevel"`
-	LogModules     string                       `json:"logModules"`
-	Hosts          []dvcom.IpList               `json:"hosts"`
-	HostServers    []DvHostServer               `json:"hostServers"`
-	SystemInfo     string                       `json:"systemInfo"`
-	Server         DvHostServer                 `json:"server"`
-	Modules        map[string]map[string]string `json:"modules"`
-	Hooks          map[string]map[string]string `json:"hooks"`
-	Processors     map[string]map[string]string `json:"processors"`
-	PostProcessors map[string]map[string]string `json:"postProcessors"`
-	Providers      map[string]map[string]string `json:"providers"`
+	Namespace          string                        `json:"namespace"`
+	Listen             string                        `json:"listen"`
+	RootFolder         string                        `json:"rootFolder"`
+	LogLevel           string                        `json:"logLevel"`
+	LogModules         string                        `json:"logModules"`
+	Hosts              []dvcom.IpList                `json:"hosts"`
+	HostServers        []DvHostServer                `json:"hostServers"`
+	SystemInfo         string                        `json:"systemInfo"`
+	Server             DvHostServer                  `json:"server"`
+	Modules            map[string]map[string]string  `json:"modules"`
+	Hooks              map[string]map[string]string  `json:"hooks"`
+	Processors         map[string]map[string]string  `json:"processors"`
+	PostProcessors     map[string]map[string]string  `json:"postProcessors"`
+	Providers          map[string]map[string]string  `json:"providers"`
+	ParallelProcessing *dvcontext.ParallelProcessing `json:"parallel_processing"`
 }
 
 // CurrentDir is a current folder where the application started

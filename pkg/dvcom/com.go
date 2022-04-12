@@ -516,6 +516,7 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 		}
 		extra, queries := calculateRequestContextParameters(r)
 		request := &dvcontext.RequestContext{
+			Id: dvcontext.GetUniqueId(),
 			Extra:   extra,
 			Server:  currentServer,
 			Writer:  w,

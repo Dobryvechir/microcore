@@ -56,6 +56,19 @@ type ServerSettings struct {
 	ExpectContinueTimeout int  `json:"expectContinueTimeout"`
 }
 
+type ParallelProcessing struct {
+	IntervalTimeUnit float32 `json:"interval_time_unit"`
+}
+
+type ParallelExecutionControl struct {
+	IsBusy              bool
+	HeartBitDownCounter int
+	IntervalDownCounter int
+	TotalDownCounter    int
+	Flusher             http.Flusher
+	Value               interface{}
+}
+
 type MicroCoreInfo struct {
 	sync.RWMutex
 	Client                    *http.Client
@@ -91,7 +104,10 @@ type MicroCoreInfo struct {
 	LogLevel                  int
 }
 
+type InterfaceExecutor func(*RequestContext, interface{}) interface{}
+
 type RequestContext struct {
+	Id                        int64
 	Extra                     map[string]interface{}
 	PrimaryContextEnvironment *dvevaluation.DvObject
 	LocalContextEnvironment   *dvevaluation.DvObject
@@ -115,6 +131,8 @@ type RequestContext struct {
 	Error                     error
 	Action                    *DvAction
 	StatusCode                int
+	ParallelExecution         *ParallelExecutionControl
+	ExecutorFn                InterfaceExecutor
 }
 
 type HandlerFunc func(request *RequestContext) bool
