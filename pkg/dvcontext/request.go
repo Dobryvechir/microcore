@@ -61,12 +61,8 @@ type ParallelProcessing struct {
 }
 
 type ParallelExecutionControl struct {
-	IsBusy              bool
-	HeartBitDownCounter int
-	IntervalDownCounter int
-	TotalDownCounter    int
-	Flusher             http.Flusher
-	Value               interface{}
+	Flusher http.Flusher
+	Value   interface{}
 }
 
 type MicroCoreInfo struct {
@@ -133,6 +129,7 @@ type RequestContext struct {
 	StatusCode                int
 	ParallelExecution         *ParallelExecutionControl
 	ExecutorFn                InterfaceExecutor
+	LogLevel                  int
 }
 
 type HandlerFunc func(request *RequestContext) bool

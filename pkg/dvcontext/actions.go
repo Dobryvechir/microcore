@@ -30,22 +30,23 @@ type Stage struct {
 	Result    string `json:"result"`
 }
 
-type SSEDelta struct {
-	ActionDelta      string   `json:"action_delta"`
+type SSEChange struct {
+	ActionCheck      string   `json:"action_check"`
+	ActionCheckVar   string   `json:"action_check_var"`
 	ActionFull       string   `json:"action_full"`
 	ActionFullResult string   `json:"action_full_result"`
 	Places           []string `json:"places"`
 }
 
 type SSEWSControl struct {
-	Delta           *SSEDelta `json:"delta"`
-	Start           *Stage    `json:"start"`
-	Mid             *Stage    `json:"mid"`
-	End             *Stage    `json:"end"`
-	Interval        int       `json:"interval"`
-	TimeOut         int       `json:"time_out"`
-	HeartBeat       int       `json:"heart_beat"`
-	ServeMidAtStart bool      `json:"serve_mid_at_start"`
+	Change          *SSEChange `json:"change"`
+	Start           *Stage     `json:"start"`
+	Mid             *Stage     `json:"mid"`
+	End             *Stage     `json:"end"`
+	Interval        int        `json:"interval"`
+	TimeOut         int        `json:"time_out"`
+	HeartBeat       int        `json:"heart_beat"`
+	ServeMidAtStart bool       `json:"serve_mid_at_start"`
 }
 
 func (action *DvAction) CloneFrom(other *DvAction) {

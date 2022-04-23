@@ -70,8 +70,10 @@ func SSEMessageBytes(ctx *dvcontext.RequestContext, id []byte, event []byte, dat
 }
 
 func SSESendPortion(ctx *dvcontext.RequestContext, data []byte) {
-	ctx.Writer.Write(data)
-	ctx.ParallelExecution.Flusher.Flush()
+	if len(data) > 0 {
+		ctx.Writer.Write(data)
+		ctx.ParallelExecution.Flusher.Flush()
+	}
 }
 
 func SSESendHeartBeat(ctx *dvcontext.RequestContext) {

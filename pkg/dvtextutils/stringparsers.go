@@ -417,3 +417,84 @@ func SeparateChildExpression(name string) (res []string) {
 	}
 	return
 }
+
+func SmartReadStringList(s string, nonEmpty bool) []string {
+	res := make([]string, 0, 16)
+	n := len(s)
+	for i := 0; i < n; {
+		c := s[i]
+		if c <= ' ' {
+			i++
+			continue
+		}
+		if c == '"' || c == '\'' {
+			pos, screened := SmartReadQuotedStringEndPos(s, i)
+			if pos < 0 {
+				t := s[i:]
+				res = append(res, t)
+				break
+			} else {
+				t := s[i+1 : pos]
+				if screened {
+					t = ReadScreenedString(t)
+				}
+				i = pos + 1
+				if len(t) > 0 || !nonEmpty {
+					res = append(res, t)
+				}
+			}
+		} else {
+			pos := SmartReadUnquotedStringEndPos(s, i)
+			t := strings.TrimSpace(s[i:pos])
+			i = pos
+			if len(t) > 0 || !nonEmpty {
+				res = append(res, t)
+			}
+		}
+	}
+	return res
+}
+
+func SmartReadQuotedStringEndPos(s string, pos int) (int, bool) {
+	n := len(s)
+	c := s[pos]
+	screened := false
+	for pos++; pos < n; pos++ {
+		t := s[pos]
+		if t == c {
+			return pos, screened
+		} else if t == '\\' {
+			pos++
+			screened = true
+		}
+	}
+	return -1, false
+}
+
+func SmartReadUnquotedStringEndPos(s string, pos int) int {
+	n := len(s)
+	for ; pos < n; pos++ {
+		if s[pos] == ',' {
+			return pos
+		}
+	}
+	return n
+}
+
+func ReadScreenedString(s string) string {
+	t := []byte(s)
+	n := len(t)
+	pos := 0
+	for i := 0; i < n; i++ {
+		b := t[i]
+		if b == '\\' && i < n-1 {
+			i++
+			t[pos] = t[i]
+			pos++
+		} else {
+			t[pos] = b
+			pos++
+		}
+	}
+	return string(t[:pos])
+}

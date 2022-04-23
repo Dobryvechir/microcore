@@ -1,0 +1,27 @@
+<h1>key_variables</h1>
+<pre>
+it assigns new variables based on the key and data in the global variables:
+{
+   "prefix" string, prefix of the global variable, to be used together with the key
+   "values" array of strings, names of new variables to be assigned
+   "success_var" string, the names of the variable assigned with true/false
+            depending on the success of the operation, ="RESULT" by default
+   "key_param" string, the name of the key variable taken from the request
+         variables. = "URL_PARAM_KEY" by default. This is used together with the "prefix"
+       to get the name of the variable
+}
+Example:
+DATA_729=one,two,"three rooms, or more"
+DATA_123="1 room","2 rooms","3 rooms"
+FIRST_ACTION_1=key_variables:{"prefix":"DATA_", "values":["ONE","TWO","THREE"]}
+FIRST_ACTION_2=if:{"condition":"RESULT","then":{"action":"NEXT_ACTION"},"else":{"action":"error:500"}}
+NEXT_ACTION_1=void:
+# suppose action has url of  "path?key=729"
+# as a result we will have next variables
+    ONE="one"
+    TWO="two"
+    THREE="three rooms, or more"
+    RESULT=true
+# Notes: 1. because "success_var" is not set, "RESULT" is used
+# 2. because  "key_param" is not set, URL_PARAM_KEY is used, which means we expect "key" parameter
+</pre>

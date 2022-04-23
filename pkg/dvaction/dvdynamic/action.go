@@ -12,6 +12,7 @@ const (
 	CommandDynamic       = "dynamic"
 	CommandDynamicServer = "dserver"
 	CommandDynamicCache  = "dcache"
+	CommandKeyVariables  = "key_variables"
 )
 
 var processFunctions = map[string]dvaction.ProcessFunction{
@@ -19,6 +20,7 @@ var processFunctions = map[string]dvaction.ProcessFunction{
 	CommandDynamic:       {Init: DynamicActionInit, Run: DynamicActionRun},
 	CommandDynamicServer: {Init: DynamicServerInit, Run: DynamicServerRun},
 	CommandDynamicCache:  {Init: DynamicCacheInit, Run: DynamicCacheRun},
+	CommandKeyVariables:  {Init: KeyVariablesInit, Run: KeyVariablesRun},
 }
 
 func Init() bool {

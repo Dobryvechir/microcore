@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -331,9 +332,20 @@ func ProxyNetRunByConfig(config *ProxyNetConfig, ctx *dvcontext.RequestContext) 
 	if !config.NotAddUrlPath {
 		url = smartNetAddUrlParams(url, ctx)
 	}
+	var logFile string
+	if ctx.LogLevel >= dvlog.LogInfo {
+		logFile = dvlog.WriteNetRequestToLog([]byte(body), method, url, ctx.LogLevel >= dvlog.LogDetail,
+			"", "A"+strconv.FormatInt(ctx.Id, 16)+"_", nil, headers)
+	}
 	res, err, heads, stat := NetRequest(method, url, body, headers, options)
+	if ctx.LogLevel >= dvlog.LogInfo {
+		dvlog.WriteNetResponseToLog(logFile, res, err, heads, stat, ctx.LogLevel >= dvlog.LogDetail)
+		if ctx.LogLevel >= dvlog.LogDebug {
+			dvlog.PrintfError("Logged in %s", logFile)
+		}
+	}
 	if err != nil {
-		if Log >= dvlog.LogError {
+		if Log >= dvlog.LogError || ctx.LogLevel >= dvlog.LogError {
 			log.Println(res)
 			log.Printf("%s %s failed: %v", method, url, err)
 		}

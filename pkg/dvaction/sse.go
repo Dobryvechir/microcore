@@ -20,14 +20,14 @@ func fireSseAction(ctx *dvcontext.RequestContext) bool {
 		return false
 	}
 	ctx.ExecutorFn = SseExecutor
-	dvssews.PushSSEWSContext(ctx, dvcontext.PARALLEL_MODE_SSE)
+	dvssews.RunInSSEWSContext(ctx, dvcontext.PARALLEL_MODE_SSE)
 	return true
 }
 
 func SseExecutor(ctx *dvcontext.RequestContext, v interface{}) interface{} {
 	mode := v.(int)
-	delta := ctx.Action.SseWs.Delta
-	isDelta := delta != nil && delta.ActionDelta != ""
+	change := ctx.Action.SseWs.Change
+	checkChange := change != nil && change.ActionCheck != ""
 	switch mode {
 	case dvcontext.STAGE_MODE_START:
 		if ctx.Action.SseWs.Start != nil {
@@ -35,31 +35,46 @@ func SseExecutor(ctx *dvcontext.RequestContext, v interface{}) interface{} {
 		} else if ctx.Action.SseWs.ServeMidAtStart && ctx.Action.SseWs.Mid != nil {
 			return SseServe(ctx, ctx.Action.SseWs.Mid)
 		}
-		if isDelta {
-			fireActionByName(ctx, delta.ActionDelta, ctx.Action.Definitions, true)
-			s, ok := ReadActionResult(ctx.Action.Result, ctx)
+		if checkChange {
+			fireActionByName(ctx, change.ActionCheck, ctx.Action.Definitions, true)
+			s, ok := ReadActionResult(change.ActionCheckVar, ctx)
 			if !ok {
 				s = nil
 			}
 			ctx.ParallelExecution.Value = s
 			if s != nil && ctx.Action.SseWs.ServeMidAtStart && ctx.Action.SseWs.Mid == nil {
-				serveDelta(ctx, delta)
+				if ctx.LogLevel >= dvlog.LogDetail {
+					str := dvevaluation.AnyToString(s)
+					dvlog.PrintfError("Start change %s ", str)
+				}
+				serveSseChange(ctx, change)
+			} else {
+				if ctx.LogLevel >= dvlog.LogDetail {
+					str := dvevaluation.AnyToString(s)
+					dvlog.PrintfError("Start (not sent) change %s ", str)
+				}
 			}
 		}
 	case dvcontext.STAGE_MODE_MIDDLE:
 		if ctx.Action.SseWs.Mid != nil {
 			return SseServe(ctx, ctx.Action.SseWs.Mid)
 		}
-		if isDelta {
-			fireActionByName(ctx, delta.ActionDelta, ctx.Action.Definitions, true)
+		if checkChange {
+			fireActionByName(ctx, change.ActionCheck, ctx.Action.Definitions, true)
 			v, ok := ReadActionResult(ctx.Action.Result, ctx)
 			if !ok {
 				v = nil
 			}
-			changed := deltaCompare(ctx, v, ctx.ParallelExecution.Value, delta.Places)
+			changed := !deltaCompare(ctx, v, ctx.ParallelExecution.Value, change.Places)
 			ctx.ParallelExecution.Value = v
 			if changed {
-				serveDelta(ctx, delta)
+				if ctx.LogLevel >= dvlog.LogDetail {
+					str := dvevaluation.AnyToString(v)
+					dvlog.PrintfError("Change %s ", str)
+				}
+				serveSseChange(ctx, change)
+			} else if ctx.LogLevel >= dvlog.LogDebug {
+				dvlog.PrintlnError("No change")
 			}
 		}
 	case dvcontext.STAGE_MODE_END:
@@ -87,23 +102,28 @@ func SseServe(ctx *dvcontext.RequestContext, control *dvcontext.Stage) bool {
 		if control.Result == ":" {
 			dvssews.SSESendHeartBeat(ctx)
 		} else {
-			s, ok := ReadActionResult(control.Result, ctx)
-			if ok && s != nil {
+			s, err := ctx.LocalContextEnvironment.CalculateString(control.Result)
+			if err != nil && s != "" {
 				dvssews.SSEMessageInterface(ctx, s)
 			} else {
 				dvssews.SSESendHeartBeat(ctx)
+				if err != nil && ctx.LogLevel >= dvlog.LogInfo {
+					dvlog.PrintfError("Error in %s: %s", control.Result, err.Error())
+				}
 			}
 		}
 	}
 	return res
 }
 
-func serveDelta(ctx *dvcontext.RequestContext, delta *dvcontext.SSEDelta) {
+func serveSseChange(ctx *dvcontext.RequestContext, change *dvcontext.SSEChange) {
 	var res interface{} = ctx.ParallelExecution.Value
 	ok := true
-	if delta.ActionFull != "" {
-		fireActionByName(ctx, delta.ActionFull, ctx.Action.Definitions, true)
-		res, ok = ReadActionResult(delta.ActionFullResult, ctx)
+	if change.ActionFull != "" {
+		fireActionByName(ctx, change.ActionFull, ctx.Action.Definitions, true)
+		res, ok = ReadActionResult(change.ActionFullResult, ctx)
+	} else if change.ActionFullResult != "" {
+		res, ok = ReadActionResult(change.ActionFullResult, ctx)
 	}
 	if ok && res != nil {
 		dvssews.SSEMessageInterface(ctx, res)
@@ -113,6 +133,17 @@ func serveDelta(ctx *dvcontext.RequestContext, delta *dvcontext.SSEDelta) {
 }
 
 func deltaCompare(ctx *dvcontext.RequestContext, newVal interface{}, oldVal interface{}, places []string) bool {
+	newStr := dvevaluation.AnyToString(newVal)
+	oldStr := dvevaluation.AnyToString(oldVal)
+	if newStr == oldStr {
+		if ctx.LogLevel >= dvlog.LogTrace {
+			dvlog.PrintfError("Completely unchanged %s", newStr)
+		}
+		return true
+	}
+	if ctx.LogLevel >= dvlog.LogTrace {
+		dvlog.PrintfError("Comparing %s with %s", newStr, oldStr)
+	}
 	newDv := dvevaluation.AnyToDvVariable(newVal)
 	oldDv := dvevaluation.AnyToDvVariable(oldVal)
 	n := len(places)

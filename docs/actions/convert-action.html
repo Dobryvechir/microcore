@@ -29,8 +29,8 @@ It has the parameters as follows:
     "for_each" read <a href="convert-foreach.html">here</a>
 }
 Example:
-    ACTION_CONVERT_1=convert:{"source":"JSON_SRC", "remove":["0.value"],"result":"JSON_RESULT"}
-    ACTION_CONVERT_2=convert:{"source":"S", "add":[{"var":"X"}],"result":"S"}
-    ACTION_CONVERT_3=convert:{"source":"S.0.value", "replace":[{"var":"X"}],"result":"Y.pool.0"}
-    ACTION_CONVERT_4=convert:{"source":"S", "update":[{"var":"X"}],"result":"S"}
+    ACTION_CONVERT_1=convert:{"source":{"var":"JSON_SRC"}, "remove":["0.value"],"result":"JSON_RESULT"}
+    ACTION_CONVERT_2=convert:{"source":{"var":"S"}, "add":[{"var":"X"}],"result":"S"}
+    ACTION_CONVERT_3=convert:{"source":{"var":"S","path":"0.value"}, "replace":[{"var":"X"}],"result":"Y.pool.0"}
+    ACTION_CONVERT_4=convert:{"source":{"var":"S"}, "update":[{"var":"X"}],"result":"S"}
 </pre>

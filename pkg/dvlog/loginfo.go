@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2017 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvlog
 
@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	LogFatal = iota
-	LogError
+	LogFatal = -1
+	LogError = iota
 	LogWarning
 	LogInfo
 	LogDetail
@@ -35,8 +35,26 @@ var CurrentLogLevel = LogError
 var CurrentNamespace string
 var CurrentRootFolder string
 
+var logTable = map[string]int{
+	"fatal":    LogFatal,
+	"error":    LogError,
+	"warning":  LogWarning,
+	"info":     LogInfo,
+	"detail":   LogDetail,
+	"trace":    LogTrace,
+	"internal": LogTrace,
+}
+
 func FormErrorMessage(err string) []byte {
 	return []byte("{\"errorMessage\":\"" + strings.Replace(err, "\"", "\\\"", -1) + "\"}")
+}
+
+func GetLogLevel(level string) int {
+	v, ok := logTable[strings.ToLower(level)]
+	if !ok {
+		return LogError
+	}
+	return v
 }
 
 func GetPrincipalFolder(ensure bool) string {
@@ -132,20 +150,24 @@ func GetTaskSubFolder(subFolder string) string {
 }
 
 func WriteRequestToLog(body []byte, r *http.Request) string {
+	return WriteNetRequestToLog(body, r.Method, r.URL.Path, CurrentLogLevel >= LogDetail, r.Host, "R", r.Header, nil)
+}
+
+func WriteNetRequestToLog(body []byte, method string, url string, moreDetail bool,
+	host string, rpref string, headersDouble map[string][]string, headersSingle map[string]string) string {
 	number := int(GetNextUniqueNumber())
 	if logsFolder == "" {
 		logsFolder = GetTaskSubFolder("LOGS")
 	}
-	logFile := logsFolder + "/R" + strconv.Itoa(number) + r.Method
-	fileName := logFile + "R." + GetSafeFileName(r.URL.Path)
+	logFile := logsFolder + "/" + rpref + strconv.Itoa(number) + method
+	fileName := logFile + "R." + GetSafeFileName(url)
 	ioutil.WriteFile(fileName, body, os.ModePerm)
-	if CurrentLogLevel >= LogDetail {
+	if moreDetail {
 		headers := make([]byte, 0, 1024)
-		headers = append(headers, []byte(r.Method)...)
+		headers = append(headers, []byte(method)...)
 		headers = append(headers, ' ')
-		headers = append(headers, []byte(r.URL.Path)...)
+		headers = append(headers, []byte(url)...)
 		headers = append(headers, 13, 10)
-		host := r.Host
 		count := 0
 		if host != "" {
 			headers = append(headers, []byte("Host")...)
@@ -154,11 +176,22 @@ func WriteRequestToLog(body []byte, r *http.Request) string {
 			headers = append(headers, 13, 10)
 			count++
 		}
-		for name, headerValues := range r.Header {
-			for _, h := range headerValues {
+		if headersDouble != nil {
+			for name, headerValues := range headersDouble {
+				for _, h := range headerValues {
+					headers = append(headers, []byte(name)...)
+					headers = append(headers, ':', ' ')
+					headers = append(headers, []byte(h)...)
+					headers = append(headers, 13, 10)
+					count++
+				}
+			}
+		}
+		if headersSingle != nil {
+			for name, headerValue := range headersSingle {
 				headers = append(headers, []byte(name)...)
 				headers = append(headers, ':', ' ')
-				headers = append(headers, []byte(h)...)
+				headers = append(headers, []byte(headerValue)...)
 				headers = append(headers, 13, 10)
 				count++
 			}
@@ -170,14 +203,24 @@ func WriteRequestToLog(body []byte, r *http.Request) string {
 }
 
 func WriteResponseToLog(logFile string, resp *http.Response, body []byte) {
-	fileName := logFile + "R." + GetSafeFileName(resp.Status)
+	WriteNetResponseToLog(logFile, body, nil, resp.Header, resp.StatusCode, CurrentLogLevel >= LogDetail)
+}
+
+func WriteNetResponseToLog(logFile string, body []byte, err error, headsDouble map[string][]string,
+	status int, moreDetail bool) {
+	respStatus := strconv.Itoa(status)
+	fileName := logFile + "S." + GetSafeFileName(respStatus)
 	ioutil.WriteFile(fileName, body, os.ModePerm)
-	if CurrentLogLevel >= LogDetail {
+	if err != nil {
+		fileName = logFile + "E." + GetSafeFileName(respStatus)
+		ioutil.WriteFile(fileName, []byte(err.Error()), os.ModePerm)
+	}
+	if moreDetail {
 		headers := make([]byte, 0, 1024)
-		headers = append(headers, []byte(resp.Status)...)
+		headers = append(headers, []byte(respStatus)...)
 		headers = append(headers, 13, 10)
 		count := 0
-		for name, headerValues := range resp.Header {
+		for name, headerValues := range headsDouble {
 			for _, h := range headerValues {
 				headers = append(headers, []byte(name)...)
 				headers = append(headers, ':', ' ')
@@ -196,27 +239,16 @@ func SetLogLevel(logLevel string) {
 }
 
 func GetLogLevelByDefinition(logLevel string, defaultLevel int) int {
-	switch strings.ToLower(strings.TrimSpace(logLevel)) {
-	case "internal", "trace":
-		return LogTrace
-	case "debug":
-		return LogDebug
-	case "detail":
-		return LogDetail
-	case "info":
-		return LogInfo
-	case "warning":
-		return LogWarning
-	case "error":
-		return LogError
-	case "none", "fatal":
-		return LogFatal
-	case "":
+	logLevel = strings.ToLower(strings.TrimSpace(logLevel))
+	level, ok := logTable[logLevel]
+	if ok {
+		return level
+	}
+	if logLevel == "" {
 		return defaultLevel
-	default:
-		if defaultLevel >= 0 {
-			log.Print("logLevel can be debug, detail, info, warning, error, and none, but you specified " + logLevel)
-		}
+	}
+	if defaultLevel >= LogError {
+		log.Print("logLevel can be debug, detail, info, warning, error, and none, but you specified " + logLevel)
 	}
 	return defaultLevel
 }

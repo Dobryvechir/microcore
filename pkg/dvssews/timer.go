@@ -10,7 +10,6 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -28,34 +27,33 @@ var SseHeaders = map[string]string{
 	"Transfer-Encoding":           "chunked",
 }
 
-var pool = make([]*dvcontext.RequestContext, 0, 1024)
-var cycling = false
-var poolMutex sync.Mutex
 var parallelTimeUnitMs time.Duration = 1000 * time.Millisecond
 
-func PushSSEWSContext(ctx *dvcontext.RequestContext, parallelMode int) {
+func prepareSSEWSContext(ctx *dvcontext.RequestContext, parallelMode int) (ok bool, heartBeat int, totalDownCounter int, intervalDownCounter int) {
 	if ctx == nil || ctx.Action == nil || ctx.Action.SseWs == nil || ctx.Writer == nil {
 		return
 	}
-	flusher, ok := ctx.Writer.(http.Flusher)
+	var flusher http.Flusher
+	flusher, ok = ctx.Writer.(http.Flusher)
 	if !ok {
 		dvlog.PrintlnError("Streaming unsupported")
 		return
 	}
-	if ctx.Action.SseWs.HeartBeat<1 {
-		ctx.Action.SseWs.HeartBeat = 1
+	heartBeat = ctx.Action.SseWs.HeartBeat
+	if heartBeat < 1 {
+		heartBeat = 1
+	}
+	totalDownCounter = ctx.Action.SseWs.TimeOut
+	if totalDownCounter < 1 {
+		totalDownCounter = 180
+	}
+	intervalDownCounter = ctx.Action.SseWs.Interval
+	if intervalDownCounter < 1 {
+		intervalDownCounter = 5
 	}
 	ctx.ParallelExecution = &dvcontext.ParallelExecutionControl{
-		HeartBitDownCounter: ctx.Action.SseWs.HeartBeat,
-		IntervalDownCounter: ctx.Action.SseWs.Interval,
-		TotalDownCounter:    ctx.Action.SseWs.TimeOut,
-		Flusher:             flusher,
+		Flusher: flusher,
 	}
-	poolMutex.Lock()
-	pool = append(pool, ctx)
-	n := len(pool)
-	cycling = n > 0
-	poolMutex.Unlock()
 	switch parallelMode {
 	case dvcontext.PARALLEL_MODE_SSE:
 		for k, v := range SseHeaders {
@@ -63,104 +61,59 @@ func PushSSEWSContext(ctx *dvcontext.RequestContext, parallelMode int) {
 		}
 		ctx.Writer.WriteHeader(200)
 	}
-	go requestStarter(ctx)
-	if n == 1 {
-		startChannel()
-	}
+	requestStarter(ctx)
+	return
 }
 
-func removeSSEWSContext(index int) {
-	n := len(pool)
-	if index >= n || index < 0 {
+func RunInSSEWSContext(ctx *dvcontext.RequestContext, parallelMode int) {
+	ok, heartBeat, totalDownCounter, intervalDownCounter := prepareSSEWSContext(ctx, parallelMode)
+	if !ok {
 		return
 	}
-	if pool[index] != nil && pool[index].ExecutorFn != nil {
-		go requestEnder(pool[index])
-	}
-	if index == n-1 {
-		pool = pool[:index]
-	} else {
-		pool = append(pool[:index], pool[index+1:]...)
-	}
-	cycling = len(pool) > 0
-}
-
-func PokeSSEWSContext(ctx *dvcontext.RequestContext) {
-	n := len(pool)
-	for i := 0; i < n; i++ {
-		if pool[i] == ctx {
-			poolMutex.Lock()
-			removeSSEWSContext(i)
-			poolMutex.Unlock()
-			break
-		}
-	}
-}
-
-func startChannel() {
-	go func() {
-		count := 0
-		tick := time.Tick(parallelTimeUnitMs)
-		for cycling {
-			select {
-			case <-tick:
-				count++
-				poolMutex.Lock()
-				n := len(pool)
-				for i := 0; i < n; i++ {
-					ctx := pool[i]
-					ctx.ParallelExecution.TotalDownCounter--
-					if ctx.ParallelExecution.TotalDownCounter <= 0 {
-						removeSSEWSContext(i)
-						i--
-						n--
-						continue
-					}
-					if !ctx.ParallelExecution.IsBusy {
-						startable := ctx.ParallelExecution.IntervalDownCounter == 0
-						if ctx.ParallelExecution.IntervalDownCounter > 0 {
-							ctx.ParallelExecution.IntervalDownCounter--
-							startable = ctx.ParallelExecution.IntervalDownCounter == 0
-						}
-						ctx.ParallelExecution.HeartBitDownCounter--
-						if startable {
-							ctx.ParallelExecution.IntervalDownCounter = ctx.Action.SseWs.Interval
-							ctx.ParallelExecution.HeartBitDownCounter = ctx.Action.SseWs.HeartBeat
-							ctx.ParallelExecution.IsBusy = true
-							go requestRunner(ctx, count, i)
-						} else if ctx.ParallelExecution.HeartBitDownCounter<=0 {
-							ctx.ParallelExecution.HeartBitDownCounter = ctx.Action.SseWs.HeartBeat
-							SSESendHeartBeat(ctx)
-						}
-					}
+	tick := time.Tick(parallelTimeUnitMs)
+	heart := heartBeat
+	interval := intervalDownCounter
+downCounter:
+	for count := 0; count < totalDownCounter; count++ {
+		select {
+		case <-tick:
+			heart--
+			interval--
+			if interval <= 0 {
+				interval = intervalDownCounter
+				heart = heartBeat
+				if !requestRunner(ctx, count) {
+					break downCounter
 				}
-				poolMutex.Unlock()
+			} else if heart <= 0 {
+				heart = heartBeat
+				SSESendHeartBeat(ctx)
 			}
 		}
-	}()
+	}
+	requestEnder(ctx)
 }
 
-func requestRunner(ctx *dvcontext.RequestContext, count int, index int) {
+func requestRunner(ctx *dvcontext.RequestContext, count int) bool {
 	if ctx.PrimaryContextEnvironment != nil {
 		ctx.PrimaryContextEnvironment.Set(REQUEST_SSE_COUNTER, count)
-		ctx.PrimaryContextEnvironment.Set(REQUEST_SSE_INDEX, index)
-		ctx.PrimaryContextEnvironment.Set(REQUEST_SSE_EVENT, "v"+strconv.FormatInt(ctx.Id, 16)+"-"+strconv.Itoa(ctx.ParallelExecution.TotalDownCounter))
+		ctx.PrimaryContextEnvironment.Set(REQUEST_SSE_EVENT, "v"+strconv.FormatInt(ctx.Id, 16)+"-"+strconv.Itoa(count))
 	}
 	if ctx.ExecutorFn == nil {
 		dvlog.PrintfError("executorFn not defined for %s", ctx.Url)
-		ctx.ParallelExecution.TotalDownCounter = 1
-		return
+		return false
 	}
 	r := ctx.ExecutorFn(ctx, dvcontext.STAGE_MODE_MIDDLE)
+	v := false
 	switch r.(type) {
 	case bool:
-		if !r.(bool) {
-			ctx.ParallelExecution.TotalDownCounter = 1
+		if r.(bool) {
+			v = true
 		}
 	default:
 		dvlog.PrintfError("Incorrect executorFn (not bool) for %s", ctx.Url)
-		ctx.ParallelExecution.TotalDownCounter = 1
 	}
+	return v
 }
 
 func SetTimeUnitInSeconds(unitTime float32) {

@@ -84,7 +84,9 @@ Solution:
        "unique": ["id"]
 ACTION_CONVERT_1=convert:
     {
-       "source":"S",
+       "source": {
+           "var":"S"
+       },
        "for_each":{
           "path": "*",
           "blocks":[

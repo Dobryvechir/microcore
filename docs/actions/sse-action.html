@@ -8,8 +8,8 @@
 
      "result" ...
      "sse_ws": {
-         "delta": {
-            "action_delta": string, the name of the action to verify delta
+         "change": {
+            "action_check": string, the name of the action to verify delta
             "action_full": string, the name of the action to get the full data, if it is not the same as delta
             "action_full_result": the name of the variable where the result of the action "full" is stored
             "places": array of strings, places where changes must be tracked
@@ -39,16 +39,20 @@ Example:
       "url": "/api/v1/sse",
       "result": "{{RESULT}}"
       "sse_ws": {
-         "delta": {
-            "action_delta": "SSE_DELTA",
+         "change": {
+            "action_check": "SSE_CHECK_CHANGE",
             "action_full": "SSE_FULL",
             "action_full_result": "SSE_FULL_RESULT",
             "places": ["0.id","pull.0.state"]
+         },
+         "end": {
+             "result": "{\"action\":\"close\"}"
          },
          "interval": "2",
          "time_out": "240"
       }
    }
 
-SSE_DELTA_1=call:{"action":"SECOND_ACTION", "params":{"A1":"5","A2":"6"},"result":"A3"}
+SSE_CHECK_CHANGE_1=call:{"action":"CHECK_ACTION", "params":{"A1":"5","A2":"6"},"result":"A3"}
+SSE_FULL_1=call:{"action":"DATA_ACTION", "params":{"A1":"5","A2":"6"},"result":"A3"}
 </pre>
