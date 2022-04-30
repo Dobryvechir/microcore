@@ -190,7 +190,7 @@ func GetMicroServicePropertyName(microServiceName string) string {
 	return strings.ToUpper(strings.ReplaceAll(microServiceName, "-", "_"))
 }
 
-func NetRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header, int) {
+func NetRequest(method string, url string, body string, headers map[string]string, options map[string]interface{},forceM2mSimple bool) ([]byte, error, http.Header, int) {
 	_, m2mSimple := headers[M2M]
 	microServiceName, m2mComplex := headers[Authorization]
 	if m2mComplex {
@@ -212,6 +212,9 @@ func NetRequest(method string, url string, body string, headers map[string]strin
 		return nil, errors.New("Cannot get M2M token " + microServiceName), nil, 500
 	}
 	headers[Authorization] = m2mToken
+	if forceM2mSimple {
+		return dvnet.NewRequest(method, url, body, headers, options)
+	}
 	data, err, heads, stat := dvnet.NewRequestRepeatPause(method, url, body, headers, options, 1, 0)
 	if err == nil && stat < 500 && stat != 401 && stat != 403 {
 		return data, nil, heads, stat

@@ -10,6 +10,7 @@ import (
 )
 
 func Init() bool {
+	window_init()
 	object_init()
 	array_init()
 	dvevaluation.Init()

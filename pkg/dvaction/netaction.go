@@ -47,6 +47,8 @@ type SmartNetConfig struct {
 	Result        string                 `json:"result"`
 	DefaultResult string                 `json:"default"`
 	Body          string                 `json:"body"`
+	Ignorable     bool                   `json:"ignorable"`
+	M2MSimple     bool                   `json:"m2m_simple"`
 }
 
 type ProxyNetConfig struct {
@@ -62,6 +64,8 @@ type ProxyNetConfig struct {
 	NotAddUrlPath     bool   `json:"not_add_url_path"`
 	NotProxyBody      bool   `json:"not_proxy_body"`
 	NotReturnHeaders  bool   `json:"not_return_headers"`
+	Ignorable         bool   `json:"ignorable"`
+	M2MSimple         bool   `json:"m2m_simple"`
 }
 
 func convertToHeader(list []string) (res map[string]string) {
@@ -208,13 +212,13 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 	env := GetEnvironment(ctx)
 	headers := make(map[string]string)
 	headers = smartNetProcessHeaders(headers, config.Headers, config.Method, body)
-	res, err, heads, stat := NetRequest(config.Method, config.Url, body, headers, options)
+	res, err, heads, stat := NetRequest(config.Method, config.Url, body, headers, options, config.M2MSimple)
 	if err != nil {
 		if Log >= dvlog.LogError {
 			log.Println(res)
 			log.Printf("%s %s failed: %v", config.Method, config.Url, err)
 		}
-		if config.DefaultResult == "" {
+		if config.DefaultResult == "" && !config.Ignorable {
 			if heads != nil {
 				ctx.SetHeaderUnique("Content-Type", heads.Get("Content-Type"))
 			}
@@ -224,8 +228,12 @@ func SmartNetRunByConfig(config *SmartNetConfig, ctx *dvcontext.RequestContext) 
 			res = []byte(config.DefaultResult)
 		}
 	} else if stat >= 400 {
-		ActionExternalException(stat, res, ctx)
-		return false
+		if config.Ignorable {
+			res = []byte(config.DefaultResult)
+		} else {
+			ActionExternalException(stat, res, ctx)
+			return false
+		}
 	}
 	var result interface{}
 	switch config.ContentType {
@@ -337,7 +345,7 @@ func ProxyNetRunByConfig(config *ProxyNetConfig, ctx *dvcontext.RequestContext) 
 		logFile = dvlog.WriteNetRequestToLog([]byte(body), method, url, ctx.LogLevel >= dvlog.LogDetail,
 			"", "A"+strconv.FormatInt(ctx.Id, 16)+"_", nil, headers)
 	}
-	res, err, heads, stat := NetRequest(method, url, body, headers, options)
+	res, err, heads, stat := NetRequest(method, url, body, headers, options, config.M2MSimple)
 	if ctx.LogLevel >= dvlog.LogInfo {
 		dvlog.WriteNetResponseToLog(logFile, res, err, heads, stat, ctx.LogLevel >= dvlog.LogDetail)
 		if ctx.LogLevel >= dvlog.LogDebug {

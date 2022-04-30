@@ -419,7 +419,14 @@ func SeparateChildExpression(name string) (res []string) {
 }
 
 func SmartReadStringList(s string, nonEmpty bool) []string {
+	s = strings.TrimSpace(s)
 	res := make([]string, 0, 16)
+	if s == "" {
+		return res
+	}
+	if s[0] == '[' && s[len(s)-1] == ']' {
+		s = s[1 : len(s)-1]
+	}
 	n := len(s)
 	for i := 0; i < n; {
 		c := s[i]
@@ -443,10 +450,16 @@ func SmartReadStringList(s string, nonEmpty bool) []string {
 					res = append(res, t)
 				}
 			}
+			for ; i < n; i++ {
+				if s[i] == ',' {
+					i++
+					break
+				}
+			}
 		} else {
 			pos := SmartReadUnquotedStringEndPos(s, i)
 			t := strings.TrimSpace(s[i:pos])
-			i = pos
+			i = pos + 1
 			if len(t) > 0 || !nonEmpty {
 				res = append(res, t)
 			}

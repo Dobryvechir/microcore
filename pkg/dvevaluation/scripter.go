@@ -41,6 +41,7 @@ func ProvideRootValues(env *DvObject) {
     for k,v:=range registeredMasterObjects {
 		env.Set(k,v)
 	}
+
 }
 
 func (dv *DvVariable) GetDvObjectByPrototypes() *DvObject {
