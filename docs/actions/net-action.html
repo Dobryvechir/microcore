@@ -9,6 +9,7 @@ Net command has the following parameters:
      "template" Object (SmartNetConfigTemplate) "template", use it only if you need to insert 
              the response into some template file
      "type" the Content-Type of the response. By default it is application/json
+            if "json" is specified, the result is converted into json, if possible
      "result" the name of the variable where to store the response
      "body" the body of the request. If it starts with @@, then the body will be taken from 
            the variable, the name of each is specified after @@. For example, in case of "body": "@@MY_SOURCE", the body

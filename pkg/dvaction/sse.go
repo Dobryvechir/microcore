@@ -32,7 +32,8 @@ func SseExecutor(ctx *dvcontext.RequestContext, v interface{}) interface{} {
 	case dvcontext.STAGE_MODE_START:
 		if ctx.Action.SseWs.Start != nil {
 			return SseServe(ctx, ctx.Action.SseWs.Start)
-		} else if ctx.Action.SseWs.ServeMidAtStart && ctx.Action.SseWs.Mid != nil {
+		}
+		if ctx.Action.SseWs.ServeMidAtStart && ctx.Action.SseWs.Mid != nil {
 			return SseServe(ctx, ctx.Action.SseWs.Mid)
 		}
 		if checkChange {
@@ -42,7 +43,7 @@ func SseExecutor(ctx *dvcontext.RequestContext, v interface{}) interface{} {
 				s = nil
 			}
 			ctx.ParallelExecution.Value = s
-			if s != nil && ctx.Action.SseWs.ServeMidAtStart && ctx.Action.SseWs.Mid == nil {
+			if s != nil && ctx.Action.SseWs.ServeMidAtStart {
 				if ctx.LogLevel >= dvlog.LogDetail {
 					str := dvevaluation.AnyToString(s)
 					dvlog.PrintfError("Start change %s ", str)
@@ -61,12 +62,12 @@ func SseExecutor(ctx *dvcontext.RequestContext, v interface{}) interface{} {
 		}
 		if checkChange {
 			fireActionByName(ctx, change.ActionCheck, ctx.Action.Definitions, true)
-			v, ok := ReadActionResult(ctx.Action.Result, ctx)
+			newVal, ok := ReadActionResult(change.ActionCheckVar, ctx)
 			if !ok {
-				v = nil
+				newVal = nil
 			}
-			changed := !deltaCompare(ctx, v, ctx.ParallelExecution.Value, change.Places)
-			ctx.ParallelExecution.Value = v
+			changed := !deltaCompare(ctx, newVal, ctx.ParallelExecution.Value, change.Places)
+			ctx.ParallelExecution.Value = newVal
 			if changed {
 				if ctx.LogLevel >= dvlog.LogDetail {
 					str := dvevaluation.AnyToString(v)
@@ -118,14 +119,14 @@ func SseServe(ctx *dvcontext.RequestContext, control *dvcontext.Stage) bool {
 
 func serveSseChange(ctx *dvcontext.RequestContext, change *dvcontext.SSEChange) {
 	var res interface{} = ctx.ParallelExecution.Value
-	ok := true
+	var err error = nil
 	if change.ActionFull != "" {
 		fireActionByName(ctx, change.ActionFull, ctx.Action.Definitions, true)
-		res, ok = ReadActionResult(change.ActionFullResult, ctx)
+		res, err = ctx.LocalContextEnvironment.CalculateString(change.ActionFullResult)
 	} else if change.ActionFullResult != "" {
-		res, ok = ReadActionResult(change.ActionFullResult, ctx)
+		res, err = ctx.LocalContextEnvironment.CalculateString(change.ActionFullResult)
 	}
-	if ok && res != nil {
+	if err == nil && res != nil {
 		dvssews.SSEMessageInterface(ctx, res)
 	} else {
 		dvssews.SSESendHeartBeat(ctx)
