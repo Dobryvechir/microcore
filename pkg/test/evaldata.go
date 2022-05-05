@@ -101,6 +101,7 @@ func testEvaluation() {
         testEvaluationSingle("", "Math.atanh(0.5)","0.5493061443340548", KindFloat)
         testEvaluationSingle("", "Math.cbrt(2)","1.2599210498948732", KindFloat)
         testEvaluationSingle("", "Math.ceil(7.5)","8", KindFloat)
+	testEvaluationSingle("", "Math.clz32(100)","25", KindInteger)
         testEvaluationSingle("", "Math.cos(1)","0.5403023058681398", KindFloat)
         testEvaluationSingle("", "Math.cosh(1)","1.5430806348152437", KindFloat)
         testEvaluationSingle("", "Math.exp(1)","2.718281828459045", KindFloat)

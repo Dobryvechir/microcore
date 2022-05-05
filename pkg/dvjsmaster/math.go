@@ -117,6 +117,13 @@ func math_init() {
 					Extra: &dvevaluation.DvFunction{
 						Fn: Math_Ceil,
 					},
+				},
+				{
+					Name: []byte("clz32"),                      
+					Kind: dvevaluation.FIELD_FUNCTION,
+					Extra: &dvevaluation.DvFunction{
+						Fn: Math_Clz32,
+					},
 				},                                 
                                 {
 					Name: []byte("cos"),                      
@@ -701,4 +708,24 @@ func Math_Trunc(context *dvgrammar.ExpressionContext, thisVariable interface{}, 
 	val := dvevaluation.AnyToNumber(params[0])
 	res:=math.Trunc(val)
 	return res, nil
+}
+func Math_Clz32(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+        n := len(params)
+	if n == 0 {
+		return 0, nil
+	}
+	m, ok := dvevaluation.AnyToNumberInt(params[0])
+	if !ok {
+		return 0, nil
+	}
+	
+	t := 0
+        for i := 31; i>=0; i-- {
+	    if m&(1<<i) != 0 {
+	       break
+	    }
+	    t++
+        }
+
+        return t, nil
 }
