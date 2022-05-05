@@ -17,6 +17,11 @@ func NewDvObject(properties map[string]string, prototype *DvObject) *DvObject {
 }
 
 func NewDvObjectWithGlobalPrototype(properties map[string]string) *DvObject {
+	if WindowMaster.Prototype != nil && len(GlobalFunctionPool) < len(WindowMaster.Prototype.Fields) {
+		for _, v := range WindowMaster.Prototype.Fields {
+			GlobalFunctionPool[string(v.Name)] = v
+		}
+	}
 	return NewDvObject(properties, GlobalFunctionPrototype)
 }
 

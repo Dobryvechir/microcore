@@ -9,6 +9,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"io/ioutil"
 	"strings"
 )
@@ -16,6 +17,12 @@ import (
 func collectRequestParameters(request *dvcontext.RequestContext) error {
 	action := request.Action
 	bodyParams := action.Body
+	if action.Name!="" && request.PrimaryContextEnvironment!=nil {
+		logLevel:=request.PrimaryContextEnvironment.GetString(action.Name+"_LOG")
+		if logLevel!="" {
+			request.LogLevel = dvlog.GetLogLevel(logLevel)
+		}
+	}
 	method := request.Reader.Method
 	if method != "GET" {
 		body, err := ioutil.ReadAll(request.Reader.Body)

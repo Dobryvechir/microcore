@@ -1,0 +1,19 @@
+<h3>Parallel Processing</h3>
+<div>
+    Parallel processing parameters are described at the root level in the config
+    and they are general for the whole microservice.
+<p>
+    interval_time_unit is a float number, which describes a time unit for all parallel processes.
+    It is in seconds. For example, 0.5 is a half second. The default is 1 second. The minimum value is 0.01.
+</p>
+
+
+
+
+</div>
+<pre>
+    Example:
+    "parallel_processing": {
+       "interval_time_unit": 0.5
+    }
+</pre>

@@ -27,11 +27,11 @@ const (
 var Log = dvlog.LogError
 
 func fireAction(ctx *dvcontext.RequestContext) bool {
-	return fireActionByName(ctx, ctx.Action.Name, ctx.Action.Definitions)
+	return fireActionByName(ctx, ctx.Action.Name, ctx.Action.Definitions, false)
 }
 
 func fireActionByName(ctx *dvcontext.RequestContext, name string,
-	definitions map[string]string) bool {
+	definitions map[string]string, omitResults bool) bool {
 	if ctx.Action != nil && ctx.Action.ErrorPolicy != "" {
 		ctx.PrimaryContextEnvironment.Set("ERROR_POLICY", ctx.Action.ErrorPolicy)
 	}
@@ -42,7 +42,9 @@ func fireActionByName(ctx *dvcontext.RequestContext, name string,
 		return true
 	}
 	res := ExecuteSequence(prefix, ctx, definitions)
-	ActionProcessResult(ctx, res)
+	if !omitResults {
+		ActionProcessResult(ctx, res)
+	}
 	return true
 }
 
@@ -170,7 +172,7 @@ func fireSwitchAction(ctx *dvcontext.RequestContext) bool {
 			}
 		}
 	}
-	return fireActionByName(ctx, actionName, action.Definitions)
+	return fireActionByName(ctx, actionName, action.Definitions, false)
 }
 
 func securityEndPointHandler(ctx *dvcontext.RequestContext) bool {

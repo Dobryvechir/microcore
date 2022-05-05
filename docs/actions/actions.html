@@ -4,7 +4,8 @@ Actions are described in the configuration as follows:
 {
    "name" : "unique name of the action"
    "type" : "'static'(no action is performed) | 'short'(single action defined in 'params' is executed),
-            'switch':depending on conditions actions are changed, '' (default - actions are executed in sequence by properties)",
+            'switch':depending on conditions actions are changed, 'sse' - SSE response
+            '' (default - actions are executed in sequence by properties)",
    "url" : "url of the action by which it can be executed"
    "query": {"param1":"type1:name1", "param2":"type2:name2",...}
          // param1 is the name of the parameter in url
@@ -27,6 +28,8 @@ Actions are described in the configuration as follows:
    "conditions": map of conditions of eligibility for this call, in case of switch, this is the switch for different conditions
                (the default action is provided by "name" itself )
    "validations": validations of input parameters
+   "auth": string,
+    "sse_ws": SSE info <a href="sse-action.html">Server-Sent Events</a>
 } 
 </pre>
 <p>You can add your own custom actions. There are some actions available in the microcore:</p>
@@ -63,8 +66,9 @@ Actions are described in the configuration as follows:
     <li><a href="dynamic-action.html">dynamic</a> dynamically creates actions and sets properties based on variables
     </li>
     <li><a href="validate-action.html">validate</a> validates variables</li>
-    <li><a href="void-action.html">void</a> this can be used to comment some actions temporarily, just to omit this step
-    </li>
+    <li><a href="void-action.html">void</a> this can be used to comment some actions temporarily, just to omit this step</li>
+    <li><a href="keyvar-action.html">key-variables</a> restore values based on the key</li>
+    <li><a href="dserver-action.html">dserver</a> set on/off proxy server</li>
 </ol>
 <pre>
     Many of the actions have a "result" field to store the result of the execution.

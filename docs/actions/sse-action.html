@@ -1,0 +1,58 @@
+<h1>sse</h1>
+<pre>
+   SSE actions must have 2 specific fields in action description ("type" and "sse-ws"):
+   {
+      "type": "sse",
+      "url": ....
+      ....
+
+     "result" ...
+     "sse_ws": {
+         "change": {
+            "action_check": string, the name of the action to verify delta
+            "action_full": string, the name of the action to get the full data, if it is not the same as delta
+            "action_full_result": the name of the variable where the result of the action "full" is stored
+            "places": array of strings, places where changes must be tracked
+         },
+         "start": {
+             this optional block is executed at the start of sse request
+             "action": string, the name of the action to be executed
+             "condition": string, optional condition to check whether it is necessary to send SSE data
+             "result": string, the name of the variable where the data to be sent is stored
+          },
+          "mid": {
+              the same structure as the "start" above, but executed each tick of the SSE session, optional
+           },
+          "end": {
+              the same structure as the "start" above, but executed immediately before closing SSE session, optional
+          },
+          "interval", int, the number of time units for the tick execution
+          "time_out", int, the number of time units for closing the sse event
+          "heart_beat", int, the number of time units to generate heart beats when there is no data to send
+          "serve_mid_at_start", bool, whether to send "mid" in place of "start", provided the "start" is
+               not given, but "mid" is given
+     }
+   }
+Example:
+   {
+      "type": "sse",
+      "url": "/api/v1/sse",
+      "result": "{{RESULT}}"
+      "sse_ws": {
+         "change": {
+            "action_check": "SSE_CHECK_CHANGE",
+            "action_full": "SSE_FULL",
+            "action_full_result": "SSE_FULL_RESULT",
+            "places": ["0.id","pull.0.state"]
+         },
+         "end": {
+             "result": "{\"action\":\"close\"}"
+         },
+         "interval": "2",
+         "time_out": "240"
+      }
+   }
+
+SSE_CHECK_CHANGE_1=call:{"action":"CHECK_ACTION", "params":{"A1":"5","A2":"6"},"result":"A3"}
+SSE_FULL_1=call:{"action":"DATA_ACTION", "params":{"A1":"5","A2":"6"},"result":"A3"}
+</pre>

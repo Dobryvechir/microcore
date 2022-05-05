@@ -9,6 +9,7 @@ Net command has the following parameters:
      "template" Object (SmartNetConfigTemplate) "template", use it only if you need to insert 
              the response into some template file
      "type" the Content-Type of the response. By default it is application/json
+            if "json" is specified, the result is converted into json, if possible
      "result" the name of the variable where to store the response
      "body" the body of the request. If it starts with @@, then the body will be taken from 
            the variable, the name of each is specified after @@. For example, in case of "body": "@@MY_SOURCE", the body
@@ -18,8 +19,11 @@ Net command has the following parameters:
           empty body and the error will not be fired. If you do not need http requests with the empty body,
            use double ? at the end. For example, in case of "body":"@@MY_SOURCE??", the http request
           will be executed only if the MY_SOURCE variable exists and it is not empty (not "", not [], not {})
+    ignorable: bool, if the result is bad, do not fire an exception
+    m2m_simple: bool, if M2M token is used, do not refresh it
 }
 Example:
 UPDATE_SAVE_1=net:{"url":"{{{MY_URL}}}","method":"PUT","body":"@@MY_SOURCE??"}
+UPDATE_SAVE_2=net:{"url":"{{{MY_URL}}}","result":"DST"}
 
 </pre>

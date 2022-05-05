@@ -1,0 +1,121 @@
+<pre>
+This is a part of <a href="convert-action.html">convert action</a>, so you must specify the "source"
+     and may combine it with other operations. You may also use "result".
+"for_each" {
+     "pre_condition" string, optional, if not empty and evaluated false, the for_each is not executed
+     "path" a path to find, including .*. in the path (for example, *.*.roles)
+     "blocks", array of {
+          "condition", string, condition to be verified
+          "set", list of string, names of variables to be checked as set
+          "unset", list of string, names of variables to be checked as unset
+          "match", string, a variable name of another array or object to match, in this case,
+                  the matching condition must be in the condition
+          "item", name to present an item of the match, by default it is _item
+          These 3 condition above are evaluated (each of them is optional) and depending on it the following
+            assignments are performed:
+          "then_to_whole", string, to be evaluated and assigned to the whole object
+          "else_to_whole", string, to be evaluated and assigned to the whole object
+             (if "delete" is used in expression, it means to delete this object,
+              if "break" is used in expression, it means to break the loop and stop at the current position)
+          "then_assign",
+          "else_assign" as {
+              "field" string, a field name
+              "value" string, a value to be evaluated
+          }
+          "then_collection", collection,
+          "else_collection", collection,
+           where the collection is as follows:
+              {
+                  "source": string, name of the variable to store the collection
+                  "unique": array of string, names of fields to consider the insertion as unique,
+                        if empty, all data will be added in one object
+                  "assign": array of {
+                  "field" string, name of the field, a string constant, or if starts with "$:",
+                       it is evaluated at the rest after $:
+                  "value" string, to be evaluated, but if it is "delete", it is just removed
+              }
+              "merge_mode" int
+                  this describes how to merge values if "unique" fields are the same
+                  0 - replace the whole item with a new one
+                  1 - append as strings with "; " as a separator
+                  2 - add new subitems, replace old subitems if the keys coincide
+                  3 - add new subitems, keeping old subitems if the keys coincide
+                  4 - collect the minimum value as a string
+                  5 - collect the maximum value as a string
+              "append" true/false, if true, old values are kept in the collection which existed before
+                     for_each, if false (default), the old values are cleaned
+          }
+     }
+      Some variables which can be used in for_each:
+           FOR_EACH_PATH_KEYS arrays of keys if path is used, each key is a part of the path.
+           FOR_EACH_PATH_VALUES arrays of values corresponding to the keys above
+   }
+Explanation:
+    You may choose between 3 opportunities:
+    1) then_to_whole/else_to_whole if you wish to update/delete the whole object with
+      which you work
+    2) then_assign/else_assign if you wish to update/delete specific fields of the object with
+       which you work
+    3) then_collection/else_collection/append, if you with to create a new object on the basis of your
+      work object (append = false) or a continue to edit a different object on the basis of your
+      work object (append = true)
+    You may also combile all these 3 opportunities, if it is necessary.
+Example:
+Task: you have an array of objects, but you want to create a different map of values.
+Solution:
+    1) Because you need to scan the whole array, you should specify "path":"*"
+    2) for_each can create only arrays, so you need to create an array first and then
+    convert it into an object.
+    3) Because we need to store the result in a different object, we need to use
+       then_collection/else_collection/append
+    4) Because we want to create a new object each time, "append" must be false.
+      This is the default for "append", so we can omit "append" at all
+    5) Because we do not have any condition, we can use then_collection always and do not
+      use else_connection at all.
+    6) For then_collection/else_collection we do not need convert's "result", the name
+      of the stored object is inside then_collection/else_collection ("source")
+    7) For this example we will use only 2 fields: "id" (key - id), "name" (value), so our assignment is as follows:
+      "assign": {
+         "id": "id",
+         "value": "name"
+      }
+    8) We assume we take data from variable "S" and put data to variable "D", and finally to map "M"
+    9) Our primary key for those objects is "id", so
+       "unique": ["id"]
+ACTION_CONVERT_1=convert:
+    {
+       "source": {
+           "var":"S"
+       },
+       "for_each":{
+          "path": "*",
+          "blocks":[
+             {
+                 "then_collection": {
+                      "source": "D",
+                      "assign": {
+                           "id": "id",
+                           "value": "name"
+                      },
+                      "unique": ["id"]
+                 }
+             }
+          ]
+       }
+    }
+
+/*
+    Our next step will be converting [{id,value}] array into a map {"id":"value"}
+    See <a href="var-action.html">var action</a>
+*/
+
+ACTION_CONVERT_2=var:
+    {
+        "object_by_array": {
+            "src": {"var": "D"},
+            "dst": "M",
+            "key": "id",
+            "value": "value"
+        }
+    }
+</pre>

@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvdynamic
@@ -8,6 +8,7 @@ package dvdynamic
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
 	"os"
@@ -22,6 +23,7 @@ type DebugActionFn func(*DebugConfig, *dvcontext.RequestContext) error
 
 var debugActionList = map[string]DebugActionFn{
 	"ALL_VARIABLES":    RunReadAllVariables,
+	"DEBUG_PROXY":      RunDebugProxy,
 	"GET_ONE_VARIABLE": RunGetOneVariable,
 	"SET_ONE_VARIABLE": RunSetOneVariable,
 	"EXIT":             RunExit,
@@ -99,6 +101,40 @@ func RunGetOneVariable(config *DebugConfig, ctx *dvcontext.RequestContext) error
 	}
 	val := dvparser.GlobalProperties[name]
 	ctx.PrimaryContextEnvironment.Properties[result] = val
+	return nil
+}
+
+func prepareProxyParams(config *DebugConfig, ctx *dvcontext.RequestContext) *dvaction.ProxyNetConfig {
+	if config.Data == "" {
+		config.Data = "DEBUG_RESULT"
+	}
+	url := ctx.PrimaryContextEnvironment.GetString("URL_PARAM_URL")
+	if url == "" {
+		return nil
+	}
+	method := ctx.PrimaryContextEnvironment.GetString("URL_PARAM_METHOD")
+	if method == "" {
+		method = "GET"
+	}
+	body := ctx.PrimaryContextEnvironment.GetString("")
+	proxyConfig := &dvaction.ProxyNetConfig{
+		Url:    url,
+		Method: method,
+		Body:   body,
+		Result: config.Data,
+	}
+	return proxyConfig
+}
+
+func RunDebugProxy(config *DebugConfig, ctx *dvcontext.RequestContext) error {
+	proxyConfig := prepareProxyParams(config, ctx)
+	if proxyConfig == nil {
+		return nil
+	}
+	ok := dvaction.ProxyNetRunByConfig(proxyConfig, ctx)
+	if !ok {
+		dvlog.PrintfError("Cannot execute %s", ctx.Url)
+	}
 	return nil
 }
 
