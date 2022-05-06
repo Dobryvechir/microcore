@@ -13,6 +13,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvsecurity"
+	"github.com/Dobryvechir/microcore/pkg/dvsession"
 	"io/ioutil"
 	"log"
 	"strconv"
@@ -219,6 +220,7 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 				return
 			}
 		}
+		isMap := strings.HasPrefix(level, "map_")
 		if level == "session" || level == "session?" {
 			isErrorFatal := level == "session"
 			if ctx.Session == nil {
@@ -229,7 +231,7 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 				return
 			}
 			ctx.Session.SetItem(varName, data)
-		} else if ctx != nil && level != "global" {
+		} else if ctx != nil && level != "global" && !isMap {
 			if ctx.LocalContextEnvironment != nil && level != "request" {
 				if level != "" && level[0] >= '1' && level[0] <= '9' {
 					levelVal, err := strconv.Atoi(level)
@@ -245,7 +247,12 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 				ctx.PrimaryContextEnvironment.Set(varName, data)
 			}
 		} else {
-			dvparser.SetGlobalPropertiesAnyValue(varName, data)
+			if isMap {
+				mapName := level[4:]
+				dvsession.GlobalMapWrite(mapName, varName, data)
+			} else {
+				dvparser.SetGlobalPropertiesAnyValue(varName, data)
+			}
 		}
 	}
 }
@@ -257,7 +264,8 @@ func DeleteActionResult(result string, ctx *dvcontext.RequestContext) {
 		var ok bool
 		var env *dvevaluation.DvObject = nil
 		isSession := false
-		if ctx != nil && level != "global" {
+		isMap := strings.HasPrefix(level, "map_")
+		if ctx != nil && level != "global" && !isMap {
 			if level == "session" || level == "session?" {
 				isErrorFatal := level == "session"
 				if ctx.Session == nil {
@@ -308,7 +316,12 @@ func DeleteActionResult(result string, ctx *dvcontext.RequestContext) {
 				}
 			}
 		} else {
-			dvparser.RemoveGlobalPropertiesValue(varName)
+			if isMap {
+				mapName := level[4:]
+				dvsession.GlobalMapDelete(mapName, varName)
+			} else {
+				dvparser.RemoveGlobalPropertiesValue(varName)
+			}
 		}
 		if path != "" && env != nil {
 			res, ok = env.Get(varName)
@@ -352,7 +365,8 @@ func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interfa
 			return result[1 : len(result)-1], true
 		}
 		level, varName, path := GetLevelMainPath(result)
-		if ctx != nil && level != "global" {
+		isMap := strings.HasPrefix(level, "map_")
+		if ctx != nil && level != "global" && !isMap {
 			switch level {
 			case "":
 				res, ok = env.Get(varName)
@@ -402,7 +416,12 @@ func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interfa
 				}
 			}
 		} else {
-			res, ok = dvparser.GlobalProperties[varName]
+			if isMap {
+				mapName := level[4:]
+				res, ok = dvsession.GlobalMapRead(mapName, varName)
+			} else {
+				res, ok = dvparser.GlobalProperties[varName]
+			}
 		}
 		if ok && path != "" {
 			var err error

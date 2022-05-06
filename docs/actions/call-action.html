@@ -5,6 +5,7 @@ It has the parameters as follows:
 {
    "action" string, name of the other action to be executed
    "params" map[string]string, optional parameters to be set for the execution of those actions
+        For each key-value pair, value is considered literally, unless it starts with @.
    "result" string, optional the names of variables to be returned to the higher level
 }
 Normally, "action" is the name of any other valid action. There are some specific cases as follows:
@@ -15,5 +16,5 @@ Normally, "action" is the name of any other valid action. There are some specifi
        the error is generated
      In this case "result" is the error message (optionally).
 Example:
-FIRST_ACTION_1=call:{"action":"SECOND_ACTION", "params":{"A1":"5","A2":"6"},"result":"A3"}
+FIRST_ACTION_1=call:{"action":"SECOND_ACTION", "params":{"A1":"5","A2":"@map_UNIT:KEY1"},"result":"A3"}
 </pre>

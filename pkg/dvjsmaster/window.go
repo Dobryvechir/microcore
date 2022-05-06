@@ -8,6 +8,7 @@ package dvjsmaster
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"net/url"
 	"strings"
 )
@@ -60,8 +61,8 @@ func Window_encodeURIComponent(context *dvgrammar.ExpressionContext, thisVariabl
 
 func EncodeURIComponent(s string) string {
 	s = url.QueryEscape(s)
-	if strings.Contains(s,"+") {
-        s = strings.Replace(s,"+","%20", -1)
+	if strings.Contains(s, "+") {
+		s = strings.Replace(s, "+", "%20", -1)
 	}
 	return s
 }
@@ -82,7 +83,7 @@ func Window_encodeURI(context *dvgrammar.ExpressionContext, thisVariable interfa
 		return "", nil
 	}
 	s := dvevaluation.AnyToString(params[0])
-	s = EncodeURI(s)
+	s = dvtextutils.EncodeURI(s)
 	return s, nil
 }
 
@@ -94,15 +95,4 @@ func Window_decodeURI(context *dvgrammar.ExpressionContext, thisVariable interfa
 	s := dvevaluation.AnyToString(params[0])
 	s, err := url.PathUnescape(s)
 	return s, err
-}
-
-func EncodeURI(s string) string {
-	s = url.PathEscape(s)
-	if strings.Contains(s,"%2F") {
-		s = strings.Replace(s,"%2F","/", -1)
-	}
-	if strings.Contains(s,"%3F") {
-		s = strings.Replace(s,"%3F","?", -1)
-	}
-	return s
 }

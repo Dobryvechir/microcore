@@ -210,7 +210,15 @@ func pushSubsequence(ctx *dvcontext.RequestContext, actionName string,
 	params := make(map[string]interface{})
 	if paramStr != nil && len(paramStr) > 0 {
 		for k, v := range paramStr {
-			params[k] = v
+			if len(v) > 1 && v[0] == '@' {
+				vl, ok := ReadActionResult(v[1:], ctx)
+				if !ok {
+					vl = ""
+				}
+				params[k] = vl
+			} else {
+				params[k] = v
+			}
 		}
 	}
 	putSubsequence(ctx, actionName, returnKey, level, params)
@@ -251,7 +259,7 @@ func ExecuteAddSubsequenceShort(ctx *dvcontext.RequestContext, actionName string
 func ExecuteSequence(startActionName string, ctx *dvcontext.RequestContext, initialParams map[string]string) bool {
 	if ctx == nil {
 		ctx = &dvcontext.RequestContext{
-			Id: dvcontext.GetUniqueId(),
+			Id:                        dvcontext.GetUniqueId(),
 			PrimaryContextEnvironment: dvparser.GetGlobalPropertiesAsDvObject(),
 		}
 	}

@@ -30,6 +30,7 @@ func (storage *MemorySessionStorage) GetItem(key string) interface{} {
 	r := storage.values[key]
 	return r
 }
+
 func (storage *MemorySessionStorage) RemoveItem(key string) {
 	storage.UpdateAccessTime()
 	delete(storage.values, key)

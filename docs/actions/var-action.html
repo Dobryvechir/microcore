@@ -137,6 +137,7 @@ Make conversions with variables
 }
 Example:
 var:{"clone":{"CLONED_A":"A"},"replace":{"source":"A","reg-expr":"a(x+)b","replacement":"${1}cd"}}
+var:{"create_object":{"RESULT":{"FIELD1":"VAR1","FIELD2":"VAR2","FIELD3":"VAR3"}}}
 Note: all variables can contain the following parts in the name:
     [level][variable name][path]
     [level] and [path] are optional. [level] can be "global" or "request" or "session" or "_" or "$" or number (if it is the number,

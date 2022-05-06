@@ -10,6 +10,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"strings"
 )
@@ -17,9 +18,9 @@ import (
 func collectRequestParameters(request *dvcontext.RequestContext) error {
 	action := request.Action
 	bodyParams := action.Body
-	if action.Name!="" && request.PrimaryContextEnvironment!=nil {
-		logLevel:=request.PrimaryContextEnvironment.GetString(action.Name+"_LOG")
-		if logLevel!="" {
+	if action.Name != "" && request.PrimaryContextEnvironment != nil {
+		logLevel := request.PrimaryContextEnvironment.GetString(action.Name + "_LOG")
+		if logLevel != "" {
 			request.LogLevel = dvlog.GetLogLevel(logLevel)
 		}
 	}
@@ -39,6 +40,21 @@ func collectRequestParameters(request *dvcontext.RequestContext) error {
 					request.PrimaryContextEnvironment.Set(dvcontext.BODY_JSON, request.InputJson)
 					if bodyParams != nil {
 						dvevaluation.CollectJsonVariables(request.InputJson, bodyParams, request.PrimaryContextEnvironment, true)
+					}
+				}
+			} else {
+				mp, err := dvtextutils.DecomposeUrlEncodedString(request.InputStr)
+				if err != nil && request.LogLevel >= dvlog.LogInfo {
+					dvlog.PrintfError("Body parsing error: %v %s", err, request.InputStr)
+				}
+				request.PrimaryContextEnvironment.Set(dvcontext.BODY_STRING_ARRAY_MAP, mp)
+				m := dvtextutils.ConvertArrayStringMapIntoSimpleStringMap(mp)
+				request.PrimaryContextEnvironment.Set(dvcontext.BODY_STRING_MAP, m)
+				if len(m) > 0 {
+					for k, _ := range bodyParams {
+						v := m[k]
+						key := dvcontext.BODY_PARAM_PREFIX + dvtextutils.ConvertToUpperAlphaDigital([]byte(k))
+						request.PrimaryContextEnvironment.Set(key, v)
 					}
 				}
 			}
