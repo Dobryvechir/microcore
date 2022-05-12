@@ -395,6 +395,17 @@ func AnyToDvVariable(v interface{}) *DvVariable {
 		return &DvVariable{Kind: FIELD_NUMBER, Value: []byte(s)}
 	case *dvgrammar.ExpressionValue:
 		return AnyToDvVariable(v.(*dvgrammar.ExpressionValue).Value)
+	case []string:
+		rs := v.([]string)
+		rn := len(rs)
+		rd := &DvVariable{Kind: FIELD_ARRAY, Fields: make([]*DvVariable, rn)}
+		for ri := 0; ri < rn; ri++ {
+			rd.Fields[ri] = &DvVariable{
+				Kind:  FIELD_STRING,
+				Value: []byte(rs[ri]),
+			}
+		}
+		return rd
 	}
 	return nil
 }
@@ -460,6 +471,11 @@ func AnyToDvGrammarExpressionValue(v interface{}) *dvgrammar.ExpressionValue {
 		return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_BOOLEAN}
 	case nil:
 		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}
+	default:
+		d := AnyToDvVariable(v)
+		if d != nil {
+			return d.ToDvGrammarExpressionValue()
+		}
 	}
 	log.Printf("Unknown type %v", v)
 	return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}

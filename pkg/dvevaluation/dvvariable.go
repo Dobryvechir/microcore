@@ -320,6 +320,9 @@ func (item *DvVariable) CompareDvFieldByFields(other *DvVariable, fields []strin
 }
 
 func (item *DvVariable) ReadSimpleChild(fieldName string) *DvVariable {
+	if item==nil {
+		return nil
+	}
 	n := len(item.Fields)
 	if item.Kind == FIELD_ARRAY {
 		k, err := strconv.Atoi(fieldName)

@@ -133,6 +133,7 @@ func testEvaluation() {
 	testEvaluationSingle("", "Math.PI", "3.14159265359", KindFloat)
 	testEvaluationSingle("", "Math.SQRT1_2", "0.7071067811865476", KindFloat)
 	testEvaluationSingle("", "Math.SQRT2", "1.4142135623730951", KindFloat)
-
+	testEvaluationSingle("S=Good evening", "S.split(' ')[0]", "Good", KindString)
+	testEvaluationSingle("S=Good evening", "S.split(' ')[1]", "evening", KindString)
 	showResume()
 }
