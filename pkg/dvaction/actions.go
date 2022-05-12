@@ -346,12 +346,17 @@ func GetLevelMainPath(result string) (string, string, string) {
 	p := strings.Index(result, ":")
 	level := ""
 	path := ""
+	pathIsProcessed := true
 	if p >= 0 {
 		level = strings.ToLower(result[:p])
 		result = result[p+1:]
+		if len(level) > 0 && level[0] == '~' {
+			level = level[1:]
+			pathIsProcessed = false
+		}
 	}
 	p = strings.Index(result, ".")
-	if p >= 0 {
+	if pathIsProcessed && p >= 0 {
 		path = result[p+1:]
 		result = result[:p]
 	}

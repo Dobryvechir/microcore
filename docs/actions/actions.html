@@ -103,6 +103,16 @@ Actions are described in the configuration as follows:
          "result": "global:MY_RESULT"
               value will be available for all action steps and not only in this
               http request, but in all further work of the server
+
+    There are some special values. If you start with ' and end with ', the whole string is considered
+    as a string constant.
+    if it starts with "session:", the result will be written in the current session, provided the session
+    requirements are met.
+    if it starts with "map_"+mapName + ":" + "key", the result is stored in a static map.
+    For saving, if it starts with log: or error:, the result is logged and not saved anywhere
+    For reading, if it starts with "_:", the result is parsed into json, if it is not so.
+                 and if it starts with "$:", the result is evaluated as an expression.
+    Additional general prefix "~" before level means that the "." should not separate the path part.
 </pre>
 <pre>
     When actions are described in properties, you can set them either in short form as follows:
