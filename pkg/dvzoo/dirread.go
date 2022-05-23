@@ -7,6 +7,7 @@ package dvzoo
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/go-zookeeper/zk"
 	"strings"
 )
@@ -17,12 +18,14 @@ const (
 )
 
 var (
-	path_st     = "path"
-	children_st = "children"
-	value_st    = "value"
-	path_bt     = []byte("path")
-	children_bt = []byte("children")
-	value_bt    = []byte("value")
+	path_st            = "path"
+	children_st        = "children"
+	value_st           = "value"
+	path_bt            = []byte("path")
+	children_bt        = []byte("children")
+	value_bt           = []byte("value")
+	zkCreatedNode      = int32(-30)
+	zkAlreadySameValue = int32(-31)
 )
 
 func ReadWholeFolder(conn *zk.Conn, path string, includeSys bool, includeErr bool, fullPath bool) (r *dvevaluation.DvVariable, err error) {
@@ -81,10 +84,14 @@ func ReadWholeFolder(conn *zk.Conn, path string, includeSys bool, includeErr boo
 				}
 				fld = append(fld, rC)
 			}
+			dvlog.PrintfError("Error at %s %s", addPath, s)
 		} else if rC != nil {
 			fld = append(fld, rC)
+		} else {
+			dvlog.PrintfError("not added because empty %s %s", addPath, s)
 		}
 	}
+	r.Fields[2].Fields = fld
 	return r, nil
 }
 
@@ -102,13 +109,26 @@ func DeleteWholeFolder(conn *zk.Conn, path string, version int32, includeSys boo
 		addPath += "/"
 	}
 	for i := 0; i < n; i++ {
-		err = DeleteWholeFolder(conn, addPath+children[i], version, includeSys)
+		s := addPath + children[i]
+		err = DeleteWholeFolder(conn, s, version, includeSys)
 		if err != nil {
-			return err
+			dvlog.PrintfError("Zoo cannot delete [%s] %v", s, err)
+			return
 		}
 	}
 	if path != "/" {
-		err = conn.Delete(path, version)
+		_, stat, err1 := conn.Get(path)
+		versionReal := version
+		if err1 != nil || stat == nil {
+			dvlog.PrintfError("Error reading %s %v %v", path, stat, err1)
+		} else {
+			versionReal = stat.Version
+		}
+		err = conn.Delete(path, versionReal)
+		if err != nil {
+			dvlog.PrintfError("Zoo cannot delete at [%s] %v level %d", path, err, version)
+			return
+		}
 	}
 	return
 }
@@ -117,7 +137,11 @@ func SaveWholeFolder(conn *zk.Conn, path string, r *dvevaluation.DvVariable, ver
 	if path == "" || path[0] != '/' || (!includeSys && (path == ZooSysFolder || strings.HasPrefix(path, ZooSysFolderPref))) {
 		return nil
 	}
-	s, err := EnsureZooPath(conn, path, version, "")
+	value := ""
+	if r != nil && r.Kind == dvevaluation.FIELD_OBJECT {
+		value = r.ReadChildStringValue(value_st)
+	}
+	s, err := EnsureZooPathValue(conn, path, version, value)
 	if err != nil {
 		return err
 	}
@@ -125,11 +149,6 @@ func SaveWholeFolder(conn *zk.Conn, path string, r *dvevaluation.DvVariable, ver
 		path = s
 	}
 	if r != nil && r.Kind == dvevaluation.FIELD_OBJECT {
-		value := r.ReadChildStringValue(value_st)
-		_, err = conn.Set(path, []byte(value), version)
-		if err != nil {
-			return err
-		}
 		kids := r.ReadSimpleChild(children_st)
 		if kids != nil && kids.Kind == dvevaluation.FIELD_ARRAY || len(kids.Fields) > 0 {
 			n := len(kids.Fields)
@@ -157,13 +176,28 @@ func SaveWholeFolder(conn *zk.Conn, path string, r *dvevaluation.DvVariable, ver
 	return
 }
 
-func EnsureZooPath(conn *zk.Conn, path string, version int32, defValue string) (string, error) {
-	_, _, err1 := conn.Get(path)
-	if err1 == nil {
-		return "", nil
+func EnsureZooPath(conn *zk.Conn, path string, version int32, defValue string) (string, int32, error) {
+	vl, stat, err1 := conn.Get(path)
+	if err1 == nil && stat != nil {
+		realVersion := stat.Version + 1
+		if string(vl) == defValue {
+			realVersion = zkAlreadySameValue
+		}
+		return "", realVersion, nil
 	}
-	s, err := conn.Create(path, []byte(defValue), version, nil)
-	return s, err
+	s, err := conn.Create(path, []byte(defValue), version, zk.WorldACL(zk.PermAll))
+	return s, zkCreatedNode, err
+}
+
+func EnsureZooPathValue(conn *zk.Conn, path string, version int32, defValue string) (string, error) {
+	newPath, newVersion, err := EnsureZooPath(conn, path, version, defValue)
+	if err != nil {
+		return "", err
+	}
+	if newVersion >= 0 {
+		_, err = conn.Set(path, []byte(defValue), newVersion)
+	}
+	return newPath, err
 }
 
 func latestPath(path string) string {

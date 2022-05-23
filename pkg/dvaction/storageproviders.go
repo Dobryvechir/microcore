@@ -25,8 +25,8 @@ func (provider *LogActionProvider) PathSupported() bool {
 	return false
 }
 
-func (provider *LogActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool) {
-	return nil, false
+func (provider *LogActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool, error) {
+	return nil, false, nil
 }
 
 func (provider *LogActionProvider) Delete(ctx *dvcontext.RequestContext, prefix string, key string) error {
@@ -48,8 +48,8 @@ func (provider *ErrorActionProvider) PathSupported() bool {
 	return false
 }
 
-func (provider *ErrorActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool) {
-	return nil, false
+func (provider *ErrorActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool, error) {
+	return nil, false, nil
 }
 
 func (provider *ErrorActionProvider) Delete(ctx *dvcontext.RequestContext, prefix string, key string) error {
@@ -73,12 +73,12 @@ func (provider *SessionActionProvider) PathSupported() bool {
 	return true
 }
 
-func (provider *SessionActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool) {
+func (provider *SessionActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool, error) {
 	if ctx.Session == nil {
-		return nil, false
+		return nil, false, errors.New("No session available for "+ key)
 	}
 	res := ctx.Session.GetItem(key)
-	return res, res!=nil
+	return res, res!=nil, nil
 }
 
 func (provider *SessionActionProvider) Delete(ctx *dvcontext.RequestContext, prefix string, key string) error {
@@ -102,9 +102,9 @@ func (provider *MapActionProvider) PathSupported() bool {
 	return true
 }
 
-func (provider *MapActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool) {
+func (provider *MapActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool, error) {
 	res, ok := dvsession.GlobalMapRead(prefix, key)
-	return res, ok
+	return res, ok, nil
 }
 
 func (provider *MapActionProvider) Delete(ctx *dvcontext.RequestContext, prefix string, key string) error {
@@ -122,9 +122,9 @@ func (provider *GlobalActionProvider) PathSupported() bool {
 	return true
 }
 
-func (provider *GlobalActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool) {
+func (provider *GlobalActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool, error) {
 	res, ok := dvparser.ReadGlobalPropertiesAny(key)
-	return res, ok
+	return res, ok, nil
 }
 
 func (provider *GlobalActionProvider) Delete(ctx *dvcontext.RequestContext, prefix string, key string) error {
@@ -142,11 +142,12 @@ func (provider *RequestActionProvider) PathSupported() bool {
 	return true
 }
 
-func (provider *RequestActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool) {
+func (provider *RequestActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool, error) {
 	if ctx!=nil && ctx.PrimaryContextEnvironment!=nil {
-		return ctx.PrimaryContextEnvironment.Get(key)
+		res, ok:=ctx.PrimaryContextEnvironment.Get(key)
+		return res, ok, nil
 	}
-	return nil, false
+	return nil, false, nil
 }
 
 func (provider *RequestActionProvider) Delete(ctx *dvcontext.RequestContext, prefix string, key string) error {

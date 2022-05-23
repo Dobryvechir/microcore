@@ -315,7 +315,7 @@ func ExecuteSequenceCycle(ctx *dvcontext.RequestContext, cycleLevel int) bool {
 		ip++
 		ctx.LocalContextEnvironment.Set(namePrefix+ExSeqIP, ip)
 		p := ctx.LocalContextEnvironment.GetString(namePrefix+ExSeqActionName) + "_" + strconv.Itoa(ip)
-		waitCommandRaw := strings.TrimSpace(dvparser.GlobalProperties[p])
+		waitCommandRaw := strings.TrimSpace(ctx.LocalContextEnvironment.GetString(p))
 		if waitCommandRaw == "" {
 			ExecuteReturnSubsequence(ctx, ExSeqReturnSingleDefault)
 			continue
@@ -454,6 +454,7 @@ func RegisterOC() bool {
 	AddProcessFunctions(execStatementProcessFunctions)
 	AddProcessFunctions(logicProcessFunctions)
 	dvmodules.RegisterActionProcessor("", fireAction, false)
+	dvmodules.RegisterActionProcessor("single", fireSingleAction, false)
 	dvmodules.RegisterActionProcessor("static", fireStaticAction, false)
 	dvmodules.RegisterActionProcessor("switch", fireSwitchAction, false)
 	dvmodules.RegisterActionProcessor("security", securityEndPointHandler, false)

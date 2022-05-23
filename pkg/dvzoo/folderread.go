@@ -18,11 +18,12 @@ func (provider *ZooFolderActionProvider) PathSupported() bool {
 	return false
 }
 
-func (provider *ZooFolderActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool) {
-	conn, err := GetZConnect()
+func (provider *ZooFolderActionProvider) Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool, error) {
+	conn, err := GetZooConnect()
 	if err != nil {
-		return nil, false
+		return nil, false, err
 	}
+	defer LeaveZooConnect(conn)
 	includeSys := false
 	includeErr := false
 	fullPath := false
@@ -40,16 +41,17 @@ func (provider *ZooFolderActionProvider) Read(ctx *dvcontext.RequestContext, pre
 	}
 	v, err := ReadWholeFolder(conn, key, includeSys, includeErr, fullPath)
 	if err != nil {
-		return nil, false
+		return nil, false, err
 	}
-	return v, true
+	return v, true, nil
 }
 
 func (provider *ZooFolderActionProvider) Delete(ctx *dvcontext.RequestContext, prefix string, key string) error {
-	conn, err := GetZConnect()
+	conn, err := GetZooConnect()
 	if err != nil {
 		return err
 	}
+	defer LeaveZooConnect(conn)
 	var version int32 = 0
 	includeSys := false
 	if prefix != "" {
@@ -67,10 +69,11 @@ func (provider *ZooFolderActionProvider) Delete(ctx *dvcontext.RequestContext, p
 }
 
 func (provider *ZooFolderActionProvider) Save(ctx *dvcontext.RequestContext, prefix string, key string, value interface{}) error {
-	conn, err := GetZConnect()
+	conn, err := GetZooConnect()
 	if err != nil {
 		return err
 	}
+	defer LeaveZooConnect(conn)
 	var version int32 = 0
 	includeSys := false
 	if prefix != "" {

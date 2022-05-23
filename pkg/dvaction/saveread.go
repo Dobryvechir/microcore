@@ -18,14 +18,14 @@ import (
 
 type StorageActionProvider interface {
 	PathSupported() bool
-	Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool)
+	Read(ctx *dvcontext.RequestContext, prefix string, key string) (interface{}, bool, error)
 	Save(ctx *dvcontext.RequestContext, prefix string, key string, value interface{}) error
 	Delete(ctx *dvcontext.RequestContext, prefix string, key string) error
 }
 
 var StorageProviders map[string]StorageActionProvider = make(map[string]StorageActionProvider, 32)
 
-func RegisterStorageActionProvider(name string,provider StorageActionProvider) {
+func RegisterStorageActionProvider(name string, provider StorageActionProvider) {
 	StorageProviders[name] = provider
 }
 
@@ -154,9 +154,18 @@ func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interfa
 		if result[0] == '\'' && result[len(result)-1] == '\'' && len(result) >= 2 {
 			return result[1 : len(result)-1], true
 		}
-		level, subLevel, varName, path, _, _, provider := GetLevelMainPath(result)
+		level, subLevel, varName, path, _, isFatal, provider := GetLevelMainPath(result)
 		if provider != nil {
-			res, ok = provider.Read(ctx, subLevel, varName)
+			var err error
+			res, ok, err = provider.Read(ctx, subLevel, varName)
+			if err != nil {
+				ok = false
+				res = nil
+				dvlog.PrintfError("Error %s", err.Error())
+				if isFatal {
+					ctx.HandleInternalServerError()
+				}
+			}
 		} else {
 			switch level {
 			case "":

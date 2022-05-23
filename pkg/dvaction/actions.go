@@ -29,6 +29,11 @@ func fireAction(ctx *dvcontext.RequestContext) bool {
 	return fireActionByName(ctx, ctx.Action.Name, ctx.Action.Definitions, false)
 }
 
+func fireSingleAction(ctx *dvcontext.RequestContext) bool {
+	ctx.PrimaryContextEnvironment.Set("ACTION_"+ctx.Action.Name+"_1", ctx.Action.InnerParams)
+	return fireActionByName(ctx, ctx.Action.Name, ctx.Action.Definitions, false)
+}
+
 func fireActionByName(ctx *dvcontext.RequestContext, name string,
 	definitions map[string]string, omitResults bool) bool {
 	if ctx.Action != nil && ctx.Action.ErrorPolicy != "" {

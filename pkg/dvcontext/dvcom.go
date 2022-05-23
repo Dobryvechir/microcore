@@ -30,6 +30,8 @@ const (
 	LogLevelFull      = iota
 )
 
+const LogHandled = -2000
+
 var isRecord = false
 
 var recordNo int
@@ -38,6 +40,9 @@ var uniqueId int64 = 0
 var idMutex sync.Mutex
 
 func (request *RequestContext) HandleCommunication() {
+	if request.LogLevel == LogHandled {
+		return
+	}
 	if request.DataType == "" {
 		request.DataType = "application/json"
 	}
@@ -66,6 +71,7 @@ func (request *RequestContext) HandleCommunication() {
 		}
 	}
 	Send(request.Writer, request.Reader, request.Output)
+	request.LogLevel = LogHandled
 }
 
 func HandlerError(w http.ResponseWriter, r *http.Request, message string) {
@@ -282,3 +288,4 @@ func GetUniqueId() int64 {
 	idMutex.Unlock()
 	return v
 }
+
