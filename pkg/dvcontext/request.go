@@ -11,6 +11,10 @@ import (
 	"sync"
 )
 
+const (
+	DoNotShowPlaceInfo = "~DO NOT SHOW PLACE~"
+)
+
 type ProcessorEndPointHandler func(request *RequestContext) bool
 
 type ProcessorBlock struct {
@@ -65,6 +69,11 @@ type ParallelExecutionControl struct {
 	Value   interface{}
 }
 
+type ActionPolicy struct {
+	LogFirstTimes int `json:"log_first_times"`
+	LogNextTime   int `json:"log_next_time"`
+}
+
 type MicroCoreInfo struct {
 	sync.RWMutex
 	Client                    *http.Client
@@ -96,6 +105,7 @@ type MicroCoreInfo struct {
 	Session                   ServerSessionProvider
 	SecurityInfo              *SecurityServerInfo
 	ModuleHandler             HandlerFunc
+	ActionPolicies            map[string]*ActionPolicy
 	ActionHandler             HandlerFunc
 	LogLevel                  int
 }
@@ -130,6 +140,7 @@ type RequestContext struct {
 	ParallelExecution         *ParallelExecutionControl
 	ExecutorFn                InterfaceExecutor
 	LogLevel                  int
+	PlaceInfo                 string
 }
 
 type HandlerFunc func(request *RequestContext) bool

@@ -501,7 +501,9 @@ func calculateRequestContextParameters(r *http.Request) (res map[string]interfac
 }
 
 func logRequest(request *dvcontext.RequestContext, place string) {
-	log.Printf("[%v %v] %s", request.Extra[dvcontext.REQUEST_METHOD], request.Extra["REQUEST_URI"], place)
+	if place != dvcontext.DoNotShowPlaceInfo {
+		log.Printf("[%v %v] %s", request.Extra[dvcontext.REQUEST_METHOD], request.Extra["REQUEST_URI"], place)
+	}
 }
 
 func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerInfo map[string]*dvcontext.MicroCoreInfo) http.HandlerFunc {
@@ -516,7 +518,7 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 		}
 		extra, queries := calculateRequestContextParameters(r)
 		request := &dvcontext.RequestContext{
-			Id: dvcontext.GetUniqueId(),
+			Id:      dvcontext.GetUniqueId(),
 			Extra:   extra,
 			Server:  currentServer,
 			Writer:  w,
@@ -537,7 +539,19 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 		if currentServer.BaseFolderUsed && tryLocalFile(request, currentServer.BaseFolderUrl) {
 			place = "Local"
 		} else if currentServer.ActionHandler != nil && currentServer.ActionHandler(request) {
-			place = "Action"
+			if len(request.PlaceInfo) != 0 {
+				if request.PlaceInfo != dvcontext.DoNotShowPlaceInfo {
+					if request.PlaceInfo=="0" {
+						place = "*"
+					} else {
+						place = "* " + request.PlaceInfo
+					}
+				} else {
+					place = dvcontext.DoNotShowPlaceInfo
+				}
+			} else {
+				place = "Action"
+			}
 		} else if currentServer.ModuleHandler != nil && currentServer.ModuleHandler(request) {
 			place = "Module"
 		} else {

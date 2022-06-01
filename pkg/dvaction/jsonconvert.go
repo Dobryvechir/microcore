@@ -124,7 +124,7 @@ func JsonConvertRunByConfig(config *JsonConvertConfig, ctx *dvcontext.RequestCon
 		config.ForEach.ForEachProcessing(s, env, ctx)
 	}
 	if config.ReplaceBlock != nil {
-		ok := replaceBlockConvert(config.ReplaceBlock, s, env, ctx)
+		ok = replaceBlockConvert(config.ReplaceBlock, s, env, ctx)
 		if !ok {
 			return true
 		}
@@ -242,7 +242,7 @@ func JsonConvertConcat(push *JsonRead, dst *dvevaluation.DvVariable, ctx *dvcont
 	}
 }
 
-func findObjectOrCondition(obj string, condition string, isLast bool, v *dvevaluation.DvVariable, env *dvevaluation.DvObject) int {
+func findObjectOrCondition(obj string, condition string, isLast bool, v *dvevaluation.DvVariable, ctx *dvcontext.RequestContext, env *dvevaluation.DvObject) int {
 	if v == nil {
 		return -1
 	}
@@ -251,7 +251,7 @@ func findObjectOrCondition(obj string, condition string, isLast bool, v *dvevalu
 		return -1
 	}
 	if obj != "" {
-		d, ok := env.Get(obj)
+		d, ok := ReadActionResult(obj, ctx)
 		if !ok || d == nil {
 			return -1
 		}
@@ -285,7 +285,7 @@ func findObjectOrCondition(obj string, condition string, isLast bool, v *dvevalu
 }
 
 func replaceBlockConvert(block *ConvertReplaceBlock, v *dvevaluation.DvVariable, env *dvevaluation.DvObject, ctx *dvcontext.RequestContext) bool {
-	ind := findObjectOrCondition(block.FindObject, block.FindCondition, block.IsLast, v, env)
+	ind := findObjectOrCondition(block.FindObject, block.FindCondition, block.IsLast, v, ctx, env)
 	if ind < 0 {
 		return inDefaultReplace(block.InDefault, block.ReplaceWith, v, env, ctx)
 	}

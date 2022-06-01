@@ -29,11 +29,12 @@ func RegisterStorageActionProvider(name string, provider StorageActionProvider) 
 	StorageProviders[name] = provider
 }
 
-func GetLevelMainPath(data string) (level string, subLevel string, result string, path string, prePath string, isFatal bool, provider StorageActionProvider) {
+func GetLevelMainPath(data string) (level string, subLevel string, result string, path string, prePath string, isFatal bool, pathSevere bool, provider StorageActionProvider) {
 	pos := strings.Index(data, ":")
 	result = data
 	pathIsProcessed := true
 	isFatal = true
+	pathSevere = true
 	if pos >= 0 {
 		level = strings.TrimSpace(result[:pos])
 		result = result[pos+1:]
@@ -62,6 +63,11 @@ func GetLevelMainPath(data string) (level string, subLevel string, result string
 		path = result[dot+1:]
 		result = result[:dot]
 		prePath = data[:len(data)-len(path)-1]
+		k := len(result)
+		if k > 0 && result[k-1] == '?' {
+			pathSevere = false
+			result = result[:k-1]
+		}
 	}
 	return
 }
@@ -69,7 +75,7 @@ func GetLevelMainPath(data string) (level string, subLevel string, result string
 func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestContext) {
 	if result != "" {
 		env := GetEnvironment(ctx)
-		level, subLevel, varName, path, prePath, isFatal, provider := GetLevelMainPath(result)
+		level, subLevel, varName, path, prePath, isFatal, _, provider := GetLevelMainPath(result)
 		if path != "" {
 			dat, ok := ReadActionResult(prePath, ctx)
 			if !ok {
@@ -109,7 +115,7 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 func DeleteActionResult(result string, ctx *dvcontext.RequestContext) {
 	if result != "" {
 		env := GetEnvironment(ctx)
-		level, subLevel, varName, path, prePath, isFatal, provider := GetLevelMainPath(result)
+		level, subLevel, varName, path, prePath, isFatal, _, provider := GetLevelMainPath(result)
 		if path != "" {
 			res, ok := ReadActionResult(prePath, ctx)
 			var err error
@@ -154,7 +160,7 @@ func ReadActionResult(result string, ctx *dvcontext.RequestContext) (res interfa
 		if result[0] == '\'' && result[len(result)-1] == '\'' && len(result) >= 2 {
 			return result[1 : len(result)-1], true
 		}
-		level, subLevel, varName, path, _, isFatal, provider := GetLevelMainPath(result)
+		level, subLevel, varName, path, _, isFatal, _, provider := GetLevelMainPath(result)
 		if provider != nil {
 			var err error
 			res, ok, err = provider.Read(ctx, subLevel, varName)

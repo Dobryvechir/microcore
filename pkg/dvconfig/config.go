@@ -1,5 +1,9 @@
-// Package dvconfig provides configuration management for the http server
-// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+/***********************************************************************
+MicroCore
+Package dvconfig provides configuration management for the http server
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+************************************************************************/
+
 package dvconfig
 
 import (
@@ -47,6 +51,7 @@ type DvRewrite struct {
 	Condition string `json:"condition"`
 	Options   string `json:"options"`
 }
+
 type ProxyServerInfo struct {
 	Filter string `json:"filter"`
 	Url    string `json:"url"`
@@ -63,37 +68,38 @@ type ServerSession struct {
 
 // DvHostServer collects all parameters for a specific host server
 type DvHostServer struct {
-	Hosts                         string                         `json:"hosts"`
-	BaseFolder                    string                         `json:"baseFolder"`
-	Actions                       []*dvcontext.DvAction          `json:"actions"`
-	Rewrites                      []DvRewrite                    `json:"rewrites"`
-	DefaultProxyServer            string                         `json:"defaultProxy"`
-	ProxyServers                  []ProxyServerInfo              `json:"proxyServers"`
-	ProxyServerSettings           dvcontext.ServerSettings       `json:"proxyServerSettings"`
-	ServerRewrites                []DvRewrite                    `json:"serverRewrites"`
-	ProxyName                     string                         `json:"proxyName"`
-	DomainName                    string                         `json:"domain"`
-	CacheControl                  string                         `json:"cacheControl"`
-	DirectoryIndex                string                         `json:"directoryIndex"`
-	HeadersStatic                 map[string]string              `json:"headersStatic"`
-	HeadersProxyServer            map[string]string              `json:"headersProxyServer"`
-	HeadersStaticOptions          map[string]string              `json:"headersStaticOptions"`
-	HeadersProxyServerOptions     map[string]string              `json:"headersProxyServerOptions"`
-	AccessControlAllowOrigin      string                         `json:"accessControlAllowOrigin"`
-	AccessControlAllowMethod      string                         `json:"accessControlAllowMethod"`
-	AccessControlAllowHeaders     string                         `json:"accessControlAllowHeaders"`
-	AccessControlMaxAge           string                         `json:"accessControlMaxAge"`
-	AccessControlExposeHeaders    string                         `json:"accessControlExposeHeaders"`
-	AccessControlAllowCredentials string                         `json:"accessControlAllowCredentials"`
-	Modules                       []dvmodules.ModuleConfig       `json:"modules"`
-	Processors                    []dvprocessors.ProcessorConfig `json:"processors"`
-	PostProcessors                []dvprocessors.ProcessorConfig `json:"postProcessors"`
-	Providers                     []dvproviders.ProviderConfig   `json:"providers"`
-	HostHeader                    string                         `json:"hostHeader"`
-	SecurityInfo                  *dvcontext.SecurityServerInfo  `json:"security"`
-	LogLevel                      string                         `json:"logLevel"`
-	DynamicActions                bool                           `json:"dynamic"`
-	Session                       *ServerSession                 `json:"session"`
+	Hosts                         string                             `json:"hosts"`
+	BaseFolder                    string                             `json:"baseFolder"`
+	Actions                       []*dvcontext.DvAction              `json:"actions"`
+	Rewrites                      []DvRewrite                        `json:"rewrites"`
+	DefaultProxyServer            string                             `json:"defaultProxy"`
+	ProxyServers                  []ProxyServerInfo                  `json:"proxyServers"`
+	ProxyServerSettings           dvcontext.ServerSettings           `json:"proxyServerSettings"`
+	ServerRewrites                []DvRewrite                        `json:"serverRewrites"`
+	ProxyName                     string                             `json:"proxyName"`
+	DomainName                    string                             `json:"domain"`
+	CacheControl                  string                             `json:"cacheControl"`
+	DirectoryIndex                string                             `json:"directoryIndex"`
+	HeadersStatic                 map[string]string                  `json:"headersStatic"`
+	HeadersProxyServer            map[string]string                  `json:"headersProxyServer"`
+	HeadersStaticOptions          map[string]string                  `json:"headersStaticOptions"`
+	HeadersProxyServerOptions     map[string]string                  `json:"headersProxyServerOptions"`
+	AccessControlAllowOrigin      string                             `json:"accessControlAllowOrigin"`
+	AccessControlAllowMethod      string                             `json:"accessControlAllowMethod"`
+	AccessControlAllowHeaders     string                             `json:"accessControlAllowHeaders"`
+	AccessControlMaxAge           string                             `json:"accessControlMaxAge"`
+	AccessControlExposeHeaders    string                             `json:"accessControlExposeHeaders"`
+	AccessControlAllowCredentials string                             `json:"accessControlAllowCredentials"`
+	Modules                       []dvmodules.ModuleConfig           `json:"modules"`
+	Processors                    []dvprocessors.ProcessorConfig     `json:"processors"`
+	PostProcessors                []dvprocessors.ProcessorConfig     `json:"postProcessors"`
+	Providers                     []dvproviders.ProviderConfig       `json:"providers"`
+	HostHeader                    string                             `json:"hostHeader"`
+	SecurityInfo                  *dvcontext.SecurityServerInfo      `json:"security"`
+	ActionPolicies                map[string]*dvcontext.ActionPolicy `json:"action_policies"`
+	LogLevel                      string                             `json:"logLevel"`
+	DynamicActions                bool                               `json:"dynamic"`
+	Session                       *ServerSession                     `json:"session"`
 }
 
 // DvConfig is a full structure of the config for http server

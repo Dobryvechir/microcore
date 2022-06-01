@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvcontext
@@ -71,6 +71,19 @@ func (request *RequestContext) HandleCommunication() {
 		}
 	}
 	Send(request.Writer, request.Reader, request.Output)
+	if request.PlaceInfo == "" {
+		s := strconv.Itoa(request.StatusCode)
+		if request.Action != nil && len(request.Action.LogPolicy) != 0 && request.Server != nil && request.Server.ActionPolicies != nil {
+			policyType := request.Server.ActionPolicies[request.Action.LogPolicy]
+			if policyType != nil && (policyType.LogFirstTimes > 0 || policyType.LogNextTime > 0) {
+				request.PlaceInfo = getRequestLogInfo(s, policyType, request.Reader.Method, request.Url)
+			} else {
+				request.PlaceInfo = s
+			}
+		} else {
+			request.PlaceInfo = s
+		}
+	}
 	request.LogLevel = LogHandled
 }
 
@@ -288,4 +301,3 @@ func GetUniqueId() int64 {
 	idMutex.Unlock()
 	return v
 }
-

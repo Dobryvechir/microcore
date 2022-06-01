@@ -117,6 +117,8 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 		PostProcessorBlocks:       dvprocessors.InitializePostProcessors(server.PostProcessors),
 		HostHeader:                strings.TrimSpace(server.HostHeader),
 		LogLevel:                  getLogLevelCode(server.LogLevel),
+		ActionPolicies:            server.ActionPolicies,
+		SecurityInfo:              server.SecurityInfo,
 	}
 
 	accessControlAllowOrigin := dvcom.PrepareAccessControlLists(server.AccessControlAllowOrigin)
@@ -160,12 +162,10 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 		dvServerInfo.HeadersSpecialStatic["Access-Control-Allow-Origin"] = accessControlAllowOrigin
 	}
 	dvServerInfo.ModuleHandler = dvmodules.RegisterEndPointHandlers(server.Modules)
-
 	dvServerInfo.ActionHandler = dvmodules.DynamicRegisterEndPointActions(server.Actions, server.DynamicActions)
 	if server.Session != nil {
 		dvServerInfo.Session = dvsession.GetServerSessionProvider(server.Session.Name, server.Session.Option, server.Session.Params, server.Session.Urls, server.Session.Prefix)
 	}
-	dvServerInfo.SecurityInfo = server.SecurityInfo
 	return dvServerInfo
 }
 
