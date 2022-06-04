@@ -8,6 +8,7 @@ package dvdynamic
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvaction"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
@@ -42,12 +43,8 @@ func DebugInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bo
 			return nil, false
 		}
 	}
-	switch currentKey.(type) {
-	case string:
-		if currentKey.(string) != key {
-			return nil, false
-		}
-	default:
+	currentStr := dvevaluation.AnyToString(currentKey)
+	if currentStr != key {
 		return nil, false
 	}
 	fn, ok := debugActionList[config.Action]
@@ -143,27 +140,17 @@ func RunSetOneVariable(config *DebugConfig, ctx *dvcontext.RequestContext) error
 	if result == "" {
 		result = "DEBUG_ONE_VARIABLE"
 	}
-	nameStr, ok := ctx.PrimaryContextEnvironment.Properties["BODY_PARAM_NAME"]
-	valueStr, ok1 := ctx.PrimaryContextEnvironment.Properties["BODY_PARAM_VALUE"]
+	nameVar, ok := ctx.PrimaryContextEnvironment.Properties["BODY_PARAM_NAME"]
+	valueVar, ok1 := ctx.PrimaryContextEnvironment.Properties["BODY_PARAM_VALUE"]
 	if !ok || !ok1 {
+		ctx.PrimaryContextEnvironment.Properties[result] = "No name or value in the body"
 		return nil
 	}
-	var name, value string
-	switch nameStr.(type) {
-	case string:
-		name = nameStr.(string)
-	default:
-		return nil
-	}
-	switch valueStr.(type) {
-	case string:
-		value = valueStr.(string)
-	default:
-		return nil
-	}
+	name := dvevaluation.AnyToString(nameVar)
+	value := dvevaluation.AnyToString(valueVar)
 	val := dvparser.GlobalProperties[name]
 	ctx.PrimaryContextEnvironment.Properties[result] = val
-	dvparser.GlobalProperties[name] = value
+	dvparser.SetGlobalPropertiesValue(name, value)
 	return nil
 }
 

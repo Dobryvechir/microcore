@@ -39,7 +39,7 @@ func collectRequestParameters(request *dvcontext.RequestContext) error {
 				if err == nil {
 					request.PrimaryContextEnvironment.Set(dvcontext.BODY_JSON, request.InputJson)
 					if bodyParams != nil {
-						dvevaluation.CollectJsonVariables(request.InputJson, bodyParams, request.PrimaryContextEnvironment, true)
+						dvevaluation.CollectJsonVariables(request.InputJson, bodyParams, request.PrimaryContextEnvironment, true, dvcontext.BODY_PARAM_PREFIX, true)
 					}
 				}
 			} else {
@@ -60,6 +60,6 @@ func collectRequestParameters(request *dvcontext.RequestContext) error {
 			}
 		}
 	}
-	dvevaluation.CollectVariablesByStringMap(request.Queries, action.QueryParams, request.PrimaryContextEnvironment, true)
+	dvevaluation.CollectVariablesByStringMap(request.Queries, action.QueryParams, request.PrimaryContextEnvironment, true, "", true)
 	return nil
 }

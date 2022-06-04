@@ -74,7 +74,7 @@ func CollectValuesByMap(data interface{}, params map[string]string, env *DvObjec
 	res = make(map[string]interface{})
 	for k, _ := range params {
 		val, _, err := CollectValueByKey(data, k, env)
-		if err != nil {
+		if err == nil {
 			res[k] = val
 		}
 	}
@@ -93,23 +93,28 @@ func CollectValueByKey(data interface{}, key string, env *DvObject) (interface{}
 	return nil, nil, errors.New("Unknown type to extrace " + key)
 }
 
-func CollectJsonVariables(data interface{}, params map[string]string, env *DvObject, anyway bool) {
+func CollectJsonVariables(data interface{}, params map[string]string, env *DvObject, anyway bool, prefix string, upperCase bool) {
 	if params == nil || (data == nil && !anyway) {
 		return
 	}
 	src := CollectValuesByMap(data, params, env)
-	CollectVariablesByAnyMap(src, params, env, anyway)
+	CollectVariablesByAnyMap(src, params, env, anyway, prefix, upperCase)
 }
 
-func CollectVariablesByStringMap(src map[string]string, params map[string]string, data *DvObject, anyway bool) {
+func CollectVariablesByStringMap(src map[string]string, params map[string]string, data *DvObject, anyway bool, prefix string, upperCase bool) {
 	if params == nil || (src == nil && !anyway) {
 		return
 	}
 	for k, v := range params {
-		if v != "" && v[0] >= 'A' && v[0] <= 'Z' {
+		if v != "" && ((v[0] >= 'A' && v[0] <= 'Z') || (v[0] >= 'a' && v[0] <= 'z')) {
 			p := strings.Index(v, ":")
 			if p > 0 {
 				v = v[:p]
+			} else {
+				v = prefix + k
+				if upperCase {
+					v = strings.ToUpper(v)
+				}
 			}
 			if src != nil {
 				v1, ok := src[k]
@@ -125,15 +130,20 @@ func CollectVariablesByStringMap(src map[string]string, params map[string]string
 	}
 }
 
-func CollectVariablesByAnyMap(src map[string]interface{}, params map[string]string, data *DvObject, anyway bool) {
+func CollectVariablesByAnyMap(src map[string]interface{}, params map[string]string, data *DvObject, anyway bool, prefix string, upperCase bool) {
 	if params == nil || (src == nil && !anyway) {
 		return
 	}
 	for k, v := range params {
-		if v != "" && v[0] >= 'A' && v[0] <= 'Z' {
+		if v != "" && ((v[0] >= 'A' && v[0] <= 'Z') || (v[0] >= 'a' && v[0] <= 'z')) {
 			p := strings.Index(v, ":")
 			if p > 0 {
 				v = v[:p]
+			} else {
+				v = prefix + k
+				if upperCase {
+					v = strings.ToUpper(v)
+				}
 			}
 			if src != nil {
 				v1, ok := src[k]

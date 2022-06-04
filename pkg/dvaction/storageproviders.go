@@ -179,7 +179,7 @@ func actionFileName(key string) (string, error) {
 	if len(key) == 0 {
 		return "", errors.New("File name is not specified")
 	}
-	if key[0] != '/' && key[0] != '\\' && (len(key) == 1 || key[1] == ':') {
+	if key[0] != '/' && key[0] != '\\' && (len(key) == 1 || key[1] != ':') {
 		key = "/tmp/" + key
 	}
 	return key, nil
@@ -214,6 +214,8 @@ func (provider *FileActionProvider) Save(ctx *dvcontext.RequestContext, prefix s
 			dvlog.PrintfError("Error saved %s as %s size %d err=%v", key, name, len(v), err)
 		}
 		return err
+	} else if ctx.LogLevel >= dvlog.LogDebug {
+		dvlog.PrintfError("About to save %s as %s size %d", key, name, len(v))
 	}
 	err = ioutil.WriteFile(name, v, 0766)
 	if ctx.LogLevel >= dvlog.LogInfo {
@@ -262,7 +264,7 @@ func initActionProvider() bool {
 	StorageProviders["global"] = &GlobalActionProvider{}
 	StorageProviders["request"] = &RequestActionProvider{}
 	StorageProviders["file"] = &FileActionProvider{}
-	StorageProviders["file"] = &FileSizeActionProvider{}
+	StorageProviders["file_size"] = &FileSizeActionProvider{}
 	return true
 }
 

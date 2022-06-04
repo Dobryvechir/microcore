@@ -41,6 +41,7 @@ var logTable = map[string]int{
 	"warning":  LogWarning,
 	"info":     LogInfo,
 	"detail":   LogDetail,
+	"debug":    LogDebug,
 	"trace":    LogTrace,
 	"internal": LogTrace,
 }
