@@ -74,6 +74,7 @@ type DvHostServer struct {
 	Rewrites                      []DvRewrite                        `json:"rewrites"`
 	DefaultProxyServer            string                             `json:"defaultProxy"`
 	ProxyServers                  []ProxyServerInfo                  `json:"proxyServers"`
+	ProxyServerMap                map[string]string                  `json:"proxyServerMap"`
 	ProxyServerSettings           dvcontext.ServerSettings           `json:"proxyServerSettings"`
 	ServerRewrites                []DvRewrite                        `json:"serverRewrites"`
 	ProxyName                     string                             `json:"proxyName"`
@@ -100,6 +101,7 @@ type DvHostServer struct {
 	LogLevel                      string                             `json:"logLevel"`
 	DynamicActions                bool                               `json:"dynamic"`
 	Session                       *ServerSession                     `json:"session"`
+	UrlIncludeOption              int                                `json:"urlIncludeOption"`
 }
 
 // DvConfig is a full structure of the config for http server

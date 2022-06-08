@@ -6,6 +6,7 @@ Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvzoo
 
 import (
+	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/go-zookeeper/zk"
@@ -143,7 +144,7 @@ func SaveWholeFolder(conn *zk.Conn, path string, r *dvevaluation.DvVariable, ver
 	}
 	s, err := EnsureZooPathValue(conn, path, version, value)
 	if err != nil {
-		return err
+		return fmt.Errorf("[path %s][vers %d][value %s] %s", path, version, value, err.Error())
 	}
 	if s != "" {
 		path = s
@@ -179,13 +180,16 @@ func SaveWholeFolder(conn *zk.Conn, path string, r *dvevaluation.DvVariable, ver
 func EnsureZooPath(conn *zk.Conn, path string, version int32, defValue string) (string, int32, error) {
 	vl, stat, err1 := conn.Get(path)
 	if err1 == nil && stat != nil {
-		realVersion := stat.Version + 1
+		realVersion := stat.Version
 		if string(vl) == defValue {
 			realVersion = zkAlreadySameValue
 		}
 		return "", realVersion, nil
 	}
 	s, err := conn.Create(path, []byte(defValue), version, zk.WorldACL(zk.PermAll))
+	if err != nil {
+		err = fmt.Errorf("[create (path %s)(val %s)(ver %d)] %s", path, defValue, version, err.Error())
+	}
 	return s, zkCreatedNode, err
 }
 
@@ -196,6 +200,9 @@ func EnsureZooPathValue(conn *zk.Conn, path string, version int32, defValue stri
 	}
 	if newVersion >= 0 {
 		_, err = conn.Set(path, []byte(defValue), newVersion)
+		if err != nil {
+			return path, fmt.Errorf("[set (old %s)(new %s)(val %s)(ver %d)] %s", path, newPath, defValue, newVersion, err.Error())
+		}
 	}
 	return newPath, err
 }

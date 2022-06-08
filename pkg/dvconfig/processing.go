@@ -1,5 +1,5 @@
 // Package dvconfig manages configuration for http server
-// MicroCore Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+// MicroCore Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 package dvconfig
 
 import (
@@ -99,6 +99,7 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 		BaseFolderUrl:             dvcontext.GetPurePath(server.BaseFolder),
 		ProxyServerUrl:            dvcontext.GetPurePath(server.DefaultProxyServer),
 		ProxyServerSettings:       server.ProxyServerSettings,
+		ProxyServerMap:            server.ProxyServerMap,
 		ProxyName:                 dvcom.PrepareProxyName(server.ProxyName),
 		DomainName:                dvcom.PrepareProxyName(server.DomainName),
 		ProxyServers:              prepareProxyInfo(server.ProxyServers),
@@ -119,6 +120,7 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 		LogLevel:                  getLogLevelCode(server.LogLevel),
 		ActionPolicies:            server.ActionPolicies,
 		SecurityInfo:              server.SecurityInfo,
+		UrlIncludeOption:          server.UrlIncludeOption,
 	}
 
 	accessControlAllowOrigin := dvcom.PrepareAccessControlLists(server.AccessControlAllowOrigin)

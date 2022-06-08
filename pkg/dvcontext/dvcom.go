@@ -40,7 +40,7 @@ var uniqueId int64 = 0
 var idMutex sync.Mutex
 
 func (request *RequestContext) HandleCommunication() {
-	if request.LogLevel == LogHandled {
+	if request.LogLevel == LogHandled || request.Reader == nil {
 		return
 	}
 	if request.DataType == "" {
@@ -280,6 +280,10 @@ func SetRecordMode(path string) {
 func (ctx *RequestContext) HandleInternalServerError() {
 	if ctx.StatusCode < 400 {
 		ctx.StatusCode = 500
+	}
+	if ctx.Reader == nil {
+		dvlog.PrintlnError("Exit by critical error")
+		os.Exit(1)
 	}
 	ctx.HandleCommunication()
 }

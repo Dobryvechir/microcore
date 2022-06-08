@@ -5,16 +5,18 @@ Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 
 package dvurl
 
-type RewriteInfo struct {
-	url string
-	condition string
-	options string
-}
-
-func createRewriteInfo(url string, condition string, options string, ids []string) *RewriteInfo {
-	return &RewriteInfo{
-		url: url,
-		condition: condition,
-		options: options,
+func PrependUrl(url string, item string) string {
+	if len(item) == 0 {
+		return url
 	}
+	if item[0] != '/' {
+		item = "/" + item
+	}
+	if len(url) == 0 {
+		return item
+	}
+	if url[0] == '/' {
+		return item + url
+	}
+	return item + "/" + url
 }

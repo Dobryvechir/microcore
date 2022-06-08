@@ -1,8 +1,13 @@
+/***********************************************************************
+MicroCore
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+************************************************************************/
+
 package dvurl
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"strings"
 )
 

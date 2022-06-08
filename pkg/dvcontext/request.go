@@ -14,6 +14,10 @@ import (
 const (
 	DoNotShowPlaceInfo = "~DO NOT SHOW PLACE~"
 )
+const (
+	UrlIncludeOption_HostFirst          = 1
+	UrlIncludeOption_PredefinedHostOnly = 2
+)
 
 type ProcessorEndPointHandler func(request *RequestContext) bool
 
@@ -82,6 +86,7 @@ type MicroCoreInfo struct {
 	ProxyServerHttp           bool
 	HasProxyServers           bool
 	BaseFolderUrl             string
+	ProxyServerMap            map[string]string
 	ProxyServerUrl            string
 	ProxyServerSettings       ServerSettings
 	ProxyName                 string
@@ -108,6 +113,7 @@ type MicroCoreInfo struct {
 	ActionPolicies            map[string]*ActionPolicy
 	ActionHandler             HandlerFunc
 	LogLevel                  int
+	UrlIncludeOption          int
 }
 
 type InterfaceExecutor func(*RequestContext, interface{}) interface{}

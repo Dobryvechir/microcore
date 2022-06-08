@@ -88,7 +88,7 @@ func SaveActionResult(result string, data interface{}, ctx *dvcontext.RequestCon
 		if provider != nil {
 			err := provider.Save(ctx, subLevel, varName, data)
 			if err != nil {
-				dvlog.PrintfError("%s", err.Error())
+				dvlog.PrintfError("Saving %s %s: %s", subLevel, varName, err.Error())
 				if isFatal {
 					ctx.HandleInternalServerError()
 				}
