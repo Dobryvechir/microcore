@@ -28,7 +28,7 @@ const (
 	LogTrace
 )
 
-var StartTime = time.Now().Unix() - 1638000000
+var StartTime = time.Now().Unix() - 1654740000
 var _startTimeMutex = &sync.Mutex{}
 var logsFolder string
 var CurrentLogLevel = LogError

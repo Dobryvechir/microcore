@@ -17,6 +17,7 @@ const (
 const (
 	UrlIncludeOption_HostFirst          = 1
 	UrlIncludeOption_PredefinedHostOnly = 2
+	UrlIncludeOption_HostWithoutPort    = 4
 )
 
 type ProcessorEndPointHandler func(request *RequestContext) bool

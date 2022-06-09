@@ -53,6 +53,9 @@ func AnyToStringWithOptions(v interface{}, options int) string {
 		f = nullValueVersion[options]
 	case *dvgrammar.ExpressionValue:
 		b := v.(*dvgrammar.ExpressionValue)
+		if b == nil {
+			return ""
+		}
 		switch b.DataType {
 		case dvgrammar.TYPE_NULL, dvgrammar.TYPE_NAN:
 			return ""

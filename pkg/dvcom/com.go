@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -513,7 +514,13 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentServer := defaultServerInfo
-		if d, okey := hostServerInfo[r.Host]; okey {
+		host := r.Host
+		posHost := strings.LastIndex(host, ":")
+		lightHost := host
+		if posHost > 0 && posHost+1 < len(host) && host[posHost+1] >= '0' && host[posHost+1] <= '9' {
+			lightHost = host[:posHost]
+		}
+		if d, okey := hostServerInfo[lightHost]; okey {
 			currentServer = d
 		}
 		extra, queries := calculateRequestContextParameters(r)
@@ -527,13 +534,16 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 		}
 		request.PrimaryContextEnvironment = dvparser.GetPropertiesPrototypedToGlobalProperties(request.Extra)
 		baseUrl := r.URL.Path
+		if (currentServer.UrlIncludeOption & dvcontext.UrlIncludeOption_HostWithoutPort) != 0 {
+			host = lightHost
+		}
 		if (currentServer.UrlIncludeOption & dvcontext.UrlIncludeOption_HostFirst) != 0 {
 			if (currentServer.UrlIncludeOption & dvcontext.UrlIncludeOption_PredefinedHostOnly) != 0 {
-				if currentServer.ProxyServerMap != nil && currentServer.ProxyServerMap[r.Host] != "" {
-					baseUrl = dvurl.PrependUrl(baseUrl, r.Host)
+				if currentServer.ProxyServerMap != nil && currentServer.ProxyServerMap[host] != "" {
+					baseUrl = dvurl.PrependUrl(baseUrl, host)
 				}
 			} else {
-				baseUrl = dvurl.PrependUrl(baseUrl, r.Host)
+				baseUrl = dvurl.PrependUrl(baseUrl, host)
 			}
 		}
 		SetRequestUrl(request, baseUrl)
@@ -571,9 +581,12 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 			}
 			if currentServer.ExtraStaticServer && tryLocalFile(request, currentServer.ProxyServerUrl) {
 				place = "ExtraStatic"
-			} else if currentServer.ProxyServerMap != nil && len(currentServer.ProxyServerMap[r.Host]) != 0 {
-				tryHttpForward(request, currentServer.ProxyServerMap[r.Host])
-				place = "mproxy [" + r.Host + "]"
+			} else if currentServer.ProxyServerMap != nil && len(currentServer.ProxyServerMap[host]) != 0 {
+				tryHttpForward(request, currentServer.ProxyServerMap[host])
+				place = "*/*"
+				if request.StatusCode>=300 {
+					place += " " + strconv.Itoa(request.StatusCode)
+				}
 			} else if currentServer.HasProxyServers && tryProxyServers(request) {
 				place = "proxy"
 			} else if currentServer.ProxyServerHttp {
