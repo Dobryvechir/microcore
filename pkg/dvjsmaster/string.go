@@ -6,6 +6,7 @@ Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvjsmaster
 
 import (
+	"github.com/Dobryvechir/microcore/pkg/dvcrypt"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"strings"
@@ -41,6 +42,13 @@ func string_init() {
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
 					Fn: String_endsWith,
+				},
+			},
+			{
+				Name: []byte("isValidUUID"),
+				Kind: dvevaluation.FIELD_FUNCTION,
+				Extra: &dvevaluation.DvFunction{
+					Fn: String_isValidUUID,
 				},
 			},
 		},
@@ -112,5 +120,14 @@ func String_split(context *dvgrammar.ExpressionContext, thisVariable interface{}
 	} else {
 		b = strings.Split(s, s1)
 	}
+	return b, nil
+}
+
+func String_isValidUUID(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	if thisVariable == nil {
+		return false, nil
+	}
+	s := dvevaluation.AnyToString(thisVariable)
+	b := dvcrypt.IsValidUUID(s)
 	return b, nil
 }

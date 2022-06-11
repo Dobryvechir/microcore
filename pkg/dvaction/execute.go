@@ -322,7 +322,7 @@ func ExecuteSequenceCycle(ctx *dvcontext.RequestContext, cycleLevel int) bool {
 		}
 		debugList := ""
 		if debugMode >= 0 {
-			dvlog.Printf(p, "Executing %s %s\n", p, waitCommandRaw)
+			dvlog.Printf(p, "Executing %s %s", p, waitCommandRaw)
 			if debugMode >= 1 {
 				DebugShowVariablesByEnvList(ctx, p+"_SHOW_BEFORE")
 				debugList = p + "_SHOW_AFTER"
