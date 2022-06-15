@@ -210,6 +210,9 @@ tokenRunner:
 			}
 		} else if value.DataType != TYPE_OPERATOR {
 			operator = dataOperator
+			if value.DataType == TYPE_DATA && opt.VoidOperators[value.Value]!=0 {
+				continue tokenRunner
+			}
 		}
 		properties, isOperator := opt.Operators[operator]
 		if !isOperator && (current.Children != nil || current.Value != nil) {

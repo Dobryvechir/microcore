@@ -203,6 +203,15 @@ func IsLikeJson(s string) bool {
 	return n >= 2 && (t[0] == '{' && t[n-1] == '}' || t[0] == '[' && t[n-1] == ']')
 }
 
+func DefaultOrSimpleInitWithObject(command string, result interface{}, env *dvevaluation.DvObject) (bool, string) {
+	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
+	if cmd != "" && cmd[0] != '{' && cmd[0] != '@' {
+		return true, cmd
+	}
+	b := DefaultInitWithObject(command, result, env)
+	return b, ""
+}
+
 func DefaultInitWithObject(command string, result interface{}, env *dvevaluation.DvObject) bool {
 	cmd := strings.TrimSpace(command[strings.Index(command, ":")+1:])
 	if cmd == "" {

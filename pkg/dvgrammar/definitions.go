@@ -67,6 +67,7 @@ type ScopeInterface interface {
 type GrammarBaseDefinition struct {
 	Operators       map[string]*InterOperator
 	UnaryOperators  map[string]*UnaryOperator
+	VoidOperators   map[string]int
 	DefaultOperator string
 }
 

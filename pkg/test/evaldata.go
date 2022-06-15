@@ -135,5 +135,8 @@ func testEvaluation() {
 	testEvaluationSingle("", "Math.SQRT2", "1.4142135623730951", KindFloat)
 	testEvaluationSingle("S=Good evening", "S.split(' ')[0]", "Good", KindString)
 	testEvaluationSingle("S=Good evening", "S.split(' ')[1]", "evening", KindString)
+	testEvaluationSingle("S=Good evening", "var L=S+'var'", "Good eveningvar", KindString)
+	testEvaluationSingle("S=Good evening", "const L=S+'const'", "Good eveningconst", KindString)
+	testEvaluationSingle("S=Good evening", "let L=S+'let'", "Good eveninglet", KindString)
 	showResume()
 }

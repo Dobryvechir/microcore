@@ -14,7 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-        testEvaluationSingle("", "Math.sign(-10)","-1", KindInteger)
+	testEvaluationSingle("S=Good evening", "var L=S+'var'", "Good eveningvar", KindString)
 	showResume()
 }
 

@@ -1,0 +1,15 @@
+<h1>js</h1>
+<pre>
+js allows to run javascript, and optionally return the result.
+The js action has 2 formats:
+js:file name
+    OR
+js:{"file":"file name", "result":"variable name"}
+If you do not need to save the results to any variable, you can use the simplest form.
+It is also possible to save the result of a variable inside javascript code, so you do not need to use
+    the second form at all
+Examples:
+ACTION_JS_STEP_1=js:./data/myprogram.js
+ACTION_JS_STEP_2=js:{"file":"./data/myprogram1.js", "result":"request:RESULT"}
+
+</pre>

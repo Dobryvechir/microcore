@@ -15,10 +15,10 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			Multi:      true,
 		},
 		"=": &InterOperator{
-			Precedence:  3,
-			Multi:       true,
-			RightToLeft: true,
-			Assignment:  true,
+			Precedence:         3,
+			Multi:              true,
+			RightToLeft:        true,
+			Assignment:         true,
 			LazyLoadedOperands: true,
 		},
 		"+=": &InterOperator{
@@ -94,15 +94,15 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			Assignment:  true,
 		},
 		"?": &InterOperator{
-			Precedence:  4,
-			Multi:       false,
-			RightToLeft: true,
+			Precedence:         4,
+			Multi:              false,
+			RightToLeft:        true,
 			LazyLoadedOperands: true,
 		},
 		":": &InterOperator{
-			Precedence:  4,
-			Multi:       false,
-			RightToLeft: true,
+			Precedence:         4,
+			Multi:              false,
+			RightToLeft:        true,
 			LazyLoadedOperands: true,
 		},
 		"||": &InterOperator{
@@ -236,6 +236,11 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			Post: true,
 			Pre:  false,
 		},
+	},
+	VoidOperators: map[string]int{
+		"var":   1,
+		"const": 1,
+		"let":   1,
 	},
 	DefaultOperator: "",
 }
