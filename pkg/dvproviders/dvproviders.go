@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvproviders
@@ -115,6 +115,6 @@ func PlaceProviderReferences(request *dvcontext.RequestContext) {
 		if provider.Data != nil {
 			request.Extra[provider.Name] = provider.Data
 		}
-		_ = provider.EndPointHandler(request)
+		provider.EndPointHandler(request)
 	}
 }

@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvprocessors
@@ -8,6 +8,7 @@ package dvprocessors
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"os"
 	"strings"
 )
@@ -19,16 +20,16 @@ const (
 	comment_HTML
 )
 
-func templateFileHandler(request *dvcontext.RequestContext) bool {
-	f, err := os.Open(request.FileName)
+func readOptionsInFileHeader(fileName string) (options map[byte]string, pos int, err error) {
+	f, err := os.Open(fileName)
 	if err != nil {
-		return false
+		return
 	}
 	buf := make([]byte, 4096)
-	n, err1 := f.Read(buf)
+	n, err := f.Read(buf)
 	defer f.Close()
-	if err1 != nil {
-		return false
+	if err != nil {
+		return
 	}
 	comment := comment_no
 	i := 0
@@ -40,14 +41,14 @@ func templateFileHandler(request *dvcontext.RequestContext) bool {
 				} else if buf[i+1] == '*' {
 					comment = comment_multiLine
 				} else {
-					return false
+					return
 				}
 				i += 2
 			} else if buf[i] == '<' && i+10 < n && buf[i+1] == '!' && buf[i+2] == '-' && buf[i+3] == '-' {
 				i += 4
 				comment = comment_HTML
 			} else {
-				return false
+				return
 			}
 			break
 		}
@@ -58,12 +59,12 @@ func templateFileHandler(request *dvcontext.RequestContext) bool {
 		}
 	}
 	if i+8 >= n {
-		return false
+		return
 	}
 	if strings.ToLower(string(buf[i:i+8])) != "template" {
-		return false
+		return
 	}
-	options := make(map[byte]string)
+	options = make(map[byte]string)
 	for i += 8; i < n; i++ {
 		if buf[i] > 'a' && buf[i] <= 'z' || buf[i] > 'A' && buf[i] <= 'Z' {
 			options[buf[i]] = "_"
@@ -71,54 +72,55 @@ func templateFileHandler(request *dvcontext.RequestContext) bool {
 			break
 		}
 	}
-	stat, err3 := f.Stat()
-	if err3 != nil {
-		request.Error = err3
-		request.HandleInternalServerError()
-		return true
-	}
-	length := int(stat.Size())
-	buffer := make([]byte, length)
-	for j := i; j < n; j++ {
-		buffer[j] = buf[j]
-	}
-	if n < length {
-		k, err4 := f.Read(buffer[n:])
-		if err4 != nil {
-			request.Error = err4
-			request.HandleInternalServerError()
-			return true
-		}
-		n += k
-	}
 	switch comment {
 	case comment_singleLine:
 		for ; i < n; i++ {
-			if buffer[i] == 10 || buffer[i] == 13 {
+			if buf[i] == 10 || buf[i] == 13 {
 				i++
-				if i < n && (buffer[i] == 10 || buffer[i] == 13) {
+				if i < n && (buf[i] == 10 || buf[i] == 13) {
 					i++
 				}
+				pos = i
 				break
 			}
 		}
 	case comment_multiLine:
 		for ; i < n; i++ {
-			if buffer[i] == '*' && i+1 < n && buffer[i+1] == '/' {
+			if buf[i] == '*' && i+1 < n && buf[i+1] == '/' {
 				i += 2
+				pos = i
 				break
 			}
 		}
 	case comment_HTML:
 		for ; i < n; i++ {
-			if buffer[i] == '-' && i+2 < n && buffer[i+1] == '-' && buffer[i+2] == '>' {
+			if buf[i] == '-' && i+2 < n && buf[i+1] == '-' && buf[i+2] == '>' {
 				i += 3
+				pos = i
 				break
 			}
 		}
 	}
+	if pos == 0 {
+		options = nil
+	}
+	return
+}
+
+func templateFileHandler(request *dvcontext.RequestContext) bool {
+	options, pos, err := readOptionsInFileHeader(request.FileName)
+	if err != nil || options == nil {
+		return false
+	}
+	env := request.GetEnvironment()
+    dat, err := dvparser.SmartReadLikeJsonTemplate(request.FileName, 3, env)
+	if err != nil {
+		request.Error = err
+		request.HandleInternalServerError()
+		return true
+	}
 	request.DataType = dvcom.GetContentTypeByFileName(request.FileName)
-	dvtemplateProcessing(request, buffer[i:n], options)
+	dvtemplateProcessing(request, dat[pos:], options)
 	return true
 }
 

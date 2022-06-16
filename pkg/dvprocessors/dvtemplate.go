@@ -12,16 +12,19 @@ import (
 )
 
 func dvtemplateProcessing(request *dvcontext.RequestContext, buffer []byte, options map[byte]string) {
-	var err error
-	request.Params = dvparser.CloneGlobalProperties()
+	paramsCloned := false
 	if options['p'] != "" || options['P'] != "" {
+		// TO DO: it was supposed to be done before reading the file
+		request.Params = dvparser.CloneGlobalProperties()
+		paramsCloned = true
 		dvproviders.PlaceProviderReferences(request)
 	}
-	buffer, err = dvparser.ConvertByteArrayBySpecificProperties(buffer, request.FileName, request.Params, 3, dvparser.CONFIG_PRESERVE_SPACE)
-	if err == nil {
-		if options['g'] != "" || options['G'] != "" {
-			buffer, err = goTemplateHandler(buffer, request)
+	var err error
+	if options['g'] != "" || options['G'] != "" {
+		if !paramsCloned {
+			request.Params = dvparser.CloneGlobalProperties()
 		}
+		buffer, err = goTemplateHandler(buffer, request)
 	}
 	request.Error = err
 	request.Output = buffer

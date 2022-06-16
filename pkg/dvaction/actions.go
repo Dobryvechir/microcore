@@ -188,13 +188,7 @@ func securityEndPointHandler(ctx *dvcontext.RequestContext) bool {
 }
 
 func GetEnvironment(ctx *dvcontext.RequestContext) *dvevaluation.DvObject {
-	if ctx == nil || ctx.PrimaryContextEnvironment == nil {
-		return dvparser.GetGlobalPropertiesAsDvObject()
-	}
-	if ctx.LocalContextEnvironment != nil {
-		return ctx.LocalContextEnvironment
-	}
-	return ctx.PrimaryContextEnvironment
+	return ctx.GetEnvironment()
 }
 
 func IsLikeJson(s string) bool {

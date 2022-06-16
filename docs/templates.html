@@ -1,41 +1,55 @@
 <style>
-  .dv_cmd {
-     color: blue;
-  }
-  .dv_subinfo {
-     color: green;
-     padding-left: 40px;
-  }
-  .dv_subinfo._list {
-     color: blue;
-  }
-  .dv_subinfo_extra {
-     color: brown;
-  }
-  div p span {
-     color: green;
-  }
+    .dv_cmd {
+        color: blue;
+    }
+
+    .dv_subinfo {
+        color: green;
+        padding-left: 40px;
+    }
+
+    .dv_subinfo._list {
+        color: blue;
+    }
+
+    .dv_subinfo_extra {
+        color: brown;
+    }
+
+    div p span {
+        color: green;
+    }
 </style>
 <div class="dv_accordion">
-<h3>Templates</h3>
-<div>
- <p>
-   Templates provide the opportunity to connect the static content 
-                with the environment variables and custom variables with their custom implementation in golang.
-  </p>
-  <p> 
-   It is possible to activate templates on each individual server.
-   Inside the <span>server</span> or <span>hostServers</span> you can specify the <span>templates</span>
-   and provide the following description:
-   "processors" : {
-       "name" : "template",
-       "urls" : "urls, as described in <a href="providers.html">providers</a>, for example, **/route.js"
-   }
- </p>
- <p>
-   It is important that the file starts with a comment of any style (single line, multiline, HTML comment)
-  and the first word in the template must be "template"
- <p>
-</div>
+    <h3>Templates</h3>
+    <div>
+        <p>
+            Templates provide the opportunity to connect the static content
+            with the environment variables and custom variables with their custom implementation in golang.
+        </p>
+        <p>
+            It is possible to activate templates on each individual server.
+            Inside the <span>server</span> or <span>hostServers</span> you can specify the <span>templates</span>
+            and provide the following description:
+            "processors" : [{
+            "name" : "template",
+            "urls" : "urls, as described in <a href="providers.html">providers</a>, for example, **/route.js",
+            "folder": "optional base folder, by default, server's base folder",
+            "params": ["a" | "g" | "p" | ""]
+            }]
+        </p>
+        <pre>
+     Note: the first parameter in params is the default option as follows:
+     "a" - apply only variable processing
+     "g" -apply as well as golang template
+     "p" -apply as well as place providers (not finished yet)
+     "" - empty, do not apply templates at all
+        </pre>
+        <p>
+            It is important that the file starts with a comment of any style (single line, multiline, HTML comment)
+            and the first word in the template must be "template" + option as described above ("g", "p" or "")
+        <p>
+
+    </div>
 
 </div>

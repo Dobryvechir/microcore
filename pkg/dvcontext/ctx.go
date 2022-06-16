@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvcontext
@@ -8,12 +8,13 @@ package dvcontext
 import (
 	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"log"
 )
 
 const (
-	UrlPathPrefix   = "URL_PATH_"
-	ErrorPolicy = "ERROR_POLICY"
+	UrlPathPrefix = "URL_PATH_"
+	ErrorPolicy   = "ERROR_POLICY"
 )
 
 func (ctx *RequestContext) SetHttpErrorCode(errorCode int, message string) {
@@ -69,4 +70,14 @@ func (ctx *RequestContext) GetCurrentErrorPolicy() *RequestErrorPolicy {
 		}
 	}
 	return DefaultRequestErrorPolicy
+}
+
+func (ctx *RequestContext) GetEnvironment() *dvevaluation.DvObject {
+	if ctx == nil || ctx.PrimaryContextEnvironment == nil {
+		return dvparser.GetGlobalPropertiesAsDvObject()
+	}
+	if ctx.LocalContextEnvironment != nil {
+		return ctx.LocalContextEnvironment
+	}
+	return ctx.PrimaryContextEnvironment
 }

@@ -123,7 +123,7 @@ func ProcessSingleFile(fileName string, config *ReadFileConfig, ctx *dvcontext.R
 		return false
 	}
 	var dat []byte
-	env := GetEnvironment(ctx)
+	env := ctx.GetEnvironment()
 	if config.IsTemplate {
 		dat, err = dvparser.SmartReadLikeJsonTemplate(fileName, 3, env)
 	} else {
