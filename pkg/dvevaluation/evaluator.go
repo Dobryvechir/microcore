@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvevaluation
 
@@ -23,6 +23,7 @@ type EvaluateBoolean struct {
 }
 
 var GlobalFunctionPool = make(map[string]interface{})
+var globalFunctionPoolInitedWithMaster = false
 var GlobalFunctionPrototype = NewObject(GlobalFunctionPool)
 
 func AddToGlobalFunctionPool(properties map[string]interface{}) {
@@ -31,6 +32,15 @@ func AddToGlobalFunctionPool(properties map[string]interface{}) {
 	}
 	for k, v := range properties {
 		GlobalFunctionPool[k] = v
+	}
+}
+
+func AddListToGlobalFunctionPool(properties []*DvVariable) {
+	if properties == nil {
+		return
+	}
+	for _, v := range properties {
+		GlobalFunctionPool[string(v.Name)] = v
 	}
 }
 

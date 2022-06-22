@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvcom
 
@@ -519,6 +519,9 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 		lightHost := host
 		if posHost > 0 && posHost+1 < len(host) && host[posHost+1] >= '0' && host[posHost+1] <= '9' {
 			lightHost = host[:posHost]
+		}
+		if d, okey := hostServerInfo[host]; okey {
+			currentServer = d
 		}
 		if d, okey := hostServerInfo[lightHost]; okey {
 			currentServer = d

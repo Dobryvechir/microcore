@@ -20,6 +20,11 @@ const (
 	comment_HTML
 )
 
+const (
+	TemplateOptions    = "TEMPLATE_OPTIONS"
+	TemplateBaseFolder = "TEMPLATE_BASE_FOLDER"
+)
+
 func readOptionsInFileHeader(fileName string) (options map[byte]string, pos int, err error) {
 	f, err := os.Open(fileName)
 	if err != nil {
@@ -107,13 +112,35 @@ func readOptionsInFileHeader(fileName string) (options map[byte]string, pos int,
 	return
 }
 
+func templateOptionsAnalyze(options string) map[byte]string {
+	r := make(map[byte]string, 2)
+	if strings.Contains(options, "g") || strings.Contains(options, "G") {
+		r['g'] = "_"
+	}
+	if strings.Contains(options, "p") || strings.Contains(options, "P") {
+		r['p'] = "_"
+	}
+	return r
+}
+
+func calculateBaseFolder(baseFolder string, url string) string {
+	return baseFolder + url
+}
+
 func templateFileHandler(request *dvcontext.RequestContext) bool {
 	options, pos, err := readOptionsInFileHeader(request.FileName)
 	if err != nil || options == nil {
-		return false
+		if request.Params == nil || request.Params[TemplateOptions] == "" {
+			return false
+		}
+		options = templateOptionsAnalyze(request.Params[TemplateOptions])
 	}
 	env := request.GetEnvironment()
-    dat, err := dvparser.SmartReadLikeJsonTemplate(request.FileName, 3, env)
+	fileName := request.FileName
+	if request.Params != nil && request.Params[TemplateBaseFolder] != "" {
+		fileName = calculateBaseFolder(request.Params[TemplateBaseFolder], request.Url)
+	}
+	dat, err := dvparser.SmartReadLikeJsonTemplate(fileName, 3, env)
 	if err != nil {
 		request.Error = err
 		request.HandleInternalServerError()
@@ -124,9 +151,25 @@ func templateFileHandler(request *dvcontext.RequestContext) bool {
 	return true
 }
 
+func templateServerInitHandler(params []string) (map[string]string, error) {
+	n := len(params)
+	if n == 0 {
+		return nil, nil
+	}
+	r := make(map[string]string)
+	if params[0] != "" {
+		r[TemplateOptions] = params[0]
+	}
+	if n > 1 && params[1] != "" {
+		r[TemplateBaseFolder] = params[1]
+	}
+	return r, nil
+}
+
 var templateFileConfig *RegistrationConfig = &RegistrationConfig{
-	Name:            "template",
-	EndPointHandler: templateFileHandler,
+	Name:              "template",
+	EndPointHandler:   templateFileHandler,
+	ServerInitHandler: templateServerInitHandler,
 }
 
 var templateFileInited bool = RegisterProcessor(templateFileConfig, true)

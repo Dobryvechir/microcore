@@ -8,10 +8,77 @@ package dvjsmaster
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"net/url"
 	"strings"
 )
+
+var console_fns = []*dvevaluation.DvVariable{
+	{
+		Name: []byte("debug"),
+		Kind: dvevaluation.FIELD_FUNCTION,
+		Extra: &dvevaluation.DvFunction{
+			Fn: Window_console_log,
+		},
+	},
+	{
+		Name: []byte("error"),
+		Kind: dvevaluation.FIELD_FUNCTION,
+		Extra: &dvevaluation.DvFunction{
+			Fn: Window_console_log,
+		},
+	},
+	{
+		Name: []byte("info"),
+		Kind: dvevaluation.FIELD_FUNCTION,
+		Extra: &dvevaluation.DvFunction{
+			Fn: Window_console_log,
+		},
+	},
+	{
+		Name: []byte("log"),
+		Kind: dvevaluation.FIELD_FUNCTION,
+		Extra: &dvevaluation.DvFunction{
+			Fn: Window_console_log,
+		},
+	},
+	{
+		Name: []byte("trace"),
+		Kind: dvevaluation.FIELD_FUNCTION,
+		Extra: &dvevaluation.DvFunction{
+			Fn: Window_console_log,
+		},
+	},
+	{
+		Name: []byte("warn"),
+		Kind: dvevaluation.FIELD_FUNCTION,
+		Extra: &dvevaluation.DvFunction{
+			Fn: Window_console_log,
+		},
+	},
+	{
+		Name: []byte("timeLog"),
+		Kind: dvevaluation.FIELD_FUNCTION,
+		Extra: &dvevaluation.DvFunction{
+			Fn: Window_console_log,
+		},
+	},
+	{
+		Name: []byte("table"),
+		Kind: dvevaluation.FIELD_FUNCTION,
+		Extra: &dvevaluation.DvFunction{
+			Fn: Window_console_log,
+		},
+	},
+	{
+		Name: []byte("clear"),
+		Kind: dvevaluation.FIELD_FUNCTION,
+		Extra: &dvevaluation.DvFunction{
+			Fn: Window_console_log,
+		},
+	},
+}
 
 func window_init() {
 	dvevaluation.WindowMaster.Prototype = &dvevaluation.DvVariable{
@@ -43,6 +110,11 @@ func window_init() {
 				Extra: &dvevaluation.DvFunction{
 					Fn: Window_decodeURI,
 				},
+			},
+			{
+				Name:   []byte("console"),
+				Kind:   dvevaluation.FIELD_OBJECT,
+				Fields: console_fns,
 			},
 		},
 		Kind: dvevaluation.FIELD_OBJECT,
@@ -95,4 +167,19 @@ func Window_decodeURI(context *dvgrammar.ExpressionContext, thisVariable interfa
 	s := dvevaluation.AnyToString(params[0])
 	s, err := url.PathUnescape(s)
 	return s, err
+}
+
+func Window_console_log(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	r := ""
+	for i := 0; i < n; i++ {
+		s := dvevaluation.AnyToString(params[i])
+		if i == 0 {
+			r = s
+		} else {
+			r = r + " " + s
+		}
+	}
+	dvlog.Println(r, r)
+	return nil, nil
 }

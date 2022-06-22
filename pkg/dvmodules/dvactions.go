@@ -105,6 +105,7 @@ func FireAction(action *dvcontext.DvAction, request *dvcontext.RequestContext) b
 			request.HandleInternalServerError()
 			return true
 		}
+		request.StoreStoringSession()
 	}
 	return proc(request)
 }

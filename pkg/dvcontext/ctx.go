@@ -81,3 +81,9 @@ func (ctx *RequestContext) GetEnvironment() *dvevaluation.DvObject {
 	}
 	return ctx.PrimaryContextEnvironment
 }
+
+func (ctx *RequestContext) StoreStoringSession() {
+	if ctx.Session!=nil && ctx.PrimaryContextEnvironment!=nil {
+		ctx.PrimaryContextEnvironment.Set(ServerSessionStoringKey, ctx.Session)
+	}
+}

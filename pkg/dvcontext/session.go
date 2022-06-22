@@ -15,6 +15,9 @@ n - specifies option "l" must be without prefix
 
 id is a place where to find the session id
 */
+const (
+	ServerSessionStoringKey = "___SERVER__SESSION__STORING__KEY___"
+)
 
 type SessionActionRequest struct {
 	Prefix string   `json:"prefix"`
