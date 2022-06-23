@@ -14,7 +14,8 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("S=Good evening", "var L=S+'var'", "Good eveningvar", KindString)
+	testEvaluationSingle("S=AB", "S.0", "A", KindString)
+	testEvaluationSingle("", "D=[];D.0", "null", KindString)
 	showResume()
 }
 

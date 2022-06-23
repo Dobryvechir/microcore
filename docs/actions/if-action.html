@@ -5,6 +5,8 @@
    "condition": string, condition
    "then", call parameters (see below)
    "else", call parameters (see below)
+   "on_error": call parameters, in case of error in the condition
+   "error": int, http code of error to be thrown, overrides "on_error" if the code is in [400..600)
 }
 "then" and "else" have the parameters as follows:
 {

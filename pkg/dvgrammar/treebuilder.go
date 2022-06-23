@@ -103,6 +103,7 @@ func findClosingTag(tokens []Token, pos int) (int, error) {
 			if tag != buf[stackLen] {
 				return -1, errors.New("Expected " + string([]byte{buf[stackLen]}) + " but found " + string([]byte{tag}))
 			}
+			continue
 		} else {
 			continue
 		}
@@ -230,6 +231,25 @@ tokenRunner:
 				isOperator = true
 				i--
 			} else {
+				if value.DataType == TYPE_NUMBER && len(value.Value)>=2 && value.Value[0]=='.' {
+                    extraToken:=Token{
+						Row: value.Row,
+						Column: value.Column,
+						Place: value.Place,
+						Value: ".",
+						DataType: TYPE_CONTROL,
+					}
+					amount++
+					value.Value = value.Value[1:]
+					value.Column++
+					newTokens:=make([]Token, amount)
+					copy(newTokens[i+1:], tokens[i:])
+					copy(newTokens, tokens[:i])
+					newTokens[i] = extraToken
+					tokens = newTokens
+					i--
+					continue tokenRunner
+				}
 				fullTreeForestClean(forest, tree)
 				return nil, errorMessage("No operator between values", value)
 			}

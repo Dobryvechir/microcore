@@ -96,6 +96,8 @@ type ExecIfConfig struct {
 	Condition string          `json:"condition"`
 	Then      *ExecCallConfig `json:"then"`
 	Else      *ExecCallConfig `json:"else"`
+	OnError   *ExecCallConfig `json:"on_error"`
+	Error     int             `json:"error"`
 }
 
 func execIfInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -122,7 +124,15 @@ func execIfRun(data []interface{}) bool {
 func ExecIf(config *ExecIfConfig, ctx *dvcontext.RequestContext) bool {
 	res, err := ctx.LocalContextEnvironment.EvaluateBooleanExpression(config.Condition)
 	if err != nil {
-		dvlog.PrintlnError("Error in " + config.Condition)
+		if ctx.LogLevel >= dvlog.LogInfo {
+			dvlog.PrintfError("Error in %s: %v", config.Condition, err)
+		}
+		if config.Error >= 400 && config.Error < 600 {
+			message := err.Error()
+			ActionInternalException(config.Error, message, message, ctx)
+		} else if config.OnError != nil {
+			ExecCall(config.OnError, ctx)
+		}
 		return true
 	}
 	if res {
