@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvevaluation
@@ -18,7 +18,7 @@ func (fn *DvFunctionObject) ExecuteDvFunctionWithTreeArguments(args []*dvgrammar
 	interfaceArgs := make([]interface{}, n)
 	var err error
 	for i := 0; i < n; i++ {
-		interfaceArgs[i], err = args[i].ExecuteExpression(context)
+		_, interfaceArgs[i], err = args[i].ExecuteExpression(context)
 		if err != nil {
 			return nil, false, err
 		}

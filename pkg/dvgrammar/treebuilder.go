@@ -209,11 +209,27 @@ tokenRunner:
 				}
 				continue tokenRunner
 			}
-		} else if value.DataType != TYPE_OPERATOR {
-			operator = dataOperator
-			if value.DataType == TYPE_DATA && opt.VoidOperators[value.Value]!=0 {
+		} else if value.DataType == TYPE_OPERATOR {
+			if opt.Language != nil {
+				lang, isLang := opt.Language[operator]
+				if isLang {
+					if lang.AlwaysFirst && (current != tree || len(currentPreAttributes) != 0 || current.Value != nil || current.Operator != "") {
+						return nil, errors.New("Language operator " + operator + " must come at first place")
+					} else if !lang.AlwaysFirst && len(currentPreAttributes) != 0 {
+						return nil, errors.New("Language operator " + operator + " cannot be preceded by usual operators")
+					}
+					node := newNode(current, opt, nil)
+					current.Operator = operator
+					current.Children = append(current.Children, node)
+					current = node
+					continue tokenRunner
+				}
+			}
+		} else {
+			if value.DataType == TYPE_DATA && opt.VoidOperators[operator] != 0 {
 				continue tokenRunner
 			}
+			operator = dataOperator
 		}
 		properties, isOperator := opt.Operators[operator]
 		if !isOperator && (current.Children != nil || current.Value != nil) {
@@ -231,18 +247,18 @@ tokenRunner:
 				isOperator = true
 				i--
 			} else {
-				if value.DataType == TYPE_NUMBER && len(value.Value)>=2 && value.Value[0]=='.' {
-                    extraToken:=Token{
-						Row: value.Row,
-						Column: value.Column,
-						Place: value.Place,
-						Value: ".",
+				if value.DataType == TYPE_NUMBER && len(value.Value) >= 2 && value.Value[0] == '.' {
+					extraToken := Token{
+						Row:      value.Row,
+						Column:   value.Column,
+						Place:    value.Place,
+						Value:    ".",
 						DataType: TYPE_CONTROL,
 					}
 					amount++
 					value.Value = value.Value[1:]
 					value.Column++
-					newTokens:=make([]Token, amount)
+					newTokens := make([]Token, amount)
 					copy(newTokens[i+1:], tokens[i:])
 					copy(newTokens, tokens[:i])
 					newTokens[i] = extraToken
@@ -367,13 +383,27 @@ func placeTreeToForest(forest []*BuildNode, current *BuildNode, tree *BuildNode,
 	for current != nil && (current.Operator == "" || opt.Operators[current.Operator] != nil) {
 		current = current.Parent
 	}
-	if current != nil {
-		fullTreeForestClean(forest, tree)
-		return nil, errorMessage("Unexpected end of expression", &tokens[len(tokens)-1])
-	}
 	if len(currentPreAttributes) != 0 {
 		fullTreeForestClean(forest, tree)
 		return nil, errorMessage("Unexpected unary operator at the end of expression", &tokens[len(tokens)-1])
+	}
+	if current != nil {
+		if opt.Language != nil && opt.Language[current.Operator] != nil && current.Parent == nil {
+           if len(tree.Children)==0 {
+			   if opt.Language[current.Operator].MustHaveArgument {
+				   fullTreeForestClean(forest, tree)
+				   return nil, errorMessage("Operator "+current.Operator+" must have an argument", &tokens[len(tokens)-1])
+			   }
+		   } else {
+			   if !opt.Language[current.Operator].CanHaveArgument {
+				   fullTreeForestClean(forest, tree)
+				   return nil, errorMessage("Operator "+current.Operator+" must have no argument", &tokens[len(tokens)-1])
+			   }
+		   }
+		} else {
+			fullTreeForestClean(forest, tree)
+			return nil, errorMessage("Unexpected end of expression", &tokens[len(tokens)-1])
+		}
 	}
 	halfTreeClean(tree)
 	tree.Group = group

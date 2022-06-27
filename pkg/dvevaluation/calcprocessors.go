@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvevaluation
 
@@ -198,15 +198,17 @@ func ProcessorColon(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNo
 	if err != nil {
 		return nil, err
 	}
-	condition, err := condNode.ExecuteExpression(context)
+	_, condition, err := condNode.ExecuteExpression(context)
 	if err != nil {
 		return nil, err
 	}
 	right := AnyToBoolean(condition)
 	if right {
-		return tree.Children[0].ExecuteExpression(context)
+		_, val, err := tree.Children[0].ExecuteExpression(context)
+		return val, err
 	}
-	return tree.Children[1].ExecuteExpression(context)
+	_, val, err := tree.Children[1].ExecuteExpression(context)
+	return val, err
 }
 
 func GetLeftestQuestionNode(tree *dvgrammar.BuildNode) (*dvgrammar.BuildNode, error) {
@@ -248,15 +250,17 @@ func ProcessorQuestion(values []*dvgrammar.ExpressionValue, tree *dvgrammar.Buil
 }
 
 func CalculateTernaryOperator(condNode, node1, node2 *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext) (*dvgrammar.ExpressionValue, error) {
-	condition, err := condNode.ExecuteExpression(context)
+	_, condition, err := condNode.ExecuteExpression(context)
 	if err != nil {
 		return nil, err
 	}
 	right := AnyToBoolean(condition)
 	if right {
-		return node1.ExecuteExpression(context)
+		_, val, err := node1.ExecuteExpression(context)
+		return val, err
 	}
-	return node2.ExecuteExpression(context)
+	_, val, err := node2.ExecuteExpression(context)
+	return val, err
 }
 
 func ProcessorRightShift(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {

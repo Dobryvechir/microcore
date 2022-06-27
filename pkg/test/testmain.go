@@ -14,8 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("S=AB", "S.0", "A", KindString)
-	testEvaluationSingle("", "D=[];D.0", "null", KindString)
+	testEvaluationSingle("", "A=()=>{return 10};A()", "10", KindInteger)
 	showResume()
 }
 

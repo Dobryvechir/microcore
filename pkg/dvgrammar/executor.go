@@ -1,14 +1,15 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2017 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvgrammar
 
 import "errors"
 
-func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (*ExpressionValue, error) {
+func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *ExpressionValue, error) {
 	var value *ExpressionValue
 	var err error
+	var flow = 0
 	l := len(tree.Children)
 	var lastVarName string
 	var lastParent *ExpressionValue
@@ -16,21 +17,26 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (*Expressio
 		visitor, ok := context.Rules.Visitors[tree.Operator]
 		operator, ok1 := context.Rules.BaseGrammar.Operators[tree.Operator]
 		if !ok || !ok1 {
-			return nil, ErrorMessageForNode("Unexpected operator "+tree.Operator, tree, context)
+			langVisitor, ok:=context.Rules.LanguageOperator[tree.Operator]
+			if ok {
+			     flow, value, err = langVisitor(tree, context)
+				 return flow, value, err
+			}
+			return flow, nil, ErrorMessageForNode("Unexpected operator "+tree.Operator, tree, context)
 		}
 		var v []*ExpressionValue
 		if !operator.LazyLoadedOperands {
 			v = make([]*ExpressionValue, l)
 			for i := 0; i < l; i++ {
-				v[i], err = tree.Children[i].ExecuteExpression(context)
+				flow, v[i], err = tree.Children[i].ExecuteExpression(context)
 				if err != nil {
-					return nil, err
+					return flow, nil, err
 				}
 			}
 		}
 		value, err = visitor(v, tree, context, tree.Operator)
 		if err != nil {
-			return nil, ErrorMessageForNode(err.Error(), tree, context)
+			return flow, nil, ErrorMessageForNode(err.Error(), tree, context)
 		}
 	} else if tree.Value != nil {
 		value = nil
@@ -39,7 +45,7 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (*Expressio
 			lastVarName = tree.Value.Value
 			value, err = context.Rules.DataGetter(tree.Value, context)
 			if err != nil {
-				return value, err
+				return flow, value, err
 			}
 		}
 		if l > 0 {
@@ -50,7 +56,7 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (*Expressio
 		for _, vl := range tree.PostAttributes {
 			v, err := context.Rules.UnaryPostVisitors[vl](value, tree, context, vl, lastVarName, lastParent)
 			if err != nil {
-				return nil, err
+				return flow, nil, err
 			}
 			value = v
 		}
@@ -59,12 +65,12 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (*Expressio
 		for _, vl := range tree.PreAttributes {
 			v, err := context.Rules.UnaryPreVisitors[vl](value, tree, context, vl, lastVarName, lastParent)
 			if err != nil {
-				return nil, err
+				return flow, nil, err
 			}
 			value = v
 		}
 	}
-	return value, nil
+	return flow, value, nil
 }
 
 func ExecuteBracketExpression(parent *ExpressionValue, hasNoParent bool, nodes []*BuildNode, context *ExpressionContext) (*ExpressionValue, *ExpressionValue, error) {
@@ -98,7 +104,8 @@ func (tree *BuildNode) GetChildrenExpressionValue(childNo int, context *Expressi
 	if childNo < 0 || childNo >= len(tree.Children) {
 		return nil, ErrorMessageForNode("Children no is out of range", tree, context)
 	}
-	return tree.Children[childNo].ExecuteExpression(context)
+	_, val, err:=tree.Children[childNo].ExecuteExpression(context)
+	return val, err
 }
 
 func (tree *BuildNode) GetChildrenNumber() int {

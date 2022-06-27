@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvgrammar
 
@@ -36,6 +36,11 @@ const (
 	TYPE_MASK       = 0x7ff
 )
 
+const (
+	FLOW_NORMAL = iota
+	FLOW_RETURN
+)
+
 type Token struct {
 	DataType int
 	Row      int
@@ -54,6 +59,12 @@ type InterOperator struct {
 	Closing            string
 }
 
+type LanguageOperator struct {
+	AlwaysFirst      bool
+	CanHaveArgument  bool
+	MustHaveArgument bool
+}
+
 type UnaryOperator struct {
 	Post bool
 	Pre  bool
@@ -68,6 +79,7 @@ type GrammarBaseDefinition struct {
 	Operators       map[string]*InterOperator
 	UnaryOperators  map[string]*UnaryOperator
 	VoidOperators   map[string]int
+	Language        map[string]*LanguageOperator
 	DefaultOperator string
 }
 
@@ -83,7 +95,8 @@ type BuildNode struct {
 }
 
 type InterOperatorVisitor func([]*ExpressionValue, *BuildNode, *ExpressionContext, string) (*ExpressionValue, error)
-type BracketOperatorVisitor func(*ExpressionValue,*BuildNode, *ExpressionContext, []*BuildNode) (*ExpressionValue, *ExpressionValue, bool, error, bool)
+type BracketOperatorVisitor func(*ExpressionValue, *BuildNode, *ExpressionContext, []*BuildNode) (*ExpressionValue, *ExpressionValue, bool, error, bool)
+type LanguageOperatorVisitor func(*BuildNode, *ExpressionContext) (int, *ExpressionValue, error)
 
 type UnaryVisitor func(*ExpressionValue, *BuildNode, *ExpressionContext, string, string, *ExpressionValue) (*ExpressionValue, error)
 
@@ -112,6 +125,7 @@ type GrammarRuleDefinitions struct {
 	EvaluateOptions   int
 	Visitors          map[string]InterOperatorVisitor
 	BracketVisitor    map[string]BracketOperatorVisitor
+	LanguageOperator  map[string]LanguageOperatorVisitor
 	UnaryPostVisitors map[string]UnaryVisitor
 	UnaryPreVisitors  map[string]UnaryVisitor
 	DataGetter        func(*Token, *ExpressionContext) (*ExpressionValue, error)

@@ -26,7 +26,7 @@ func SquareBracketNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvg
 	for i := 0; i < n; i++ {
 		t := tree.Children[i]
 		if t != nil {
-			r, err := t.ExecuteExpression(context)
+			_, r, err := t.ExecuteExpression(context)
 			if err != nil {
 				return nil, nil, false, err, false
 			}
@@ -48,7 +48,7 @@ func SquareBracketParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgra
 	for i := 0; i < n; i++ {
 		t := tree.Children[i]
 		if t != nil {
-			_, err = t.ExecuteExpression(context)
+			_, _, err = t.ExecuteExpression(context)
 			if err != nil {
 				return
 			}
@@ -60,7 +60,7 @@ func SquareBracketParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgra
 	node := tree.Children[n]
 	node1, node2, ok := GetColumnSubNodes(node)
 	if ok {
-		value, err = node1.ExecuteExpression(context)
+		_, value, err = node1.ExecuteExpression(context)
 		if err != nil {
 			return
 		}
@@ -68,7 +68,7 @@ func SquareBracketParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgra
 		if !ok {
 			err = errors.New("First argument in [:] is not int: " + AnyToString(value))
 		}
-		value, err = node2.ExecuteExpression(context)
+		_, value, err = node2.ExecuteExpression(context)
 		if err != nil {
 			return
 		}
@@ -79,7 +79,7 @@ func SquareBracketParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgra
 		value, err = GetExpressionValueRange(parent, int(value1), int(value2))
 		return
 	}
-	value, err = node.ExecuteExpression(context)
+	_, value, err = node.ExecuteExpression(context)
 	if err != nil {
 		return
 	}
@@ -123,7 +123,7 @@ func CurlyBraceNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgram
 		return
 	}
 	for i := 0; i < n; i++ {
-		value, err = tree.Children[i].ExecuteExpression(context)
+		_, value, err = tree.Children[i].ExecuteExpression(context)
 		if err != nil {
 			break
 		}
@@ -161,7 +161,7 @@ func ConvertToObjectKeyPair(node *dvgrammar.BuildNode, context *dvgrammar.Expres
 	if node.Operator == ":" && len(node.Children) == 2 {
 		k := isSimpleKey(node.Children[0])
 		if k != "" {
-			v, err := node.Children[1].ExecuteExpression(context)
+			_, v, err := node.Children[1].ExecuteExpression(context)
 			if err != nil {
 				return nil, false, err
 			}
@@ -197,7 +197,7 @@ func CurlyBraceParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgramma
 func ParentheseNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (value *dvgrammar.ExpressionValue, parentValue *dvgrammar.ExpressionValue, toStop bool, err error, noNextParent bool) {
 	n := len(tree.Children)
 	for i := 0; i < n; i++ {
-		value, err = tree.Children[i].ExecuteExpression(context)
+		_, value, err = tree.Children[i].ExecuteExpression(context)
 		if err != nil {
 			break
 		}

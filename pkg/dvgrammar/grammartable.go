@@ -151,16 +151,16 @@ func addTokenControl(tokenMap *TokenMapType, key string, value string) {
 	b := tokenMap[c]
 	if b.IsCommon {
 		kind := b.Kind
-		recongnizers:=b.Recognizers
+		recongnizers := b.Recognizers
 		if kind == BYTE_ONLY_INSIDE_STRING {
 			kind = BYTE_OPERATOR
 			recongnizers = nil
 		}
 		b = &TokenBlock{
-			Kind:      kind,
-			Controls:  make([]map[string]string, n),
-			MaxWords:  maxWords,
-			MaxLength: n,
+			Kind:        kind,
+			Controls:    make([]map[string]string, n),
+			MaxWords:    maxWords,
+			MaxLength:   n,
 			Recognizers: recongnizers,
 		}
 		tokenMap[c] = b
@@ -202,11 +202,20 @@ func buildSpecificTokenTable(rules *GrammarRuleDefinitions) {
 			addTokenControl(tokenMap, k, k)
 		}
 	}
-	for k, _ := range rules.UnaryPreVisitors {
-		addTokenControl(tokenMap, k, k)
+	if rules.UnaryPreVisitors != nil {
+		for k, _ := range rules.UnaryPreVisitors {
+			addTokenControl(tokenMap, k, k)
+		}
 	}
-	for k, _ := range rules.UnaryPostVisitors {
-		addTokenControl(tokenMap, k, k)
+	if rules.UnaryPostVisitors != nil {
+		for k, _ := range rules.UnaryPostVisitors {
+			addTokenControl(tokenMap, k, k)
+		}
+	}
+	if rules.LanguageOperator != nil {
+		for k, _ := range rules.LanguageOperator {
+			addTokenControl(tokenMap, k, k)
+		}
 	}
 	for k, v := range rules.GrammarAliases {
 		_, ok := rules.Visitors[v]

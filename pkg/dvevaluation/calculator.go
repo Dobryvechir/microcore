@@ -82,6 +82,12 @@ var CalculatorUnaryMap = map[string]dvgrammar.UnaryVisitor{
 	"--": PreMinusMinusOperator,
 }
 
+var LanguageOperatorMap = map[string]dvgrammar.LanguageOperatorVisitor{
+	"return":   ReturnOperator,
+	"break":    ReturnOperator,
+	"continue": ReturnOperator,
+}
+
 var CalculatorPostUnaryMap = map[string]dvgrammar.UnaryVisitor{
 	"++": PostPlusPlusOperator,
 	"--": PostMinusMinusOperator,
@@ -90,6 +96,7 @@ var CalculatorPostUnaryMap = map[string]dvgrammar.UnaryVisitor{
 var CalculatorRules = &dvgrammar.GrammarRuleDefinitions{
 	Visitors:          CalculatorOperators,
 	BracketVisitor:    BracketProcessors,
+	LanguageOperator:  LanguageOperatorMap,
 	DataGetter:        CalculatorDataGetter,
 	EvaluateOptions:   0,
 	UnaryPreVisitors:  CalculatorUnaryMap,

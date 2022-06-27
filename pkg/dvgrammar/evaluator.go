@@ -45,15 +45,24 @@ func FastEvaluation(data []byte, context *ExpressionContext) (*ExpressionValue, 
 		return nil, err
 	}
 	var value *ExpressionValue
+	flow := 0
 	n := len(forest)
+forestTrack:
 	for i := 0; i < n; i++ {
 		tree := forest[i]
-		value, err = tree.ExecuteExpression(context)
-		if !cache {
-			fullTreeClean(tree)
-		}
+		flow, value, err = tree.ExecuteExpression(context)
 		if err != nil {
 			break
+		}
+		switch flow {
+		case FLOW_RETURN:
+			break forestTrack
+		}
+	}
+	if !cache {
+		for i := 0; i < n; i++ {
+			tree := forest[i]
+			fullTreeClean(tree)
 		}
 	}
 	return value, err
