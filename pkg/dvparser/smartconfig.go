@@ -310,7 +310,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 						if subStart+1 < subBlockLen && subBlock[subStart] == 'e' && subBlock[subStart+1] == 'f' && (subStart+2 >= subBlockLen || subBlock[subStart+2] <= 32) {
 							subStart += 2
 							var err error
-							bIfCondition, err = dvevaluation.IsDefined(subBlock[subStart:subBlockLen], configInfo.ParamMap, internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, 0)
+							bIfCondition, err = dvevaluation.IsDefined(subBlock[subStart:subBlockLen], dvevaluation.NewObjectStack(configInfo.ParamMap), internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, 0)
 							if err != nil {
 								configInfo.Err = err
 								return
@@ -319,7 +319,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 					} else if b3 == 'n' { //ifndef
 						if subStart+2 < subBlockLen && subBlock[subStart] == 'd' && subBlock[subStart+1] == 'e' && subBlock[subStart+2] == 'f' && (subStart+3 >= subBlockLen || subBlock[subStart+3] <= 32) {
 							subStart += 3
-							v, err := dvevaluation.IsDefined(subBlock[subStart:subBlockLen], configInfo.ParamMap, internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
+							v, err := dvevaluation.IsDefined(subBlock[subStart:subBlockLen], dvevaluation.NewObjectStack(configInfo.ParamMap), internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
 							if err != nil {
 								configInfo.Err = err
 							}
@@ -396,7 +396,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 								//elifdef
 								bIfCondition = -bIfCondition
 								if bIfCondition == IFELSE_NONEWIF+IFELSE_ELSE_RUN {
-									v, err := dvevaluation.IsDefined(subBlock[subStart+4:subBlockLen], configInfo.ParamMap, row, col, place, 0)
+									v, err := dvevaluation.IsDefined(subBlock[subStart+4:subBlockLen], dvevaluation.NewObjectStack(configInfo.ParamMap), row, col, place, 0)
 									if err != nil {
 										configInfo.Err = err
 										return
@@ -410,7 +410,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 								//elifndef
 								bIfCondition = -bIfCondition
 								if bIfCondition == IFELSE_NONEWIF+IFELSE_ELSE_RUN {
-									v, err := dvevaluation.IsDefined(subBlock[subStart+5:subBlockLen], configInfo.ParamMap, row, col, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
+									v, err := dvevaluation.IsDefined(subBlock[subStart+5:subBlockLen], dvevaluation.NewObjectStack(configInfo.ParamMap), row, col, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
 									if err != nil {
 										configInfo.Err = err
 										return

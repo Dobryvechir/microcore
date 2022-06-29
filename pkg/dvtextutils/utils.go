@@ -353,3 +353,21 @@ func CheckSimplePrefixedWordsWithDash(list []string, prefix string) bool {
 	}
 	return true
 }
+
+func IsValidVariableName(data string, uniAllowed bool) int {
+	n := len(data)
+	if n == 0 {
+		return 0
+	}
+	c := data[0]
+	if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_' || uniAllowed && c >= 128) {
+		return 0
+	}
+	for i := 1; i < n; i++ {
+		c = data[i]
+		if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || uniAllowed && c >= 128) {
+			return 0
+		}
+	}
+	return -1
+}

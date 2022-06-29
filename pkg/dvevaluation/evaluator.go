@@ -60,19 +60,19 @@ func NewDvObjectFrom2Maps(localMap map[string]string, globalMap map[string]strin
 }
 
 func Parse(data []byte, globalMap map[string]string, localMap map[string]string, row int, column int, place string) (r *EvaluateResult) {
-	params:=NewDvObjectFrom2Maps(localMap, globalMap)
+	params := NewDvObjectFrom2Maps(localMap, globalMap)
 	r = ParseForDvObject(data, params, row, column, place)
 	return r
 }
 
 func ParseForDvObjectShort(data string, params *DvObject) (interface{}, error) {
-	res:=ParseForDvObject([]byte(data), params, 1, 1, data)
+	res := ParseForDvObject([]byte(data), params, 1, 1, data)
 	return res.FinalResult, res.Err
 }
 
 func ParseForDvObjectString(data string, params *DvObject) (string, error) {
-	res, err:= ParseForDvObjectShort(data, params)
-	if err!=nil {
+	res, err := ParseForDvObjectShort(data, params)
+	if err != nil {
 		return "", err
 	}
 	return ConvertAnyTypeToJsonString(res), nil
@@ -108,10 +108,11 @@ func ParseForDvObject(data []byte, params *DvObject, row int, column int, place 
 		Column: column,
 		Place:  place,
 	}
-	ev, err := CalculatorEvaluator(data, params, ref, visitorOptions)
+	stack := NewObjectStack(params)
+	ev, err := CalculatorEvaluator(data, stack, ref, visitorOptions)
 	var res interface{}
 	if err == nil {
-		if ev==nil {
+		if ev == nil {
 			res = nil
 		} else {
 			res = ev.Value

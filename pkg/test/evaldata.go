@@ -162,5 +162,6 @@ func testEvaluation() {
 	testEvaluationSingle("I=3", "D=[{'value':'Good'}];return;'ABC'", "null", KindString)
 	testEvaluationSingle("I=3", "D=[{'value':'Good'}];return 24;'ABC'", "24", KindInteger)
 	testEvaluationSingle("I=3", "D=[{'value':'Good'}];return D[0].value[I];'ABC'", "d", KindString)
+	testEvaluationSingle("", "A=()=>{return 10};A()", "10", KindInteger)
 	showResume()
 }

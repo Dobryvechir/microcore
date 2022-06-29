@@ -73,6 +73,9 @@ type UnaryOperator struct {
 type ScopeInterface interface {
 	Get(key string) (interface{}, bool)
 	Set(key string, value interface{})
+	StackPush(option int)
+	StackPop()
+	SetDeep(key string, value interface{})
 }
 
 type GrammarBaseDefinition struct {

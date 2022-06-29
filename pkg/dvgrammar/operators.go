@@ -186,6 +186,10 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 		"NOT IN": &InterOperator{
 			Precedence: 16,
 		},
+		"=>": &InterOperator{
+			Precedence: 18,
+			Multi:      true,
+		},
 		"(": &InterOperator{
 			Precedence: 19,
 			Closing:    ")",

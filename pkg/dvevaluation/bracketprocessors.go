@@ -209,9 +209,6 @@ func ParentheseParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgramma
 	if parent == nil || parent.Value == nil {
 		return nil, nil, false, errors.New("Cannot execute function of null"), false
 	}
-	if parent.DataType != dvgrammar.TYPE_FUNCTION && parent.DataType != dvgrammar.TYPE_OBJECT {
-		return nil, nil, false, fmt.Errorf("Value of %v is not a function", parent), false
-	}
 	switch parent.Value.(type) {
 	case *DvVariable:
 		dv := parent.Value.(*DvVariable)
@@ -232,7 +229,16 @@ func ParentheseParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgramma
 				return
 			}
 		}
-
+	case *CustomJsFunction:
+		cf:=parent.Value.(*CustomJsFunction)
+		context.Scope.StackPush(cf.Options)
+		err=PutVariablesInScope(cf.Params, tree.Children, context)
+		if err==nil {
+			value, err = dvgrammar.BuildNodeExecution(cf.Body, context)
+		}
+		context.Scope.StackPop()
+		parentValue = parent
+		return
 	}
 	return nil, nil, false, fmt.Errorf("Value of %v is not a function", parent.Value), false
 }

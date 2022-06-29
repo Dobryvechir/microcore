@@ -14,7 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("", "A=()=>{return 10};A()", "10", KindInteger)
+	testEvaluationSingle("", "A=(first,second)=>{return first*second+1};A(5,4)", "21", KindInteger)
 	showResume()
 }
 

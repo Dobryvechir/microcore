@@ -86,6 +86,7 @@ var LanguageOperatorMap = map[string]dvgrammar.LanguageOperatorVisitor{
 	"return":   ReturnOperator,
 	"break":    ReturnOperator,
 	"continue": ReturnOperator,
+	"=>": ArrowFunctionOperator,
 }
 
 var CalculatorPostUnaryMap = map[string]dvgrammar.UnaryVisitor{
