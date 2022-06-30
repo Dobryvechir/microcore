@@ -59,12 +59,16 @@ func GetFunctionParameterList(tree *dvgrammar.BuildNode) ([]string, error) {
 		if pos >= 0 {
 			return nil, fmt.Errorf("Bad variable name %s at %d", p, pos)
 		}
+		res[i] = p
 	}
 	return res, nil
 }
 
 func ExtractPureName(tree *dvgrammar.BuildNode) (string, error) {
-	return "", nil
+	if tree == nil || tree.Value == nil || tree.Value.DataType != dvgrammar.TYPE_DATA && tree.Value.DataType != dvgrammar.TYPE_STRING {
+		return "", errors.New("Parameter name required")
+	}
+	return tree.Value.Value, nil
 }
 
 func GetFunctionCodeList(tree *dvgrammar.BuildNode) ([]*dvgrammar.BuildNode, error) {
@@ -78,20 +82,66 @@ func GetFunctionCodeList(tree *dvgrammar.BuildNode) ([]*dvgrammar.BuildNode, err
 	return tree.Children, nil
 }
 
-func PutVariablesInScope(params []string, nodes []*dvgrammar.BuildNode, context *dvgrammar.ExpressionContext) error {
-	n := len(params)
-	m := len(nodes)
-	var v *dvgrammar.ExpressionValue
+func CalculateAllNodeParams(args []*dvgrammar.BuildNode, context *dvgrammar.ExpressionContext) ([]interface{}, error) {
+	n := len(args)
+	interfaceArgs := make([]interface{}, n)
 	var err error
+	for i := 0; i < n; i++ {
+		_, interfaceArgs[i], err = args[i].ExecuteExpression(context)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return interfaceArgs, nil
+}
+
+func PutVariablesInScope(params []string, args []interface{}, context *dvgrammar.ExpressionContext) error {
+	n := len(params)
+	m := len(args)
+	var v interface{}
 	for i := 0; i < n; i++ {
 		v = nil
 		if i < m {
-			_, v, err = nodes[i].ExecuteExpression(context)
-			if err != nil {
-				return err
-			}
+			v = args[i]
 		}
 		context.Scope.Set(params[i], v)
 	}
 	return nil
+}
+
+func ExecuteAnyFunction(context *dvgrammar.ExpressionContext, fn interface{}, thisArg interface{}, args []interface{}) (value interface{}, err error) {
+	switch fn.(type) {
+	case *DvVariable:
+		dv := fn.(*DvVariable)
+		if dv.Kind == FIELD_FUNCTION && dv.Extra != nil {
+			switch dv.Extra.(type) {
+			case *DvFunctionObject:
+				value, err = dv.Extra.(*DvFunctionObject).ExecuteDvFunctionWithTreeArguments(args, context)
+				return
+			case *DvFunction:
+				functionObject := &DvFunctionObject{
+					SelfRef:  thisArg,
+					Context:  context,
+					Executor: dv.Extra.(*DvFunction),
+				}
+				value, err = functionObject.ExecuteDvFunctionWithTreeArguments(args, context)
+				return
+			}
+		}
+	case *CustomJsFunction:
+		cf := fn.(*CustomJsFunction)
+		context.Scope.StackPush(cf.Options)
+		err = PutVariablesInScope(cf.Params, args, context)
+		if err == nil {
+			value, err = dvgrammar.BuildNodeExecution(cf.Body, context)
+		}
+		context.Scope.StackPop()
+		return
+	case *dvgrammar.ExpressionValue:
+		dvg := fn.(*dvgrammar.ExpressionValue)
+		if dvg != nil && dvg.DataType == dvgrammar.TYPE_FUNCTION && dvg.Value != nil {
+			return ExecuteAnyFunction(context, dvg.Value, thisArg, args)
+		}
+	}
+	return nil, fmt.Errorf("Value of %v is not a function", fn)
 }

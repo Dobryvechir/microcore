@@ -53,7 +53,7 @@ func testEvaluationSingle(vars string, expr string, result string, resultKind by
 	}
 	if resultKind != KindANY {
 		y := evaluateKind(res, resultKind)
-		if y != resultKind {
+		if y != resultKind && !(resultKind==KindFloat && y==KindInteger) {
 			fmt.Printf("Wanted [%v] but [%v] expr=[%s] var=[%s] result=[%s]\n", resultKind, y, expr, vars, s)
 			return
 		}

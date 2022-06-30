@@ -460,6 +460,8 @@ func AnyToDvGrammarExpressionValue(v interface{}) *dvgrammar.ExpressionValue {
 		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}
 	}
 	switch v.(type) {
+	case *dvgrammar.ExpressionValue:
+		return v.(*dvgrammar.ExpressionValue)
 	case string:
 		return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_STRING}
 	case *DvVariable:
@@ -474,6 +476,10 @@ func AnyToDvGrammarExpressionValue(v interface{}) *dvgrammar.ExpressionValue {
 		return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_BOOLEAN}
 	case nil:
 		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL}
+	case *DvObject:
+		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_OBJECT, Value: v}
+	case *CustomJsFunction:
+		return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_FUNCTION, Value: v}
 	default:
 		d := AnyToDvVariable(v)
 		if d != nil {

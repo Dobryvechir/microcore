@@ -149,7 +149,7 @@ func testEvaluation() {
 	testEvaluationSingle("S=Good evening", "var D=[S,S,S];D.0", "Good evening", KindString)
 	testEvaluationSingle("S=Good evening", "var D=[S,S,S];D.0.3", "d", KindString)
 	testEvaluationSingle("S=Good evening", "var D=[{'p':45},S,S];D.0.p", "45", KindInteger)
-	testEvaluationSingle("S=Good", "D=null;(D.0 && D.0.value || {})[S] || []", "[]", KindString)
+	testEvaluationSingle("S=Good", "D=null;(D && D.0 && D.0.value || {})[S] || []", "[]", KindString)
 	testEvaluationSingle("S=Good", "D=[];(D.0 && D.0.value || {})[S] || []", "[]", KindString)
 	testEvaluationSingle("S=Good", "D=[{'p':S}];(D.0 && D.0.value || {})[S] || []", "[]", KindString)
 	testEvaluationSingle("I=3", "D=[{'value':'Good'}];(D.0 && D.0.value || {})[I] || []", "d", KindString)
@@ -163,5 +163,9 @@ func testEvaluation() {
 	testEvaluationSingle("I=3", "D=[{'value':'Good'}];return 24;'ABC'", "24", KindInteger)
 	testEvaluationSingle("I=3", "D=[{'value':'Good'}];return D[0].value[I];'ABC'", "d", KindString)
 	testEvaluationSingle("", "A=()=>{return 10};A()", "10", KindInteger)
+	testEvaluationSingle("", "A=(first,second)=>{return first*second+1};A(5,4)", "21", KindInteger)
+	testEvaluationSingle("I=3", "A=(val)=>{return val*val+I};A(3)+A(4)", "31", KindInteger)
+	testEvaluationSingle("", "S=2;val=5;A=(val)=>{S=200;return val*val};A(val-4)+val+S", "206", KindInteger)
+	testEvaluationSingle("", "S=[1,2,3,4];initial=5;S.reduce((previous,current)=>{previous+current},initial)", "15", KindInteger)
 	showResume()
 }

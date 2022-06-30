@@ -134,8 +134,8 @@ func CurlyBraceNoParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgram
 }
 
 func isSimpleKey(node *dvgrammar.BuildNode) string {
-	if node.Operator=="" && len(node.Children)==0 && node.Value!=nil {
-		if node.Value.DataType==dvgrammar.TYPE_STRING || node.Value.DataType==dvgrammar.TYPE_DATA {
+	if node.Operator == "" && len(node.Children) == 0 && node.Value != nil {
+		if node.Value.DataType == dvgrammar.TYPE_STRING || node.Value.DataType == dvgrammar.TYPE_DATA {
 			return node.Value.Value
 		}
 	}
@@ -209,38 +209,24 @@ func ParentheseParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgramma
 	if parent == nil || parent.Value == nil {
 		return nil, nil, false, errors.New("Cannot execute function of null"), false
 	}
-	switch parent.Value.(type) {
-	case *DvVariable:
-		dv := parent.Value.(*DvVariable)
-		if dv.Kind == FIELD_FUNCTION && dv.Extra != nil {
-			switch dv.Extra.(type) {
-			case *DvFunctionObject:
-				value, toStop, err = dv.Extra.(*DvFunctionObject).ExecuteDvFunctionWithTreeArguments(tree.Children, context, rest)
-				parentValue = parent
-				return
-			case *DvFunction:
-				functionObject := &DvFunctionObject{
-					SelfRef:  nil,
-					Context:  context,
-					Executor: dv.Extra.(*DvFunction),
-				}
-				value, toStop, err = functionObject.ExecuteDvFunctionWithTreeArguments(tree.Children, context, rest)
-				parentValue = parent
-				return
-			}
+	if dv, isDv := parent.Value.(*DvVariable); isDv && dv != nil && dv.Kind == FIELD_FUNCTION && dv.Extra != nil {
+		if dvf, isDvf := dv.Extra.(*DvFunctionObject); isDvf && dvf != nil && dvf.Executor != nil && dvf.Executor.Special {
+			value, toStop, err = dvf.Executor.FnSpecial(tree.Children, context, rest)
+			return
 		}
-	case *CustomJsFunction:
-		cf:=parent.Value.(*CustomJsFunction)
-		context.Scope.StackPush(cf.Options)
-		err=PutVariablesInScope(cf.Params, tree.Children, context)
-		if err==nil {
-			value, err = dvgrammar.BuildNodeExecution(cf.Body, context)
-		}
-		context.Scope.StackPop()
+	}
+	args, err := CalculateAllNodeParams(tree.Children, context)
+	if err != nil {
+		return
+	}
+	var val interface{}
+	val, err = ExecuteAnyFunction(context, parent.Value, nil, args)
+	if err == nil {
+		value = AnyToDvGrammarExpressionValue(val)
 		parentValue = parent
 		return
 	}
-	return nil, nil, false, fmt.Errorf("Value of %v is not a function", parent.Value), false
+	return nil, nil, false, err, false
 }
 
 func GetExpressionValueRange(value *dvgrammar.ExpressionValue, indexFrom int, indexTo int) (*dvgrammar.ExpressionValue, error) {

@@ -10,28 +10,16 @@ import "github.com/Dobryvechir/microcore/pkg/dvgrammar"
 var dvgrammarTypePrototyper map[int]*DvObject
 var dvvariableTypePrototyper map[int]*DvObject
 
-func (fn *DvFunctionObject) ExecuteDvFunctionWithTreeArguments(args []*dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, rest []*dvgrammar.BuildNode) (*dvgrammar.ExpressionValue, bool, error) {
-	if fn.Executor.Special {
-		return fn.Executor.FnSpecial(args, context, rest)
-	}
-	n := len(args)
-	interfaceArgs := make([]interface{}, n)
-	var err error
-	for i := 0; i < n; i++ {
-		_, interfaceArgs[i], err = args[i].ExecuteExpression(context)
-		if err != nil {
-			return nil, false, err
-		}
-	}
-	vl, err := fn.Executor.Fn(context, fn.SelfRef, interfaceArgs)
+func (fn *DvFunctionObject) ExecuteDvFunctionWithTreeArguments(args []interface{}, context *dvgrammar.ExpressionContext) (*dvgrammar.ExpressionValue, error) {
+	vl, err := fn.Executor.Fn(context, fn.SelfRef, args)
 	value := AnyToDvGrammarExpressionValue(vl)
-	return value, false, err
+	return value, err
 }
 
 func GetFunctionObjectVariable(fn *DvFunction, selfVal *dvgrammar.ExpressionValue, context *dvgrammar.ExpressionContext) (*dvgrammar.ExpressionValue, error) {
 	fnObj := &DvFunctionObject{SelfRef: selfVal, Context: context, Executor: fn}
 	if fn.Immediate {
-		vl, _, err := fnObj.ExecuteDvFunctionWithTreeArguments(nil, context, nil)
+		vl, err := fnObj.ExecuteDvFunctionWithTreeArguments(nil, context)
 		return vl, err
 	}
 	dv := &DvVariable{Kind: FIELD_FUNCTION, Extra: fnObj}

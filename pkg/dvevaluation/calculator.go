@@ -20,7 +20,11 @@ func CalculatorDataGetter(token *dvgrammar.Token, context *dvgrammar.ExpressionC
 			if !ok {
 				return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL, Name: name}, errors.New(token.Value + " is not defined")
 			}
-			return &dvgrammar.ExpressionValue{Value: v, DataType: AnyGetType(v), Name: name}, nil
+			rv:=AnyToDvGrammarExpressionValue(v)
+			if rv!=nil {
+				rv.Name = name
+			}
+			return rv, nil
 		}
 	}
 	var v interface{} = token.Value
@@ -106,7 +110,7 @@ var CalculatorRules = &dvgrammar.GrammarRuleDefinitions{
 
 func SetNodeValue(tree *dvgrammar.BuildNode, v interface{}, dataType int, context *dvgrammar.ExpressionContext, lastVarName string, lastParent *dvgrammar.ExpressionValue) error {
 	if lastVarName != "" {
-		context.Scope.Set(lastVarName, v)
+		context.Scope.SetDeep(lastVarName, v)
 	}
 	return nil
 }

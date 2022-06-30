@@ -14,24 +14,31 @@ func array_init() {
 	dvevaluation.ArrayMaster.Prototype = &dvevaluation.DvVariable{
 		Fields: []*dvevaluation.DvVariable{
 			{
+				Name: []byte("reduce"),
+				Kind: dvevaluation.FIELD_FUNCTION,
+				Extra: &dvevaluation.DvFunction{
+					Fn: Array_reduce,
+				},
+			},
+			{
 				Name: []byte("push"),
 				Kind: dvevaluation.FIELD_FUNCTION,
-				Extra:   &dvevaluation.DvFunction {
+				Extra: &dvevaluation.DvFunction{
 					Fn: Array_push,
 				},
 			},
 			{
 				Name: []byte("slice"),
 				Kind: dvevaluation.FIELD_FUNCTION,
-				Extra: &dvevaluation.DvFunction {
+				Extra: &dvevaluation.DvFunction{
 					Fn: Array_slice,
 				},
 			},
 			{
 				Name: []byte("length"),
 				Kind: dvevaluation.FIELD_FUNCTION,
-				Extra: &dvevaluation.DvFunction {
-					Fn: Array_length,
+				Extra: &dvevaluation.DvFunction{
+					Fn:        Array_length,
 					Immediate: true,
 				},
 			},
@@ -49,10 +56,32 @@ func Array_slice(context *dvgrammar.ExpressionContext, thisVariable interface{},
 }
 
 func Array_length(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	v:=dvevaluation.AnyToDvVariable(thisVariable)
-	n:=0
-	if v!=nil {
-		n=len(v.Fields)
+	v := dvevaluation.AnyToDvVariable(thisVariable)
+	n := 0
+	if v != nil {
+		n = len(v.Fields)
 	}
 	return n, nil
+}
+
+func Array_reduce(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	v := dvevaluation.AnyToDvVariable(thisVariable)
+	var result interface{} = nil
+	n := len(params)
+	if n >= 2 {
+		result = params[1]
+	}
+	if n >= 1 && v != nil && len(v.Fields) > 0 {
+		fn := params[0]
+		var err error
+		m:=len(v.Fields)
+		for i := 0; i < m; i++ {
+			fnParams := []interface{}{result, v.Fields[i], i, v}
+			result, err = dvevaluation.ExecuteAnyFunction(context, fn, v, fnParams)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return result, nil
 }

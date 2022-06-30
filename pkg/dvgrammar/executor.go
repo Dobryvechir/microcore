@@ -50,6 +50,9 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 		}
 		if l > 0 {
 			value, lastParent, err = ExecuteBracketExpression(value, hasNoParent, tree.Children, context)
+			if err != nil {
+				return flow, value, err
+			}
 		}
 	}
 	if len(tree.PostAttributes) != 0 {
