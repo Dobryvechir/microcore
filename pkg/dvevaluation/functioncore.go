@@ -133,7 +133,7 @@ func ExecuteAnyFunction(context *dvgrammar.ExpressionContext, fn interface{}, th
 		context.Scope.StackPush(cf.Options)
 		err = PutVariablesInScope(cf.Params, args, context)
 		if err == nil {
-			value, err = dvgrammar.BuildNodeExecution(cf.Body, context)
+			_, value, err = dvgrammar.BuildNodeExecution(cf.Body, context)
 		}
 		context.Scope.StackPop()
 		return

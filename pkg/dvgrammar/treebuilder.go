@@ -389,17 +389,33 @@ func placeTreeToForest(forest []*BuildNode, current *BuildNode, tree *BuildNode,
 	}
 	if current != nil {
 		if opt.Language != nil && opt.Language[current.Operator] != nil && current.Parent == nil {
-           if len(tree.Children)==0 {
-			   if opt.Language[current.Operator].MustHaveArgument {
-				   fullTreeForestClean(forest, tree)
-				   return nil, errorMessage("Operator "+current.Operator+" must have an argument", &tokens[len(tokens)-1])
-			   }
-		   } else {
-			   if !opt.Language[current.Operator].CanHaveArgument {
-				   fullTreeForestClean(forest, tree)
-				   return nil, errorMessage("Operator "+current.Operator+" must have no argument", &tokens[len(tokens)-1])
-			   }
-		   }
+			if len(tree.Children) == 0 {
+				if opt.Language[current.Operator].MustHaveArgument {
+					fullTreeForestClean(forest, tree)
+					return nil, errorMessage("Operator "+current.Operator+" must have an argument", &tokens[len(tokens)-1])
+				}
+				if opt.Language[current.Operator].ParenthesesFollow {
+					fullTreeForestClean(forest, tree)
+					return nil, errorMessage("Operator "+current.Operator+" must be followed by parentheses", &tokens[len(tokens)-1])
+				}
+			} else {
+				if opt.Language[current.Operator].ParenthesesFollow {
+					n := len(tree.Children[0].Children)
+					if n == 0 || tree.Children[0].Children[0] == nil || tree.Children[0].Children[0].Operator != "(" {
+						fullTreeForestClean(forest, tree)
+						return nil, errorMessage("Operator "+current.Operator+" must be followed by parentheses", &tokens[len(tokens)-1])
+					}
+					if opt.Language[current.Operator].CurlyBracesFollowParentheses {
+						if n < 2 || tree.Children[0].Children[1] == nil || tree.Children[0].Children[1].Operator != "{" {
+							fullTreeForestClean(forest, tree)
+							return nil, errorMessage("In operator "+current.Operator+" parentheses must be followed by curly brackets", &tokens[len(tokens)-1])
+						}
+					}
+				} else if !opt.Language[current.Operator].CanHaveArgument {
+					fullTreeForestClean(forest, tree)
+					return nil, errorMessage("Operator "+current.Operator+" must have no argument", &tokens[len(tokens)-1])
+				}
+			}
 		} else {
 			fullTreeForestClean(forest, tree)
 			return nil, errorMessage("Unexpected end of expression", &tokens[len(tokens)-1])

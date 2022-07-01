@@ -60,9 +60,11 @@ type InterOperator struct {
 }
 
 type LanguageOperator struct {
-	AlwaysFirst      bool
-	CanHaveArgument  bool
-	MustHaveArgument bool
+	AlwaysFirst                  bool
+	CanHaveArgument              bool
+	MustHaveArgument             bool
+	ParenthesesFollow            bool
+	CurlyBracesFollowParentheses bool
 }
 
 type UnaryOperator struct {

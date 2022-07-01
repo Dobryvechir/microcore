@@ -20,8 +20,8 @@ func CalculatorDataGetter(token *dvgrammar.Token, context *dvgrammar.ExpressionC
 			if !ok {
 				return &dvgrammar.ExpressionValue{DataType: dvgrammar.TYPE_NULL, Name: name}, errors.New(token.Value + " is not defined")
 			}
-			rv:=AnyToDvGrammarExpressionValue(v)
-			if rv!=nil {
+			rv := AnyToDvGrammarExpressionValue(v)
+			if rv != nil {
 				rv.Name = name
 			}
 			return rv, nil
@@ -90,7 +90,8 @@ var LanguageOperatorMap = map[string]dvgrammar.LanguageOperatorVisitor{
 	"return":   ReturnOperator,
 	"break":    ReturnOperator,
 	"continue": ReturnOperator,
-	"=>": ArrowFunctionOperator,
+	"=>":       ArrowFunctionOperator,
+	"for":      ForCycleOperator,
 }
 
 var CalculatorPostUnaryMap = map[string]dvgrammar.UnaryVisitor{

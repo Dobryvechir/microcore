@@ -45,7 +45,7 @@ func FastEvaluation(data []byte, context *ExpressionContext) (*ExpressionValue, 
 		return nil, err
 	}
 	var value *ExpressionValue
-	value, err = BuildNodeExecution(forest, context)
+	_, value, err = BuildNodeExecution(forest, context)
 	n:=len(forest)
 	if !cache {
 		for i := 0; i < n; i++ {
@@ -56,8 +56,8 @@ func FastEvaluation(data []byte, context *ExpressionContext) (*ExpressionValue, 
 	return value, err
 }
 
-func BuildNodeExecution(nodes []*BuildNode, context *ExpressionContext) (value *ExpressionValue,err error) {
-	flow := 0
+func BuildNodeExecution(nodes []*BuildNode, context *ExpressionContext) (flow int, value *ExpressionValue,err error) {
+	flow = FLOW_NORMAL
 	n := len(nodes)
 forestTrack:
 	for i := 0; i < n; i++ {
@@ -71,5 +71,5 @@ forestTrack:
 			break forestTrack
 		}
 	}
-	return value, err
+	return
 }
