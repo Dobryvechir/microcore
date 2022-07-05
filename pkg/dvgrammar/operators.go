@@ -291,6 +291,7 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			MustHaveArgument:             false,
 			ParenthesesFollow:            true,
 			CurlyBracesFollowParentheses: true,
+			FeatureOptions:               FEATURE_ROUND_BRACKET | FEATURE_CURLY_BRACKETS_OR_CODE | FEATURE_FINISH,
 		},
 		"if": {
 			AlwaysFirst:                  true,
@@ -298,6 +299,7 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			MustHaveArgument:             false,
 			ParenthesesFollow:            true,
 			CurlyBracesFollowParentheses: true,
+			FeatureOptions:               FEATURE_ROUND_BRACKET | FEATURE_CURLY_BRACKETS_OR_CODE | FEATURE_FINISH_OR_ELSE,
 		},
 		"else": {
 			AlwaysFirst:      false,

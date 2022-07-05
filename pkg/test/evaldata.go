@@ -1,3 +1,8 @@
+/***********************************************************************
+MicroCore
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+************************************************************************/
+
 package main
 
 func testEvaluation() {
@@ -174,5 +179,6 @@ func testEvaluation() {
 	testEvaluationSingle("I=3", "B=0;if (I<3) {B=4} else {B=5};B", "5", KindInteger)
 	testEvaluationSingle("", "A={'a':'b','c':'d'};B='';for(xx in A){B+=xx;if (xx=='a') {break}};B", "a", KindString)
 	testEvaluationSingle("", "A={'a':'b','c':'d'};B='';for(xx in A){if (xx=='a') {continue};B+=xx;};B", "c", KindString)
+	proveErrors()
 	showResume()
 }

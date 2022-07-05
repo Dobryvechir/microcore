@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package main
@@ -53,12 +53,37 @@ func testEvaluationSingle(vars string, expr string, result string, resultKind by
 	}
 	if resultKind != KindANY {
 		y := evaluateKind(res, resultKind)
-		if y != resultKind && !(resultKind==KindFloat && y==KindInteger) {
+		if y != resultKind && !(resultKind == KindFloat && y == KindInteger) {
 			fmt.Printf("Wanted [%v] but [%v] expr=[%s] var=[%s] result=[%s]\n", resultKind, y, expr, vars, s)
 			return
 		}
 	}
 	successful++
+}
+
+func checkError(expr string, result string, mode int) {
+	tested++
+	_, err := env.EvaluateAnyTypeExpression(expr)
+	if err == nil {
+		fmt.Printf("Must be error [%s] but nothing detected in expr=[%s]\n", result, expr)
+		return
+	}
+	s := err.Error()
+	res := s == result
+	if !res {
+		if mode == 1 {
+			res = strings.HasPrefix(s, result)
+		}
+	}
+	if !res {
+		fmt.Printf("Expected error [%s] but [%s] in expr=[%s]\n", result, s, expr)
+		return
+	}
+	successful++
+}
+
+func checkErrorPref(expr string, result string) {
+	checkError(expr, result, 1)
 }
 
 func initEnvironment() {

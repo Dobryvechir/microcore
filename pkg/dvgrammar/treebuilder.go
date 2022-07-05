@@ -64,6 +64,27 @@ func indexOfNode(nodes []*BuildNode, node *BuildNode) int {
 	return -1
 }
 
+func findEndingTag(tokens []Token, pos int) (int, error) {
+	n := len(tokens)
+	for pos++; pos < n; pos++ {
+		if len(tokens[pos].Value) == 0 || tokens[pos].DataType != TYPE_CONTROL {
+			continue
+		}
+		tag := tokens[pos].Value[0]
+		if tag == ';' {
+			return pos, nil
+		}
+		if tag == '(' || tag == '[' || tag == '{' {
+			p, err := findClosingTag(tokens, pos)
+			if err != nil {
+				return -1, err
+			}
+			pos = p
+		}
+	}
+	return n, nil
+}
+
 func findClosingTag(tokens []Token, pos int) (int, error) {
 	n := len(tokens)
 	var buf []byte
@@ -82,7 +103,7 @@ func findClosingTag(tokens []Token, pos int) (int, error) {
 	var nextClosing byte
 	var stackLen = 0
 	for pos++; pos < n; pos++ {
-		if len(tokens[pos].Value) == 0 {
+		if len(tokens[pos].Value) == 0 || tokens[pos].DataType != TYPE_CONTROL {
 			continue
 		}
 		tag = tokens[pos].Value[0]
@@ -120,6 +141,31 @@ func findClosingTag(tokens []Token, pos int) (int, error) {
 	return -1, errors.New("No closing tag " + string([]byte{closing}))
 }
 
+func envelopWithCurlyBrackets(tokens []Token, pos int) ([]Token, error) {
+	p, err := findEndingTag(tokens, pos)
+	amount := len(tokens)
+	if err != nil {
+		return nil, err
+	}
+	newTokens := make([]Token, amount+2)
+	copy(newTokens, tokens[:pos])
+	newTokens[pos] = Token{
+		DataType: TYPE_CONTROL,
+		Value:    "{",
+	}
+	if p > pos {
+		copy(newTokens[pos+1:], tokens[pos:p])
+	}
+	newTokens[p+1] = Token{
+		DataType: TYPE_CONTROL,
+		Value:    "}",
+	}
+	if p < amount {
+		copy(newTokens[p+2:], tokens[p:])
+	}
+	return newTokens, nil
+}
+
 func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (forest []*BuildNode, err error) {
 	forest = make([]*BuildNode, 0, 16)
 	currentPreAttributes := make([]string, 0, 16)
@@ -127,21 +173,84 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (forest []*
 	current := tree
 	amount := len(tokens)
 	group := 0
-	features:= 0
+	features := 0
 tokenRunner:
 	for i := 0; i < amount; i++ {
 		value := &tokens[i]
 		operator := value.Value
-		if features!=0 {
-			if (features & FEATURE_ROUND_BRACKET)!=0 {
+		if features != 0 {
+			if (features & FEATURE_ROUND_BRACKET) != 0 {
 				features ^= FEATURE_ROUND_BRACKET
-				if operator!="(" {
+				if operator != "(" {
 					fullTreeForestClean(forest, tree)
-					w:=operator
-					if w=="" {
+					w := operator
+					if w == "" {
 						w = " no operator at all"
 					}
-					return nil, errors.New("Expected ( but found "+w)
+					return nil, errorMessage("Expected ( but found "+w, value)
+				}
+			} else if (features & FEATURE_CURLY_BRACKETS) != 0 {
+				features ^= FEATURE_CURLY_BRACKETS
+				if operator != "{" {
+					fullTreeForestClean(forest, tree)
+					w := operator
+					if w == "" {
+						w = " no operator at all"
+					}
+					return nil, errorMessage("Expected { but found "+w, value)
+				}
+			} else if (features & FEATURE_CURLY_BRACKETS_OR_CODE) != 0 {
+				features ^= FEATURE_CURLY_BRACKETS_OR_CODE
+				if operator != "{" {
+					tokens, err = envelopWithCurlyBrackets(tokens, i)
+					if err != nil {
+						fullTreeForestClean(forest, tree)
+						return nil, err
+					}
+					amount = len(tokens)
+					value = &tokens[i]
+					operator = value.Value
+				}
+			} else if (features & FEATURE_FINISH_OR_ELSE) != 0 {
+				features ^= FEATURE_FINISH_OR_ELSE
+				if operator == "else" && i+1 < amount {
+					nextOperator := tokens[i+1].Value
+					if tokens[i+1].DataType != TYPE_CONTROL {
+						nextOperator = ""
+					}
+					if nextOperator == "if" {
+						features = 0
+						continue
+					} else if nextOperator == "{" {
+						features = FEATURE_CURLY_BRACKETS | FEATURE_FINISH
+						continue
+					} else {
+						tokens, err = envelopWithCurlyBrackets(tokens, i+1)
+						if err != nil {
+							fullTreeForestClean(forest, tree)
+							return nil, err
+						}
+						amount = len(tokens)
+						features = FEATURE_CURLY_BRACKETS | FEATURE_FINISH
+						continue
+					}
+				} else if !(operator == ";" && value.DataType == TYPE_CONTROL) {
+					operator = ";"
+					value = &Token{
+						DataType: TYPE_CONTROL,
+						Value:    operator,
+					}
+					i--
+				}
+			} else if (features & FEATURE_FINISH) != 0 {
+				features ^= FEATURE_FINISH
+				if !(operator == ";" && value.DataType == TYPE_CONTROL) {
+					operator = ";"
+					value = &Token{
+						DataType: TYPE_CONTROL,
+						Value:    operator,
+					}
+					i--
 				}
 			}
 		}
@@ -236,6 +345,9 @@ tokenRunner:
 					current.Operator = operator
 					current.Children = append(current.Children, node)
 					current = node
+					if lang.FeatureOptions != 0 {
+						features |= lang.FeatureOptions
+					}
 					continue tokenRunner
 				}
 			}

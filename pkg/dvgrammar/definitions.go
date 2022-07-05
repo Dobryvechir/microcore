@@ -76,6 +76,7 @@ type LanguageOperator struct {
 	MustHaveArgument             bool
 	ParenthesesFollow            bool
 	CurlyBracesFollowParentheses bool
+	FeatureOptions               int
 }
 
 type UnaryOperator struct {
