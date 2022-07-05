@@ -243,7 +243,11 @@ func IfClauseOperator(tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionCo
 	ifThenClause := tree.Children[0].Children[1].Children
 	var ifElseClause []*dvgrammar.BuildNode = nil
 	if len(tree.Children[0].Children) >= 3 {
-		ifElseClause = tree.Children[0].Children[2].Children
+		if tree.Children[0].Children[2].Operator == "{" {
+			ifElseClause = tree.Children[0].Children[2].Children
+		} else {
+			ifElseClause = tree.Children[0].Children[2:3]
+		}
 	}
 	flow, val, err := ExecuteIfClauseCommon(context, ifClauseCondition, ifThenClause, ifElseClause)
 	return flow, val, err

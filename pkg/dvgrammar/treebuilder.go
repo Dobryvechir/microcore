@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2017 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvgrammar
 
@@ -147,7 +147,12 @@ func envelopWithCurlyBrackets(tokens []Token, pos int) ([]Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	newTokens := make([]Token, amount+2)
+	missSemicolon := p < amount && tokens[p].Value == ";"
+	newAmount := amount + 2
+	if missSemicolon {
+		newAmount--
+	}
+	newTokens := make([]Token, newAmount)
 	copy(newTokens, tokens[:pos])
 	newTokens[pos] = Token{
 		DataType: TYPE_CONTROL,
@@ -161,7 +166,11 @@ func envelopWithCurlyBrackets(tokens []Token, pos int) ([]Token, error) {
 		Value:    "}",
 	}
 	if p < amount {
-		copy(newTokens[p+2:], tokens[p:])
+		nextPos := p
+		if missSemicolon {
+			nextPos++
+		}
+		copy(newTokens[p+2:], tokens[nextPos:])
 	}
 	return newTokens, nil
 }
@@ -215,11 +224,21 @@ tokenRunner:
 				features ^= FEATURE_FINISH_OR_ELSE
 				if operator == "else" && i+1 < amount {
 					nextOperator := tokens[i+1].Value
-					if tokens[i+1].DataType != TYPE_CONTROL {
+					tp := tokens[i+1].DataType
+					if tp != TYPE_CONTROL && tp != TYPE_OPERATOR {
 						nextOperator = ""
 					}
-					if nextOperator == "if" {
-						features = 0
+					if nextOperator == "if" && opt.Language[nextOperator] != nil {
+						features = opt.Language[nextOperator].FeatureOptions
+						i++
+						node := newNode(current, opt, nil)
+						node.Operator = nextOperator
+						current.Children = append(current.Children, node)
+						current = node
+						node = newNode(current, opt, nil)
+						node.Value = &Token{DataType: TYPE_FUNCTION}
+						current.Children = append(current.Children, node)
+						current = node
 						continue
 					} else if nextOperator == "{" {
 						features = FEATURE_CURLY_BRACKETS | FEATURE_FINISH
@@ -506,7 +525,7 @@ tokenRunner:
 func placeTreeToForest(forest []*BuildNode, current *BuildNode, tree *BuildNode,
 	tokens []Token, opt *GrammarBaseDefinition, currentPreAttributes []string,
 	group int) ([]*BuildNode, error) {
-	for current != nil && (current.Operator == "" || opt.Operators[current.Operator] != nil) {
+	for current != nil && (current.Operator == "" || opt.Operators[current.Operator] != nil || opt.Language!=nil && opt.Language[current.Operator]!=nil) {
 		current = current.Parent
 	}
 	if len(currentPreAttributes) != 0 {
