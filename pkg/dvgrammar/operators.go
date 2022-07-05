@@ -10,6 +10,16 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			Precedence: 0,
 			Multi:      true,
 		},
+		"in": &InterOperator{
+			Precedence: 1,
+		},
+		"of": &InterOperator{
+			Precedence: 1,
+		},
+		"else": &InterOperator{
+			Precedence: 1,
+			Multi:      true,
+		},
 		",": &InterOperator{
 			Precedence: 1,
 			Multi:      true,
@@ -337,11 +347,6 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 		},
 		"typeof": {
 			AlwaysFirst:      true,
-			CanHaveArgument:  true,
-			MustHaveArgument: true,
-		},
-		"in": {
-			AlwaysFirst:      false,
 			CanHaveArgument:  true,
 			MustHaveArgument: true,
 		},

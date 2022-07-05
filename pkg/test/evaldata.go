@@ -167,5 +167,12 @@ func testEvaluation() {
 	testEvaluationSingle("I=3", "A=(val)=>{return val*val+I};A(3)+A(4)", "31", KindInteger)
 	testEvaluationSingle("", "S=2;val=5;A=(val)=>{S=200;return val*val};A(val-4)+val+S", "206", KindInteger)
 	testEvaluationSingle("", "S=[1,2,3,4];initial=5;S.reduce((previous,current)=>{previous+current},initial)", "15", KindInteger)
+	testEvaluationSingle("", "A=4;for(I=1;I<2;I++){A=A+I};A", "5", KindInteger)
+	testEvaluationSingle("", "A={'a':'b','c':'d'};B='';for(xx in A){B+=xx};B", "ac", KindString)
+	testEvaluationSingle("", "A={'a':'b','c':'d'};B='';for(xx of A){B+=xx};B", "bd", KindString)
+	testEvaluationSingle("I=3", "B=0;if (I<4) {B=5};B", "5", KindInteger)
+	testEvaluationSingle("I=3", "B=0;if (I<3) {B=4} else {B=5};B", "5", KindInteger)
+	testEvaluationSingle("", "A={'a':'b','c':'d'};B='';for(xx in A){B+=xx;if (xx=='a') {break}};B", "a", KindString)
+	testEvaluationSingle("", "A={'a':'b','c':'d'};B='';for(xx in A){if (xx=='a') {continue};B+=xx;};B", "c", KindString)
 	showResume()
 }

@@ -67,7 +67,7 @@ forestTrack:
 			break
 		}
 		switch flow {
-		case FLOW_RETURN:
+		case FLOW_RETURN,FLOW_BREAK,FLOW_CONTINUE:
 			break forestTrack
 		}
 	}

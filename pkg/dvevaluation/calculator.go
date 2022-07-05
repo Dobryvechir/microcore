@@ -65,6 +65,9 @@ var CalculatorOperators = map[string]dvgrammar.InterOperatorVisitor{
 	"?":   ProcessorQuestion,
 	"=":   ProcessorAssign,
 	"+=":  ProcessorPlusAssign,
+	"in":  ProcessorInInsideFor,
+	"of":  ProcessorOfInsideFor,
+	"else": ProcessorElseInsideIf,
 }
 
 func CalculatorEvaluator(data []byte, scope dvgrammar.ScopeInterface, reference *dvgrammar.SourceReference, visitorOptions int) (*dvgrammar.ExpressionValue, error) {
@@ -88,10 +91,11 @@ var CalculatorUnaryMap = map[string]dvgrammar.UnaryVisitor{
 
 var LanguageOperatorMap = map[string]dvgrammar.LanguageOperatorVisitor{
 	"return":   ReturnOperator,
-	"break":    ReturnOperator,
-	"continue": ReturnOperator,
+	"break":    BreakOperator,
+	"continue": ContinueOperator,
 	"=>":       ArrowFunctionOperator,
 	"for":      ForCycleOperator,
+	"if":       IfClauseOperator,
 }
 
 var CalculatorPostUnaryMap = map[string]dvgrammar.UnaryVisitor{

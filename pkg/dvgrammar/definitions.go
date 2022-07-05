@@ -19,6 +19,15 @@ const (
 const (
 	VISITOR_OPTION_CASHED = 1 << iota
 )
+
+const (
+	FEATURE_ROUND_BRACKET          = 1 << iota
+	FEATURE_CURLY_BRACKETS         = 1 << iota
+	FEATURE_CURLY_BRACKETS_OR_CODE = 1 << iota
+	FEATURE_FINISH                 = 1 << iota
+	FEATURE_FINISH_OR_ELSE         = 1 << iota
+)
+
 const (
 	TYPE_CONTROL    = iota
 	TYPE_OPERATOR   = iota
@@ -39,6 +48,8 @@ const (
 const (
 	FLOW_NORMAL = iota
 	FLOW_RETURN
+	FLOW_BREAK
+	FLOW_CONTINUE
 )
 
 type Token struct {

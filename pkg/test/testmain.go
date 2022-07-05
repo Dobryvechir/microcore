@@ -14,7 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("", "A=4;for(I=1;I<2;I++){A=A+I};A", "5", KindInteger)
+	testEvaluationSingle("I=3", "B=0;if (I<3) {B=4} else {B=5};B", "5", KindInteger)
 	showResume()
 }
 

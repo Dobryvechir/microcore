@@ -127,10 +127,24 @@ func buildExpressionTree(tokens []Token, opt *GrammarBaseDefinition) (forest []*
 	current := tree
 	amount := len(tokens)
 	group := 0
+	features:= 0
 tokenRunner:
 	for i := 0; i < amount; i++ {
 		value := &tokens[i]
 		operator := value.Value
+		if features!=0 {
+			if (features & FEATURE_ROUND_BRACKET)!=0 {
+				features ^= FEATURE_ROUND_BRACKET
+				if operator!="(" {
+					fullTreeForestClean(forest, tree)
+					w:=operator
+					if w=="" {
+						w = " no operator at all"
+					}
+					return nil, errors.New("Expected ( but found "+w)
+				}
+			}
+		}
 		if value.DataType == TYPE_CONTROL {
 			switch operator {
 			case ";", ",":

@@ -487,3 +487,15 @@ func ProcessorGreaterEqual(values []*dvgrammar.ExpressionValue, tree *dvgrammar.
 	res := AnyCompareAnyWithTypes(values[0].DataType, values[0].Value, values[1].DataType, values[1].Value)
 	return &dvgrammar.ExpressionValue{Value: res == 0 || res == 1, DataType: dvgrammar.TYPE_BOOLEAN}, nil
 }
+
+func ProcessorInInsideFor(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	return nil, errors.New("'in' should be used only inside 'for' declaration")
+}
+
+func ProcessorOfInsideFor(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	return nil, errors.New("'of' should be used only inside 'for' declaration")
+}
+
+func ProcessorElseInsideIf(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	return nil, errors.New("'else' should be used only inside 'if' declaration")
+}
