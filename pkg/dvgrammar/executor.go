@@ -4,7 +4,9 @@ Copyright 2017 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 ************************************************************************/
 package dvgrammar
 
-import "errors"
+import (
+	"errors"
+)
 
 func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *ExpressionValue, error) {
 	var value *ExpressionValue
@@ -17,10 +19,10 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 		visitor, ok := context.Rules.Visitors[tree.Operator]
 		operator, ok1 := context.Rules.BaseGrammar.Operators[tree.Operator]
 		if !ok || !ok1 {
-			langVisitor, ok:=context.Rules.LanguageOperator[tree.Operator]
+			langVisitor, ok := context.Rules.LanguageOperator[tree.Operator]
 			if ok {
-			     flow, value, err = langVisitor(tree, context)
-				 return flow, value, err
+				flow, value, err = langVisitor(tree, context)
+				return flow, value, err
 			}
 			return flow, nil, ErrorMessageForNode("Unexpected operator "+tree.Operator, tree, context)
 		}
@@ -40,11 +42,15 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 		}
 	} else if tree.Value != nil {
 		value = nil
+		useParent:=(context.VisitorOptions & EVALUATE_OPTION_PARENT)!=0
 		hasNoParent := tree.Value.DataType == TYPE_FUNCTION
 		if !hasNoParent {
 			lastVarName = tree.Value.Value
 			value, err = context.Rules.DataGetter(tree.Value, context)
 			if err != nil {
+				if useParent && l > 0 && value != nil {
+					value.Parent = ErrorExpressionValue
+				}
 				return flow, value, err
 			}
 		}
@@ -52,6 +58,9 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 			value, lastParent, err = ExecuteBracketExpression(value, hasNoParent, tree.Children, context)
 			if err != nil {
 				return flow, value, err
+			}
+			if useParent && lastParent != nil && value != nil {
+				value.Parent = lastParent
 			}
 		}
 	}
@@ -107,7 +116,7 @@ func (tree *BuildNode) GetChildrenExpressionValue(childNo int, context *Expressi
 	if childNo < 0 || childNo >= len(tree.Children) {
 		return nil, ErrorMessageForNode("Children no is out of range", tree, context)
 	}
-	_, val, err:=tree.Children[childNo].ExecuteExpression(context)
+	_, val, err := tree.Children[childNo].ExecuteExpression(context)
 	return val, err
 }
 

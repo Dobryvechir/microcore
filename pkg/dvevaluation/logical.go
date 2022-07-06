@@ -14,7 +14,7 @@ func LogicalDataGetter(token *dvgrammar.Token, context *dvgrammar.ExpressionCont
 			return &dvgrammar.ExpressionValue{Value: buildinTypes[token.Value], DataType: newType}, nil
 		} else {
 			_, v := context.Scope.Get(token.Value)
-			if (context.VisitorOptions & EVALUATE_OPTION_UNDEFINED) != 0 {
+			if (context.VisitorOptions & dvgrammar.EVALUATE_OPTION_UNDEFINED) != 0 {
 				v = !v
 			}
 			return &dvgrammar.ExpressionValue{Value: v, DataType: dvgrammar.TYPE_BOOLEAN}, nil

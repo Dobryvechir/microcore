@@ -14,10 +14,6 @@ const (
 	BooleanTrue  = "true"
 )
 
-const (
-	EVALUATE_OPTION_UNDEFINED = 1 << (iota + 8)
-)
-
 var reservedWords = map[string]int{
 	"null":      dvgrammar.TYPE_NULL,
 	"undefined": dvgrammar.TYPE_UNDEFINED,

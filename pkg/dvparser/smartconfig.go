@@ -7,6 +7,7 @@ package dvparser
 import (
 	"bytes"
 	"errors"
+	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"io/ioutil"
 	"log"
 	"os"
@@ -319,7 +320,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 					} else if b3 == 'n' { //ifndef
 						if subStart+2 < subBlockLen && subBlock[subStart] == 'd' && subBlock[subStart+1] == 'e' && subBlock[subStart+2] == 'f' && (subStart+3 >= subBlockLen || subBlock[subStart+3] <= 32) {
 							subStart += 3
-							v, err := dvevaluation.IsDefined(subBlock[subStart:subBlockLen], dvevaluation.NewObjectStack(configInfo.ParamMap), internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
+							v, err := dvevaluation.IsDefined(subBlock[subStart:subBlockLen], dvevaluation.NewObjectStack(configInfo.ParamMap), internalParsingInfo[0].row, internalParsingInfo[0].column+subStart, place, dvgrammar.EVALUATE_OPTION_UNDEFINED)
 							if err != nil {
 								configInfo.Err = err
 							}
@@ -410,7 +411,7 @@ func linearSmartConfigParse_internal(data []byte, configInfo *ConfigInfo, place 
 								//elifndef
 								bIfCondition = -bIfCondition
 								if bIfCondition == IFELSE_NONEWIF+IFELSE_ELSE_RUN {
-									v, err := dvevaluation.IsDefined(subBlock[subStart+5:subBlockLen], dvevaluation.NewObjectStack(configInfo.ParamMap), row, col, place, dvevaluation.EVALUATE_OPTION_UNDEFINED)
+									v, err := dvevaluation.IsDefined(subBlock[subStart+5:subBlockLen], dvevaluation.NewObjectStack(configInfo.ParamMap), row, col, place, dvgrammar.EVALUATE_OPTION_UNDEFINED)
 									if err != nil {
 										configInfo.Err = err
 										return

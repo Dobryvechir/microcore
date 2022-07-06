@@ -20,18 +20,32 @@ func ProcessorAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildN
 	if err != nil {
 		return nil, err
 	}
+	oldVisitorOption:=context.VisitorOptions
+	context.VisitorOptions = oldVisitorOption | dvgrammar.EVALUATE_OPTION_PARENT | dvgrammar.EVALUATE_OPTION_NAME
 	valueLeft, err := tree.GetChildrenExpressionValue(0, context)
-	if err != nil && !strings.Contains(err.Error(),"is not defined") {
+	context.VisitorOptions = oldVisitorOption
+	if err != nil && (!strings.Contains(err.Error(), "is not defined") || valueLeft != nil && valueLeft.Parent == dvgrammar.ErrorExpressionValue) {
 		return nil, err
 	}
 	if valueLeft == nil || valueLeft.Name == "" {
 		return nil, errors.New("Invalid left-hand side in assignment")
 	}
 	var valueRightDirect interface{} = nil
-	if valueRight!=nil {
+	if valueRight != nil {
 		valueRightDirect = valueRight.Value
 	}
-	context.Scope.SetDeep(valueLeft.Name, valueRightDirect)
+	if valueLeft.Parent == nil {
+		context.Scope.SetDeep(valueLeft.Name, valueRightDirect)
+	} else {
+		leftPart := AnyToDvVariable(valueLeft.Parent)
+		if leftPart == nil || leftPart.Kind != FIELD_ARRAY && leftPart.Kind != FIELD_OBJECT {
+			return valueRight, errors.New("Invalid left-hand side in assignment")
+		}
+		err = AssignVariableByKey(leftPart, valueLeft.Name, valueRightDirect, false)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return valueRight, nil
 }
 

@@ -42,6 +42,7 @@ const (
 	TYPE_FUNCTION   = iota
 	TYPE_DATA       = iota
 	TYPE_OBJECT     = iota
+	TYPE_ERROR      = iota
 	TYPE_MASK       = 0x7ff
 )
 
@@ -121,7 +122,16 @@ type ExpressionValue struct {
 	DataType int
 	Value    interface{}
 	Name     string
+	Parent   *ExpressionValue
 }
+
+var ErrorExpressionValue = &ExpressionValue{DataType: TYPE_ERROR}
+
+const (
+	EVALUATE_OPTION_UNDEFINED = 1 << (iota + 8)
+	EVALUATE_OPTION_PARENT = 1 << (iota + 8)
+	EVALUATE_OPTION_NAME = 1 << (iota +8)
+)
 
 type TypeRecognizer struct {
 	StartByteTypes []int

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
+	"strconv"
 )
 
 var BracketProcessors = map[string]dvgrammar.BracketOperatorVisitor{
@@ -302,9 +303,14 @@ func GetExpressionValueChild(value *dvgrammar.ExpressionValue, index *dvgrammar.
 					return &dvgrammar.ExpressionValue{
 						Value:    nil,
 						DataType: dvgrammar.TYPE_NULL,
+						Name: strconv.Itoa(indexInt),
 					}, nil
 				}
-				return v.Fields[indexInt].ToDvGrammarExpressionValue(), nil
+				fev:=v.Fields[indexInt].ToDvGrammarExpressionValue()
+				if (context.VisitorOptions & dvgrammar.EVALUATE_OPTION_NAME)!=0 {
+					fev.Name = strconv.Itoa(indexInt)
+				}
+				return fev, nil
 			}
 		}
 	}
@@ -312,18 +318,34 @@ func GetExpressionValueChild(value *dvgrammar.ExpressionValue, index *dvgrammar.
 	v := AnyToDvVariable(value.Value)
 	r := v.ReadSimpleChild(child)
 	if r != nil {
-		return r.ToDvGrammarExpressionValue(), nil
+		rev := r.ToDvGrammarExpressionValue()
+		if rev != nil && (context.VisitorOptions&dvgrammar.EVALUATE_OPTION_NAME) != 0 {
+			rev.Name = child
+		}
+		return rev, nil
 	}
 	fnMap := GetPrototypeForDvGrammarExpressionValue(value)
 	vl, ok := fnMap.Get(child)
 	if !ok {
+		if (context.VisitorOptions & dvgrammar.EVALUATE_OPTION_NAME)!=0 {
+			vlev:=&dvgrammar.ExpressionValue{
+				DataType: dvgrammar.TYPE_NULL,
+				Value: nil,
+				Name: child,
+			}
+			return vlev, nil
+		}
 		return nil, nil
 	}
 	switch vl.(type) {
 	case *DvFunction:
 		return GetFunctionObjectVariable(vl.(*DvFunction), value, context)
 	}
-	return AnyToDvGrammarExpressionValue(vl), nil
+	gev := AnyToDvGrammarExpressionValue(vl)
+	if gev != nil && (context.VisitorOptions&dvgrammar.EVALUATE_OPTION_NAME) != 0 {
+		gev.Name = child
+	}
+	return gev, nil
 }
 
 func GetColumnSubNodes(node *dvgrammar.BuildNode) (*dvgrammar.BuildNode, *dvgrammar.BuildNode, bool) {

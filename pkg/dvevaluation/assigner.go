@@ -142,8 +142,26 @@ func AssignVariable(parent *DvVariable, keys []string, value interface{}, force 
 	if parent.Fields == nil {
 		parent.Fields = make([]*DvVariable, 0, 7)
 	}
-	parent.Fields = append(parent.Fields, AnyToDvVariable(value).MakeCopyWithNewKey(key))
+	val := AnyToDvVariable(value).MakeCopyWithNewKey(key)
+	k := parent.IndexOfByKey([]byte(key))
+	n := len(parent.Fields)
+	numK, okK := AnyToNumberInt(key)
+	intK := int64(numK)
+	if okK {
+		okK = intK >= 0 && intK < int64(n)
+	}
+	if k >= 0 {
+		parent.Fields[k] = val
+	} else if parent.Kind != FIELD_ARRAY || key == "" || !okK {
+		parent.Fields = append(parent.Fields, val)
+	} else {
+		parent.Fields[int(intK)] = val
+	}
 	return nil
+}
+
+func AssignVariableByKey(parent *DvVariable, key string, value interface{}, force bool) error {
+	return AssignVariable(parent, []string{key}, value, force)
 }
 
 func GetVariableByKeys(parent *DvVariable, keys []string, silent bool) (thisValue *DvVariable, child *DvVariable, prototyped bool, err error) {

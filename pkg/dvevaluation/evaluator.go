@@ -170,7 +170,7 @@ func IsDefined(data []byte, scope dvgrammar.ScopeInterface, row int, col int, pl
 		data = data[start:end]
 		key := string(data)
 		if _, ok := scope.Get(key); ok {
-			if (visitorOptions & EVALUATE_OPTION_UNDEFINED) == 0 {
+			if (visitorOptions & dvgrammar.EVALUATE_OPTION_UNDEFINED) == 0 {
 				return 1, nil
 			}
 			return 0, nil
