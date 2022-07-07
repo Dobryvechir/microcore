@@ -190,6 +190,10 @@ func testEvaluation() {
 	testEvaluationSingle("", "B={'a':['b','c'],'d':'e'};B.a.1={'c':7};B.a.1.c", "7", KindInteger)
 	testEvaluationSingle("", "B=['a',{'b':'c'},'d','e'];B[2]=5;B['2']", "5", KindInteger)
 	testEvaluationSingle("I=1", "B={'a':['b','c'],'d':'e'};B.a[I]={'c':7};B.a[I].c", "7", KindInteger)
+	testEvaluationSingle("", "B=['a',{'b':4},'d','e'];B[1].b++;B[1].b", "5", KindInteger)
+	testEvaluationSingle("", "B=['a',{'b':4},'d','e'];++B[1].b;B[1].b", "5", KindInteger)
+	testEvaluationSingle("", "B=['a',{'b':4},'d','e'];B[1].b+=2;B[1].b", "6", KindInteger)
+	testEvaluationSingle("", "B=['a',7,'d','e'];B[1]--;--B[1];++B[1]", "6", KindInteger)
 	proveErrors()
 	showResume()
 }

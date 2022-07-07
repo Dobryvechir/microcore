@@ -14,7 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("", "B=['a',{'b':4},'d','e'];B[1].b++;B[1].b", "5", KindInteger)
+	testEvaluationSingle("", "B=['a',{'b':4},'d','e'];B[1].b+=2;B[1].b", "6", KindInteger)
 	showResume()
 }
 

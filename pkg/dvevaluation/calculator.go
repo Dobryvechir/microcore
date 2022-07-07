@@ -38,35 +38,35 @@ func CalculatorDataGetter(token *dvgrammar.Token, context *dvgrammar.ExpressionC
 }
 
 var CalculatorOperators = map[string]dvgrammar.InterOperatorVisitor{
-	"+":   ProcessorPlus,
-	"-":   ProcessorMinus,
-	"*":   ProcessorMultiply,
-	"/":   ProcessorDivision,
-	"%":   ProcessorPercent,
-	"&":   ProcessorBoolAnd,
-	"|":   ProcessorBoolOr,
-	"^":   ProcessorBoolXor,
-	"**":  ProcessorPower,
-	"||":  ProcessorBooleanOr,
-	"&&":  ProcessorBooleanAnd,
-	"<<":  ProcessorLeftShift,
-	">>>": ProcessorLogicalRightShift,
-	">>":  ProcessorRightShift,
-	"===": ProcessorEqualExact,
-	"!==": ProcessorNotEqualExact,
-	"==":  ProcessorEqual,
-	"!=":  ProcessorNotEqual,
-	">":   ProcessorGreaterThan,
-	">=":  ProcessorGreaterEqual,
-	"<":   ProcessorLessThan,
-	"<=":  ProcessorLessEqual,
-	"IN":  ProcessorContainsIn,
-	":":   ProcessorColon,
-	"?":   ProcessorQuestion,
-	"=":   ProcessorAssign,
-	"+=":  ProcessorPlusAssign,
-	"in":  ProcessorInInsideFor,
-	"of":  ProcessorOfInsideFor,
+	"+":    ProcessorPlus,
+	"-":    ProcessorMinus,
+	"*":    ProcessorMultiply,
+	"/":    ProcessorDivision,
+	"%":    ProcessorPercent,
+	"&":    ProcessorBoolAnd,
+	"|":    ProcessorBoolOr,
+	"^":    ProcessorBoolXor,
+	"**":   ProcessorPower,
+	"||":   ProcessorBooleanOr,
+	"&&":   ProcessorBooleanAnd,
+	"<<":   ProcessorLeftShift,
+	">>>":  ProcessorLogicalRightShift,
+	">>":   ProcessorRightShift,
+	"===":  ProcessorEqualExact,
+	"!==":  ProcessorNotEqualExact,
+	"==":   ProcessorEqual,
+	"!=":   ProcessorNotEqual,
+	">":    ProcessorGreaterThan,
+	">=":   ProcessorGreaterEqual,
+	"<":    ProcessorLessThan,
+	"<=":   ProcessorLessEqual,
+	"IN":   ProcessorContainsIn,
+	":":    ProcessorColon,
+	"?":    ProcessorQuestion,
+	"=":    ProcessorAssign,
+	"+=":   ProcessorPlusAssign,
+	"in":   ProcessorInInsideFor,
+	"of":   ProcessorOfInsideFor,
 	"else": ProcessorElseInsideIf,
 }
 
@@ -114,6 +114,13 @@ var CalculatorRules = &dvgrammar.GrammarRuleDefinitions{
 }
 
 func SetNodeValue(tree *dvgrammar.BuildNode, v interface{}, dataType int, context *dvgrammar.ExpressionContext, lastVarName string, lastParent *dvgrammar.ExpressionValue) error {
+	if lastParent != nil && lastParent.Name != "" && lastParent.Value != nil {
+		dv := AnyToDvVariable(lastParent.Value)
+		if dv != nil && (dv.Kind == FIELD_ARRAY || dv.Kind == FIELD_OBJECT) {
+			err := AssignVariableByKey(dv, lastVarName, v, false)
+			return err
+		}
+	}
 	if lastVarName != "" {
 		context.Scope.SetDeep(lastVarName, v)
 	}

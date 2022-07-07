@@ -42,7 +42,7 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 		}
 	} else if tree.Value != nil {
 		value = nil
-		useParent:=(context.VisitorOptions & EVALUATE_OPTION_PARENT)!=0
+		useParent := (context.VisitorOptions & EVALUATE_OPTION_PARENT) != 0
 		hasNoParent := tree.Value.DataType == TYPE_FUNCTION
 		if !hasNoParent {
 			lastVarName = tree.Value.Value
@@ -55,7 +55,20 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 			}
 		}
 		if l > 0 {
+			needName := false
+			if (context.VisitorOptions & EVALUATE_OPTION_NAME) == 0 {
+				needName = hasAssigningOperators(tree.PostAttributes)
+				if !needName {
+					needName = hasAssigningOperators(tree.PreAttributes)
+				}
+			}
+			if needName {
+				context.VisitorOptions |= EVALUATE_OPTION_NAME
+			}
 			value, lastParent, err = ExecuteBracketExpression(value, hasNoParent, tree.Children, context)
+			if needName {
+				context.VisitorOptions ^= EVALUATE_OPTION_NAME
+			}
 			if err != nil {
 				return flow, value, err
 			}
@@ -65,6 +78,9 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 		}
 	}
 	if len(tree.PostAttributes) != 0 {
+		if lastParent!=nil && value!=nil && value.Name!="" {
+			lastVarName = value.Name
+		}
 		for _, vl := range tree.PostAttributes {
 			v, err := context.Rules.UnaryPostVisitors[vl](value, tree, context, vl, lastVarName, lastParent)
 			if err != nil {
@@ -74,6 +90,9 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 		}
 	}
 	if len(tree.PreAttributes) != 0 {
+		if lastParent!=nil && value!=nil && value.Name!="" {
+			lastVarName = value.Name
+		}
 		for _, vl := range tree.PreAttributes {
 			v, err := context.Rules.UnaryPreVisitors[vl](value, tree, context, vl, lastVarName, lastParent)
 			if err != nil {
@@ -122,4 +141,14 @@ func (tree *BuildNode) GetChildrenExpressionValue(childNo int, context *Expressi
 
 func (tree *BuildNode) GetChildrenNumber() int {
 	return len(tree.Children)
+}
+
+func hasAssigningOperators(attrs []string) bool {
+	n := len(attrs)
+	for i := 0; i < n; i++ {
+		if attrs[i] == "++" || attrs[i] == "--" {
+			return true
+		}
+	}
+	return false
 }

@@ -152,10 +152,16 @@ func AssignVariable(parent *DvVariable, keys []string, value interface{}, force 
 	}
 	if k >= 0 {
 		parent.Fields[k] = val
-	} else if parent.Kind != FIELD_ARRAY || key == "" || !okK {
+	} else if parent.Kind != FIELD_ARRAY || key == "" {
 		parent.Fields = append(parent.Fields, val)
+	} else if !okK {
+		parent.Fields = append(parent.Fields, val)
+		if intK == int64(n) {
+			val.Name = nil
+		}
 	} else {
 		parent.Fields[int(intK)] = val
+		val.Name = nil
 	}
 	return nil
 }
