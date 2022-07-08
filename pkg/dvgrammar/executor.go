@@ -30,7 +30,14 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 		if !operator.LazyLoadedOperands {
 			v = make([]*ExpressionValue, l)
 			for i := 0; i < l; i++ {
-				flow, v[i], err = tree.Children[i].ExecuteExpression(context)
+				if i == 0 && operator.Assignment {
+					oldVisitOptions := context.VisitorOptions
+					context.VisitorOptions |= EVALUATE_OPTION_NAME | EVALUATE_OPTION_PARENT
+					flow, v[i], err = tree.Children[i].ExecuteExpression(context)
+					context.VisitorOptions = oldVisitOptions
+				} else {
+					flow, v[i], err = tree.Children[i].ExecuteExpression(context)
+				}
 				if err != nil {
 					return flow, nil, err
 				}
@@ -78,7 +85,7 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 		}
 	}
 	if len(tree.PostAttributes) != 0 {
-		if lastParent!=nil && value!=nil && value.Name!="" {
+		if lastParent != nil && value != nil && value.Name != "" {
 			lastVarName = value.Name
 		}
 		for _, vl := range tree.PostAttributes {
@@ -90,7 +97,7 @@ func (tree *BuildNode) ExecuteExpression(context *ExpressionContext) (int, *Expr
 		}
 	}
 	if len(tree.PreAttributes) != 0 {
-		if lastParent!=nil && value!=nil && value.Name!="" {
+		if lastParent != nil && value != nil && value.Name != "" {
 			lastVarName = value.Name
 		}
 		for _, vl := range tree.PreAttributes {

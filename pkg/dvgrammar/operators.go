@@ -103,6 +103,24 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			RightToLeft: true,
 			Assignment:  true,
 		},
+		"&&=": &InterOperator{
+			Precedence:  3,
+			Multi:       true,
+			RightToLeft: true,
+			Assignment:  true,
+		},
+		"||=": &InterOperator{
+			Precedence:  3,
+			Multi:       true,
+			RightToLeft: true,
+			Assignment:  true,
+		},
+		"??=": &InterOperator{
+			Precedence:  3,
+			Multi:       true,
+			RightToLeft: true,
+			Assignment:  true,
+		},
 		"?": &InterOperator{
 			Precedence:         4,
 			Multi:              false,
@@ -121,6 +139,11 @@ var CommonGrammarBaseDefinition = &GrammarBaseDefinition{
 			LazyLoadedOperands: true,
 		},
 		"&&": &InterOperator{
+			Precedence:         6,
+			Multi:              true,
+			LazyLoadedOperands: true,
+		},
+		"??": &InterOperator{
 			Precedence:         6,
 			Multi:              true,
 			LazyLoadedOperands: true,

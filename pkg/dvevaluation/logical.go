@@ -57,6 +57,20 @@ func ProcessorBooleanAnd(values []*dvgrammar.ExpressionValue, tree *dvgrammar.Bu
 	return
 }
 
+func ProcessorBooleanOrNullable(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (res *dvgrammar.ExpressionValue, err error) {
+	l := tree.GetChildrenNumber()
+	for i := 0; i < l; i++ {
+		res, err = tree.GetChildrenExpressionValue(i, context)
+		if err != nil {
+			return nil, err
+		}
+		if IsNotNullish(res) {
+			break
+		}
+	}
+	return
+}
+
 var LogicalOperators = map[string]dvgrammar.InterOperatorVisitor{
 	"||": ProcessorBooleanOr,
 	"&&": ProcessorBooleanAnd,

@@ -20,7 +20,7 @@ func ProcessorAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildN
 	if err != nil {
 		return nil, err
 	}
-	oldVisitorOption:=context.VisitorOptions
+	oldVisitorOption := context.VisitorOptions
 	context.VisitorOptions = oldVisitorOption | dvgrammar.EVALUATE_OPTION_PARENT | dvgrammar.EVALUATE_OPTION_NAME
 	valueLeft, err := tree.GetChildrenExpressionValue(0, context)
 	context.VisitorOptions = oldVisitorOption
@@ -61,11 +61,89 @@ func reassign(res *dvgrammar.ExpressionValue, err error, values []*dvgrammar.Exp
 	if valueLeft == nil || valueLeft.Name == "" {
 		return nil, errors.New("Invalid left-hand side in assignment")
 	}
-	context.Scope.SetDeep(valueLeft.Name, res)
+	if valueLeft.Parent == nil {
+		context.Scope.SetDeep(valueLeft.Name, res)
+	} else {
+		dv := AnyToDvVariable(valueLeft.Parent)
+		if dv == nil {
+			return nil, errors.New("Invalid left-hand side in assignment")
+		}
+		AssignVariableByKey(dv, valueLeft.Name, res, false)
+	}
 	return res, nil
 }
 
 func ProcessorPlusAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
 	res, err := ProcessorPlus(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorMinusAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorMinus(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorMultiplyAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorMultiply(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorDivisionAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorDivision(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorBooleanAndAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorBooleanAnd(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorBooleanOrAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorBooleanOr(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorBooleanOrNullableAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorBooleanOrNullable(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorBoolAndAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorBoolAnd(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorBoolOrAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorBoolOr(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorBoolXorAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorBoolXor(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorLeftShiftAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorLeftShift(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorRightShiftAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorRightShift(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorLogicalRightShiftAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorLogicalRightShift(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorPowerAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorPower(values, tree, context, operator)
+	return reassign(res, err, values, context, operator)
+}
+
+func ProcessorPercentAssign(values []*dvgrammar.ExpressionValue, tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext, operator string) (*dvgrammar.ExpressionValue, error) {
+	res, err := ProcessorPercent(values, tree, context, operator)
 	return reassign(res, err, values, context, operator)
 }

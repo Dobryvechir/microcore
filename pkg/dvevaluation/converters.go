@@ -237,6 +237,48 @@ func AnyToBoolean(v interface{}) bool {
 	return f
 }
 
+func IsNotNullish(v interface{}) bool {
+	if v == nil {
+		return false
+	}
+	var f bool = true
+	switch v.(type) {
+	case *DvObject:
+		dv := v.(*DvObject)
+		f = dv != nil && dv.Value != nil
+		if f {
+			switch dv.Value.(type) {
+			case int:
+				dvi := dv.Value.(int)
+				f = dvi != 0
+			}
+		}
+	case nil:
+		f = false
+	case *DvVariable:
+		d := v.(*DvVariable)
+		f = d != nil
+		if f {
+			switch d.Kind {
+			case FIELD_NULL, FIELD_UNDEFINED:
+				f = false
+			}
+		}
+	case *dvgrammar.ExpressionValue:
+		b := v.(*dvgrammar.ExpressionValue)
+		f = b != nil
+		if f {
+			switch b.DataType {
+			case dvgrammar.TYPE_NULL:
+				f = false
+			case dvgrammar.TYPE_OBJECT:
+				f = IsNotNullish(b.Value)
+			}
+		}
+	}
+	return f
+}
+
 func AnyWithTypeToBoolean(kind int, v interface{}, defValue bool) bool {
 	switch kind {
 	case dvgrammar.TYPE_STRING, dvgrammar.TYPE_CHAR, dvgrammar.TYPE_NUMBER,
