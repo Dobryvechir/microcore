@@ -6,6 +6,7 @@ Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvjsmaster
 
 import (
+	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 )
@@ -48,7 +49,17 @@ func array_init() {
 }
 
 func Array_push(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	return nil, nil
+	v := dvevaluation.AnyToDvVariable(thisVariable)
+	if v == nil {
+		return nil, errors.New("Cannot convert null to object")
+	}
+    n:=len(params)
+	for i:=0;i<n;i++ {
+		d:=dvevaluation.AnyToDvVariable(params[i])
+		v.Fields = append(v.Fields, d)
+	}
+	n = len(v.Fields)
+	return n, nil
 }
 
 func Array_slice(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {

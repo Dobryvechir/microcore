@@ -111,6 +111,7 @@ var LanguageOperatorMap = map[string]dvgrammar.LanguageOperatorVisitor{
 	"=>":       ArrowFunctionOperator,
 	"for":      ForCycleOperator,
 	"if":       IfClauseOperator,
+	"delete":   DeleteOperator,
 }
 
 var CalculatorPostUnaryMap = map[string]dvgrammar.UnaryVisitor{

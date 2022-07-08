@@ -215,6 +215,9 @@ func testEvaluation() {
 	testEvaluationSingle("I=5", "B=7;B??=I;B", "7", KindInteger)
 	testEvaluationSingle("I=5", "B=0;B??=I;B", "0", KindInteger)
 	testEvaluationSingle("I=5", "B=null;B??=I;B", "5", KindInteger)
+	testEvaluationSingle("", "B=['a',{'b':4},'d','e'];delete B[1].b;B[1].b", "null", KindANY)
+	testEvaluationSingle("", "B=['a',{'b':4},'d','e'];B.push(5,7);B[4]", "5", KindANY)
+	testEvaluationSingle("", "B=['a',{'b':4},'d','e'];B.push(5,7);B[4]", "5", KindANY)
 	proveErrors()
 	showResume()
 }

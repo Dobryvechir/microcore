@@ -283,6 +283,31 @@ func BreakOperator(tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionConte
 	return dvgrammar.FLOW_BREAK, nil, nil
 }
 
+func DeleteOperator(tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext) (int, *dvgrammar.ExpressionValue, error) {
+	n := len(tree.Children)
+	if n != 1 || tree.Children[0] == nil {
+		return 0, nil, errors.New("'delete' requires one argument")
+	}
+	oldVisitOptions := context.VisitorOptions
+	context.VisitorOptions |= dvgrammar.EVALUATE_OPTION_PARENT | dvgrammar.EVALUATE_OPTION_NAME
+	_, val, err := tree.Children[0].ExecuteExpression(context)
+	context.VisitorOptions = oldVisitOptions
+	if err != nil {
+		return 0, nil, err
+	}
+	if val != nil && val.Name != "" && val.Parent != nil {
+		dv := AnyToDvVariable(val.Parent)
+		if dv != nil {
+			DeleteVariable(dv, []string{val.Name}, true)
+		}
+	}
+	res := &dvgrammar.ExpressionValue{
+		DataType: dvgrammar.TYPE_BOOLEAN,
+		Value:    true,
+	}
+	return dvgrammar.FLOW_NORMAL, res, nil
+}
+
 func ContinueOperator(tree *dvgrammar.BuildNode, context *dvgrammar.ExpressionContext) (int, *dvgrammar.ExpressionValue, error) {
 	n := len(tree.Children)
 	if n > 0 {
