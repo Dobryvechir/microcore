@@ -457,6 +457,7 @@ tokenRunner:
 							(current.closed || opt.Operators[current.Operator].Precedence > precedence) {
 							current = current.Parent
 						}
+						node.Parent = current
 						if current.Operator == operator && properties.Multi {
 							current.Children = append(current.Children, node)
 							current = node

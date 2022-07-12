@@ -131,6 +131,8 @@ func ExecuteAnyFunction(context *dvgrammar.ExpressionContext, fn interface{}, th
 	case *CustomJsFunction:
 		cf := fn.(*CustomJsFunction)
 		context.Scope.StackPush(cf.Options)
+		context.Scope.Set("this", thisArg)
+		context.Scope.Set("arguments", args)
 		err = PutVariablesInScope(cf.Params, args, context)
 		if err == nil {
 			_, value, err = dvgrammar.BuildNodeExecution(cf.Body, context)

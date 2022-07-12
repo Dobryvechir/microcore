@@ -14,7 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("", "B=['a',{'b':4},'d','e'];delete B[1].b;B[1].b", "null", KindANY)
+	testEvaluationSingle("", "B=[11,22,3,4].find((val,ind)=>{val==ind+1})", "3", KindANY)
 	showResume()
 }
 
