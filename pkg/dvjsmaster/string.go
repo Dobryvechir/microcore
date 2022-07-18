@@ -9,6 +9,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvcrypt"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"strings"
 )
 
@@ -26,14 +27,14 @@ func string_init() {
 				Name: []byte("charCodeAt"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_includes,
+					Fn: String_charCodeAt,
 				},
 			},
 			{
 				Name: []byte("codePointAt"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_includes,
+					Fn: String_codePointAt,
 				},
 			},
 			{
@@ -215,7 +216,7 @@ func string_init() {
 				Name: []byte("toString"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_startsWith,
+					Fn: String_toString,
 				},
 			},
 			{
@@ -301,7 +302,7 @@ func String_charAt(context *dvgrammar.ExpressionContext, thisVariable interface{
 	if n != 0 && params[0] != nil {
 		p64, ok := dvevaluation.AnyToNumberInt(params[0])
 		if ok {
-			if p64 > int64(m) || p64 < 0 {
+			if p64 >= int64(m) || p64 < 0 {
 				return "", nil
 			}
 			p = int(p64)
@@ -391,4 +392,52 @@ func String_isValidUUID(context *dvgrammar.ExpressionContext, thisVariable inter
 	s := dvevaluation.AnyToString(thisVariable)
 	b := dvcrypt.IsValidUUID(s)
 	return b, nil
+}
+
+func String_charCodeAt(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	if thisVariable == nil {
+		return false, nil
+	}
+	s := dvevaluation.AnyToString(thisVariable)
+	m := len(s)
+	if m == 0 {
+		return nil, nil
+	}
+	n := len(params)
+	p := 0
+	if n != 0 && params[0] != nil {
+		p64, ok := dvevaluation.AnyToNumberInt(params[0])
+		if ok {
+			if p64 >= int64(m) || p64 < 0 {
+				return nil, nil
+			}
+			p = int(p64)
+		}
+	}
+	return int(s[p]), nil
+}
+
+func String_codePointAt(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	if thisVariable == nil {
+		return false, nil
+	}
+	s := dvevaluation.AnyToString(thisVariable)
+	b:=dvtextutils.SeparateBytesToUTF8Chars([]byte(s))
+	m := len(b)
+	if m == 0 {
+		return nil, nil
+	}
+	n := len(params)
+	p := 0
+	if n != 0 && params[0] != nil {
+		p64, ok := dvevaluation.AnyToNumberInt(params[0])
+		if ok {
+			if p64 >= int64(m) || p64 < 0 {
+				return nil, nil
+			}
+			p = int(p64)
+		}
+	}
+	res:=dvtextutils.GetCodePoint(b[p])
+	return res, nil
 }

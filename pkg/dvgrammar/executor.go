@@ -118,6 +118,9 @@ func ExecuteBracketExpression(parent *ExpressionValue, hasNoParent bool, nodes [
 	var err error
 	for i := 0; i < n; i++ {
 		node := nodes[i]
+		if child!=nil && child.Parent==nil {
+			child.Parent = parent
+		}
 		parent = child
 		key := node.Operator
 		if !hasNoParent {

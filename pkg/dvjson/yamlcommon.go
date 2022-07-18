@@ -9,7 +9,7 @@ import "github.com/Dobryvechir/microcore/pkg/dvevaluation"
 
 func PrintToJsonAtLevel(dvEntry *dvevaluation.DvVariable, res []byte, level int, indent int, noIndentAtFirst bool) []byte {
 	if dvEntry == nil {
-		return res
+		dvEntry = &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_NULL}
 	}
 	n := indent * level
 	nextN := n + indent
@@ -88,7 +88,8 @@ func PrintToJsonAtLevel(dvEntry *dvevaluation.DvVariable, res []byte, level int,
 			}
 		}
 		res = append(res, '}')
-
+	case dvevaluation.FIELD_NULL:
+		res = append(res, []byte("null")...)
 	default:
 		res = append(res, dvEntry.Value...)
 	}

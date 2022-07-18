@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvtextutils
 
@@ -510,4 +510,73 @@ func ReadScreenedString(s string) string {
 		}
 	}
 	return string(t[:pos])
+}
+
+func SeparateBytesToUTF8Chars(b []byte) [][]byte {
+	n := len(b)
+	res := make([][]byte, 0, n)
+	for i := 0; i < n; i++ {
+		c := b[i]
+		if c < 0xc0 || i == n-1 {
+			res = append(res, []byte{c})
+		} else if c < 0xe0 || i == n-2 {
+			i++
+			res = append(res, []byte{c, b[i]})
+		} else if c < 0xf0 || i == n-3 {
+			i++
+			res = append(res, []byte{c, b[i], b[i+1]})
+			i++
+		} else if c < 0xf8 || i == n-4 {
+			i++
+			res = append(res, []byte{c, b[i], b[i+1], b[i+2]})
+			i += 2
+		} else if c < 0xfc || i == n-5 {
+			i++
+			res = append(res, []byte{c, b[i], b[i+1], b[i+2], b[i+3]})
+			i += 3
+		} else if c < 0xfe || i == n-6 {
+			i++
+			res = append(res, []byte{c, b[i], b[i+1], b[i+2], b[i+3], b[i+4]})
+			i += 4
+		} else {
+			res = append(res, []byte{c})
+		}
+	}
+	return res
+}
+
+func GetCodePoint(b []byte) int {
+	n := len(b)
+	if n == 0 {
+		return 0
+	}
+	c := b[0]
+	if c < 0xc0 {
+		return int(c)
+	} else if c < 0xe0 {
+		return createCodePointFromBytes(c&0x1f, b[1:], 1)
+	} else if c < 0xf0 {
+		return createCodePointFromBytes(c&0xf, b[1:], 2)
+	} else if c < 0xf8 {
+		return createCodePointFromBytes(c&0x7, b[1:], 3)
+	} else if c < 0xfc {
+		return createCodePointFromBytes(c&0x3, b[1:], 4)
+	} else if c < 0xfe {
+		return createCodePointFromBytes(c&0x1, b[1:], 5)
+	} else {
+		return int(c)
+	}
+}
+
+func createCodePointFromBytes(val byte, b []byte, m int) int {
+	res := int(val)
+	n := len(b)
+	for i := 0; i < m; i++ {
+		d := 0
+		if i < n {
+			d = int(b[i]) & 0x3f
+		}
+		res = (res << 6) | d
+	}
+	return res
 }

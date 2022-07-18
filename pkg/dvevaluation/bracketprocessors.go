@@ -221,7 +221,7 @@ func ParentheseParentProcessor(parent *dvgrammar.ExpressionValue, tree *dvgramma
 		return
 	}
 	var val interface{}
-	val, err = ExecuteAnyFunction(context, parent.Value, nil, args)
+	val, err = ExecuteAnyFunction(context, parent.Value, parent.Parent, args)
 	if err == nil {
 		value = AnyToDvGrammarExpressionValue(val)
 		parentValue = parent

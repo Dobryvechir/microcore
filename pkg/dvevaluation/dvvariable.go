@@ -327,6 +327,9 @@ func (item *DvVariable) ReadSimpleChild(fieldName string) *DvVariable {
 	if item.Kind == FIELD_ARRAY {
 		k, err := strconv.Atoi(fieldName)
 		if err != nil || k < 0 || k >= n {
+			if item.Prototype != nil {
+				return item.Prototype.ReadSimpleChild(fieldName)
+			}
 			return nil
 		}
 		return item.Fields[k]
