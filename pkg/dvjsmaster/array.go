@@ -11,7 +11,10 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"sort"
+	"strconv"
 )
+
+const ARRAY_SEQUENTIAL_LIMIT = 8000
 
 func array_init() {
 	dvevaluation.ArrayMaster.Prototype = &dvevaluation.DvVariable{
@@ -279,6 +282,10 @@ func array_init() {
 		},
 		Kind: dvevaluation.FIELD_OBJECT,
 	}
+	dvevaluation.ArrayMaster.Kind = dvevaluation.FIELD_FUNCTION
+	dvevaluation.ArrayMaster.Extra = &dvevaluation.DvFunction{
+		Fn: Array_constructor,
+	}
 }
 
 func Array_push(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
@@ -477,7 +484,7 @@ func Array_map(context *dvgrammar.ExpressionContext, thisVariable interface{}, p
 		thisArg = params[1]
 	}
 	if v != nil && v.Kind == dvevaluation.FIELD_STRING {
-		s:=dvtextutils.SeparateBytesToUTF8Chars(v.Value)
+		s := dvtextutils.SeparateBytesToUTF8Chars(v.Value)
 		m := len(s)
 		u := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: make([]*dvevaluation.DvVariable, m)}
 		for i := 0; i < m; i++ {
@@ -1007,21 +1014,51 @@ func Array_sort(context *dvgrammar.ExpressionContext, thisVariable interface{}, 
 }
 
 func Array_from(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	m:=len(params)
-	if m==0 {
+	m := len(params)
+	if m == 0 {
 		return nil, errors.New("Array.from requires parameters")
 	}
-	self:=params[0]
+	self := params[0]
 	params = params[1:]
-	v, err:=Array_map(context, self, params)
+	v, err := Array_map(context, self, params)
 	return v, err
 }
 
 func Array_of(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	m:=len(params)
-	v:=&dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: make([]*dvevaluation.DvVariable, m)}
-	for i:=0;i<m;i++ {
+	m := len(params)
+	v := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: make([]*dvevaluation.DvVariable, m)}
+	for i := 0; i < m; i++ {
 		v.Fields[i] = dvevaluation.AnyToDvVariable(params[i])
+	}
+	return v, nil
+}
+
+func Array_constructor(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	m := len(params)
+	if m > 1 {
+		return Array_of(context, thisVariable, params)
+	}
+	n := 0
+	lim := 0
+	if m == 1 {
+		f, ok := dvevaluation.AnyToNumberInt(params[0])
+		if ok && f > 0 {
+			if f < ARRAY_SEQUENTIAL_LIMIT {
+				n = int(f)
+			} else {
+				lim = int(f)
+				n = 1
+			}
+		}
+	}
+	v := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: make([]*dvevaluation.DvVariable, n)}
+	if lim > 0 {
+		v.Kind = dvevaluation.FIELD_OBJECT
+		v.Fields[0] = &dvevaluation.DvVariable{
+			Kind:  dvevaluation.FIELD_NUMBER,
+			Name:  []byte("length"),
+			Value: []byte(strconv.Itoa(lim)),
+		}
 	}
 	return v, nil
 }

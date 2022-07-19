@@ -56,7 +56,7 @@ func (item *DvVariable) ContainsItemIn(v interface{}) bool {
 	s := AnyToString(v)
 	n := len(item.Fields)
 	switch item.Kind {
-	case FIELD_OBJECT:
+	case FIELD_OBJECT, FIELD_FUNCTION:
 		for i := 0; i < n; i++ {
 			if string(item.Fields[i].Name) == s {
 				return true
@@ -260,7 +260,7 @@ func (item *DvVariable) CompareWholeDvField(other *DvVariable) int {
 			}
 		}
 		return 0
-	case FIELD_OBJECT:
+	case FIELD_OBJECT, FIELD_FUNCTION:
 		n := len(item.Fields)
 		dif := n - len(other.Fields)
 		if dif != 0 {
@@ -320,7 +320,7 @@ func (item *DvVariable) CompareDvFieldByFields(other *DvVariable, fields []strin
 }
 
 func (item *DvVariable) ReadSimpleChild(fieldName string) *DvVariable {
-	if item==nil {
+	if item == nil {
 		return nil
 	}
 	n := len(item.Fields)
@@ -334,7 +334,7 @@ func (item *DvVariable) ReadSimpleChild(fieldName string) *DvVariable {
 		}
 		return item.Fields[k]
 	}
-	if item.Kind != FIELD_OBJECT {
+	if item.Kind != FIELD_OBJECT && item.Kind != FIELD_FUNCTION {
 		return nil
 	}
 	name := []byte(fieldName)
@@ -385,7 +385,7 @@ func (item *DvVariable) ReadChildStringArrayValue(fieldName string) []string {
 
 func (item *DvVariable) ReadChildMapValue(fieldName string) map[string]string {
 	subItem, _, err := item.ReadChild(fieldName, nil)
-	if err != nil || subItem == nil || subItem.Kind != FIELD_OBJECT || len(subItem.Fields) == 0 {
+	if err != nil || subItem == nil || subItem.Kind != FIELD_OBJECT && subItem.Kind != FIELD_FUNCTION || len(subItem.Fields) == 0 {
 		return nil
 	}
 	res := make(map[string]string)
@@ -510,7 +510,7 @@ func (item *DvVariable) ReadChild(childName string, resolver ExpressionResolver)
 }
 
 func (item *DvVariable) GetChildrenByRange(startIndex int, count int) *DvVariable {
-	if item == nil || (item.Kind != FIELD_ARRAY && item.Kind != FIELD_OBJECT) {
+	if item == nil || (item.Kind != FIELD_ARRAY && item.Kind != FIELD_OBJECT && item.Kind != FIELD_FUNCTION) {
 		return nil
 	}
 	subfields := item.Fields
@@ -536,7 +536,7 @@ func (item *DvVariable) GetStringValue() string {
 		return ""
 	}
 	switch item.Kind {
-	case FIELD_OBJECT:
+	case FIELD_OBJECT, FIELD_FUNCTION:
 		res := "{"
 		subfields := item.Fields
 		n := len(subfields)
@@ -574,7 +574,7 @@ func (item *DvVariable) GetStringValueJson() string {
 		return ""
 	}
 	switch item.Kind {
-	case FIELD_OBJECT:
+	case FIELD_OBJECT, FIELD_FUNCTION:
 		res := "{"
 		subfields := item.Fields
 		n := len(subfields)
@@ -612,7 +612,7 @@ func (item *DvVariable) ConvertSimpleValueToInterface() (interface{}, bool) {
 }
 
 func (item *DvVariable) ReadSimpleStringMap(data map[string]string) error {
-	if item.Kind != FIELD_OBJECT {
+	if item.Kind != FIELD_OBJECT && item.Kind != FIELD_FUNCTION {
 		return errors.New(string(item.Name) + " must be an object { }")
 	}
 	n := len(item.Fields)
@@ -662,7 +662,7 @@ func (item *DvVariable) ConvertValueToInterface() (interface{}, bool) {
 			}
 		}
 		return data, true
-	case FIELD_OBJECT:
+	case FIELD_OBJECT, FIELD_FUNCTION:
 		fields := item.Fields
 		n := len(fields)
 		data := make(map[string]interface{}, n)
@@ -683,7 +683,7 @@ func (item *DvVariable) GetLength() int {
 		return 0
 	}
 	switch item.Kind {
-	case FIELD_ARRAY, FIELD_OBJECT:
+	case FIELD_ARRAY, FIELD_OBJECT, FIELD_FUNCTION:
 		return len(item.Fields)
 	case FIELD_STRING:
 		return len(item.Value)
@@ -711,7 +711,7 @@ func (item *DvVariable) IndexOf(child *DvVariable) int {
 			if len(sub.Name) > 0 {
 				return i
 			}
-			if sub.Kind != FIELD_OBJECT && sub.Kind != FIELD_ARRAY {
+			if sub.Kind != FIELD_OBJECT && sub.Kind != FIELD_ARRAY && sub.Kind != FIELD_FUNCTION {
 				if bytes.Equal(sub.Value, child.Value) {
 					return i
 				}
@@ -873,7 +873,7 @@ func (item *DvVariable) CloneExceptKey(other *DvVariable, deep bool) *DvVariable
 	item.Extra = other.Extra
 	item.Prototype = other.Prototype
 	item.QuickSearch = nil
-	if item.Kind == FIELD_ARRAY || item.Kind == FIELD_OBJECT {
+	if item.Kind == FIELD_ARRAY || item.Kind == FIELD_OBJECT || item.Kind == FIELD_FUNCTION {
 		fld := other.Fields
 		if deep {
 			n := len(fld)
@@ -965,7 +965,7 @@ func (item *DvVariable) MergeArraysByIds(other *DvVariable, ids []string, mode i
 	}
 }
 
-func (item *DvVariable) MergeItemIntoArraysByIds(other *DvVariable, ids []string, mode int,init bool) {
+func (item *DvVariable) MergeItemIntoArraysByIds(other *DvVariable, ids []string, mode int, init bool) {
 	if item == nil || other == nil {
 		return
 	}
@@ -978,7 +978,7 @@ func (item *DvVariable) MergeItemIntoArraysByIds(other *DvVariable, ids []string
 		switch mode {
 		case UPDATE_MODE_REPLACE:
 			m.CloneExceptKey(other, true)
-		case UPDATE_MODE_APPEND, UPDATE_MODE_MERGE_MAX, UPDATE_MODE_MERGE_MIN, UPDATE_MODE_ADD_BY_KEYS,UPDATE_MODE_MERGE:
+		case UPDATE_MODE_APPEND, UPDATE_MODE_MERGE_MAX, UPDATE_MODE_MERGE_MIN, UPDATE_MODE_ADD_BY_KEYS, UPDATE_MODE_MERGE:
 			n := len(other.Fields)
 			looker := m.QuickSearch.Looker
 			for i := 0; i < n; i++ {
@@ -1045,7 +1045,7 @@ func (item *DvVariable) AssignToSubField(field string, value string, env *DvObje
 	var err error
 	if strings.HasPrefix(field, "$:") {
 		field, err = env.EvaluateStringTypeExpression(field[2:])
-		if err!=nil {
+		if err != nil {
 			return err
 		}
 	}

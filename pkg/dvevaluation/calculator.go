@@ -132,7 +132,7 @@ var CalculatorRules = &dvgrammar.GrammarRuleDefinitions{
 func SetNodeValue(tree *dvgrammar.BuildNode, v interface{}, dataType int, context *dvgrammar.ExpressionContext, lastVarName string, lastParent *dvgrammar.ExpressionValue) error {
 	if lastParent != nil && lastParent.Name != "" && lastParent.Value != nil {
 		dv := AnyToDvVariable(lastParent.Value)
-		if dv != nil && (dv.Kind == FIELD_ARRAY || dv.Kind == FIELD_OBJECT) {
+		if dv != nil && (dv.Kind == FIELD_ARRAY || dv.Kind == FIELD_OBJECT || dv.Kind == FIELD_FUNCTION) {
 			err := AssignVariableByKey(dv, lastVarName, v, false)
 			return err
 		}

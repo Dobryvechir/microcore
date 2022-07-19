@@ -141,7 +141,7 @@ func AnyToNumber(v interface{}) float64 {
 	case *DvVariable:
 		b := v.(*DvVariable)
 		switch b.Kind {
-		case FIELD_OBJECT, FIELD_ARRAY:
+		case FIELD_OBJECT, FIELD_ARRAY, FIELD_FUNCTION:
 			f = float64(len(b.Fields))
 		case FIELD_NULL, FIELD_UNDEFINED:
 			f = 0

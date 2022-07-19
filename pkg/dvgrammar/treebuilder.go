@@ -300,7 +300,7 @@ tokenRunner:
 				}
 				value = &tokens[i]
 				operator = value.Value
-				if operator == "" || value.DataType == TYPE_CONTROL || value.DataType == TYPE_OPERATOR || value.DataType == TYPE_OBJECT {
+				if operator == "" || value.DataType == TYPE_OBJECT {
 					return nil, errors.New("Dot must be followed by name")
 				}
 				subForest := make([]*BuildNode, 1)

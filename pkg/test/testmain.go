@@ -14,6 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
+	testEvaluationSingle("", "B=Array(7);B.length", "7", KindANY)
 	testEvaluationSingle("", "B=Array.of(1,2,3,4);B[2]", "3", KindANY)
 	showResume()
 }
