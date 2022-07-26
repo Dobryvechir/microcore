@@ -19,6 +19,7 @@ func Init() bool {
 	date_init()
 	json_init()
 	string_init()
+	regexp_init()
 	return true
 }
 

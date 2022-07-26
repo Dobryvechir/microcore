@@ -14,8 +14,8 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("", "B=Array(7);B.length", "7", KindANY)
-	testEvaluationSingle("", "B=Array.of(1,2,3,4);B[2]", "3", KindANY)
+	testEvaluationSingle("", "'ж'.codePointAt(0)", "1078", KindANY)
+	testEvaluationSingle("", "String.fromCodePoint('у'.codePointAt(0),'ж'.codePointAt(0))", "уж", KindANY)
 	showResume()
 }
 

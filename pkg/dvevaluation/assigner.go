@@ -15,6 +15,7 @@ var ObjectMaster *DvVariable = RegisterMasterVariable("Object", &DvVariable{Kind
 var ArrayMaster *DvVariable = RegisterMasterVariable("Array", &DvVariable{Kind: FIELD_OBJECT})
 var StringMaster *DvVariable = RegisterMasterVariable("String", &DvVariable{Kind: FIELD_OBJECT})
 var WindowMaster *DvVariable = RegisterMasterVariable("window", &DvVariable{Kind: FIELD_OBJECT})
+var RegExpMaster *DvVariable = RegisterMasterVariable("RegExp", &DvVariable{Kind: FIELD_OBJECT})
 
 func AssignVariableDirect(parent *DvVariable, val interface{}) error {
 	var value *DvVariable

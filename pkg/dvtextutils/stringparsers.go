@@ -580,3 +580,33 @@ func createCodePointFromBytes(val byte, b []byte, m int) int {
 	}
 	return res
 }
+
+func GetBytesFromPointCode(v int) []byte {
+	v = v & 0x7fffffff
+	if v <= 0x7f {
+		return []byte{byte(v)}
+	}
+	if v <= 0x7ff {
+		return createBytesFromPointCode(v, 0xc0, 5, 1)
+	}
+	if v <= 0xffff {
+		return createBytesFromPointCode(v, 0xe0, 4, 2)
+	}
+	if v <= 0x1fffff {
+		return createBytesFromPointCode(v, 0xf0, 3, 3)
+	}
+	if v <= 0x3ffffff {
+		return createBytesFromPointCode(v, 0xf8, 2, 4)
+	}
+	return createBytesFromPointCode(v, 0xfc, 1, 5)
+}
+
+func createBytesFromPointCode(v int, first byte, bits int, rest int) []byte {
+	buf := make([]byte, rest+1)
+	for i := 0; i < rest; i++ {
+		buf[rest-i] = byte(v&0x3f) | 0x80
+		v >>= 6
+	}
+	buf[0] = first | byte(v & ((1 << bits) - 1))
+	return buf
+}

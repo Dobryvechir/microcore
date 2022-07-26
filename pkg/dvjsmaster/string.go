@@ -41,7 +41,7 @@ func string_init() {
 				Name: []byte("concat"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_includes,
+					Fn: String_concat,
 				},
 			},
 			{
@@ -55,14 +55,14 @@ func string_init() {
 				Name: []byte("fromCharCode"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_includes,
+					Fn: String_fromCharCode,
 				},
 			},
 			{
 				Name: []byte("fromCodePoint"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_includes,
+					Fn: String_fromCodePoint,
 				},
 			},
 			{
@@ -76,28 +76,28 @@ func string_init() {
 				Name: []byte("indexOf"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_includes,
+					Fn: String_indexOf,
 				},
 			},
 			{
 				Name: []byte("lastIndexOf"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_includes,
+					Fn: String_lastIndexOf,
 				},
 			},
 			{
 				Name: []byte("localeCompare"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_includes,
+					Fn: String_localeCompare,
 				},
 			},
 			{
 				Name: []byte("match"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: String_includes,
+					Fn: String_match,
 				},
 			},
 			{
@@ -422,7 +422,7 @@ func String_codePointAt(context *dvgrammar.ExpressionContext, thisVariable inter
 		return false, nil
 	}
 	s := dvevaluation.AnyToString(thisVariable)
-	b:=dvtextutils.SeparateBytesToUTF8Chars([]byte(s))
+	b := dvtextutils.SeparateBytesToUTF8Chars([]byte(s))
 	m := len(b)
 	if m == 0 {
 		return nil, nil
@@ -438,6 +438,119 @@ func String_codePointAt(context *dvgrammar.ExpressionContext, thisVariable inter
 			p = int(p64)
 		}
 	}
-	res:=dvtextutils.GetCodePoint(b[p])
+	res := dvtextutils.GetCodePoint(b[p])
 	return res, nil
+}
+
+func String_concat(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	s := dvevaluation.AnyToString(thisVariable)
+	n := len(params)
+	for i := 0; i < n; i++ {
+		s += dvevaluation.AnyToString(params[i])
+	}
+	return s, nil
+}
+
+func String_fromCharCode(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	buf := make([]byte, 0, 2*n)
+	for i := 0; i < n; i++ {
+		b, ok := dvevaluation.AnyToNumberInt(params[i])
+		if !ok {
+			continue
+		}
+		b = b & 0xffff
+		if b < 256 {
+			buf = append(buf, byte(b))
+		} else {
+			buf = append(buf, dvtextutils.GetBytesFromPointCode(int(b))...)
+		}
+	}
+	return string(buf), nil
+}
+
+func String_fromCodePoint(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	buf := make([]byte, 0, n<<2)
+	for i := 0; i < n; i++ {
+		b, ok := dvevaluation.AnyToNumberInt(params[i])
+		if !ok {
+			continue
+		}
+		b = b & 0xffffffff
+		sub := dvtextutils.GetBytesFromPointCode(int(b))
+		buf = append(buf, sub...)
+	}
+	return string(buf), nil
+}
+
+func String_indexOf(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	s := dvevaluation.AnyToString(thisVariable)
+	n := len(params)
+	if n == 0 {
+		return -1, nil
+	}
+	t := dvevaluation.AnyToString(params[0])
+	pos := 0
+	m := len(s)
+	if n > 1 {
+		p, ok := dvevaluation.AnyToNumberInt(params[1])
+		if ok {
+			if p >= int64(m) {
+				return -1, nil
+			}
+			if p >= 0 {
+				pos = int(p)
+			}
+		}
+	}
+	res := strings.Index(s[pos:], t)
+	if res >= 0 {
+		res += pos
+	}
+	return res, nil
+}
+
+func String_lastIndexOf(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	s := dvevaluation.AnyToString(thisVariable)
+	n := len(params)
+	if n == 0 {
+		return -1, nil
+	}
+	t := dvevaluation.AnyToString(params[0])
+	m := len(s)
+	pos := m
+	if n > 1 {
+		p, ok := dvevaluation.AnyToNumberInt(params[1])
+		if ok {
+			if p <= 0 {
+				return -1, nil
+			}
+			if p < int64(m) {
+				pos = int(p)
+			}
+		}
+	}
+	res := strings.LastIndex(s[:pos], t)
+	return res, nil
+}
+
+func String_localeCompare(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	s := dvevaluation.AnyToString(thisVariable)
+	t := ""
+	if len(params) > 0 {
+		t = dvevaluation.AnyToString(params[0])
+	}
+	b := strings.Compare(s, t)
+	return b, nil
+}
+
+func String_match(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	s := dvevaluation.AnyToString(thisVariable)
+	t := ""
+	if len(params) > 0 {
+		t = dvevaluation.AnyToString(params[0])
+	}
+	b := strings.Compare(s, t)
+	return b, nil
 }

@@ -10,6 +10,19 @@ import (
 	"strconv"
 )
 
+type RegExpession struct {
+	Pattern string
+	Flags string
+}
+
+func NewRegExpression(pattern string, flags string) (*RegExpession, error) {
+	v:=&RegExpession{
+		Pattern: pattern,
+		Flags: flags,
+	}
+	return v, nil
+}
+
 func FindByRegularExpression(source string, regexpr string, group string, defvalue string, isall bool, count int) (interface{}, error) {
 	reg, err := regexp.Compile(regexpr)
 	if err != nil {
