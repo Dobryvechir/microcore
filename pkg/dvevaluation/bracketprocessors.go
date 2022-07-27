@@ -319,6 +319,16 @@ func GetExpressionValueChild(value *dvgrammar.ExpressionValue, index *dvgrammar.
 	r := v.ReadSimpleChild(child)
 	if r != nil {
 		rev := r.ToDvGrammarExpressionValue()
+		if r.Kind==FIELD_FUNCTION && r.Extra!=nil {
+			dvf:=r.Extra.(*DvFunction)
+			if dvf!=nil && dvf.Immediate {
+				val, err := ExecuteAnyFunction(context, r, v, nil)
+				if err!=nil {
+					return nil, err
+				}
+				rev = AnyToDvGrammarExpressionValue(val)
+			}
+		}
 		if rev != nil && (context.VisitorOptions&dvgrammar.EVALUATE_OPTION_NAME) != 0 {
 			rev.Name = child
 		}

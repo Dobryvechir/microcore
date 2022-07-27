@@ -339,8 +339,12 @@ func (item *DvVariable) ReadSimpleChild(fieldName string) *DvVariable {
 	}
 	name := []byte(fieldName)
 	for i := 0; i < n; i++ {
-		if bytes.Equal(item.Fields[i].Name, name) {
-			return item.Fields[i]
+		r:=item.Fields[i]
+		if r==nil {
+			continue
+		}
+		if bytes.Equal(r.Name, name) {
+			return r
 		}
 	}
 	if item.Prototype != nil {

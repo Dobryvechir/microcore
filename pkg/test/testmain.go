@@ -14,8 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("", "'ж'.codePointAt(0)", "1078", KindANY)
-	testEvaluationSingle("", "String.fromCodePoint('у'.codePointAt(0),'ж'.codePointAt(0))", "уж", KindANY)
+	testEvaluationSingle("", "V=new RegExp('\\w','g');V.flags", "g", KindANY)
 	showResume()
 }
 

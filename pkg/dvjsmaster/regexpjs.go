@@ -9,6 +9,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
+	"strings"
 )
 
 func regexp_init() {
@@ -18,7 +19,7 @@ func regexp_init() {
 				Name: []byte("dotAll"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_concat,
+					Fn: RegExp_dotAll,
 					Immediate: true,
 				},
 			},
@@ -34,7 +35,7 @@ func regexp_init() {
 				Name: []byte("global"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_entries,
+					Fn: RegExp_global,
 					Immediate: true,
 				},
 			},
@@ -42,7 +43,7 @@ func regexp_init() {
 				Name: []byte("hasIndices"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_every,
+					Fn: RegExp_hasIndices,
 					Immediate: true,
 				},
 			},
@@ -50,7 +51,7 @@ func regexp_init() {
 				Name: []byte("ignoreCase"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_fill,
+					Fn: RegExp_ignoreCase,
 					Immediate: true,
 				},
 			},
@@ -58,7 +59,7 @@ func regexp_init() {
 				Name: []byte("lastIndex"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_filter,
+					Fn: RegExp_global,
 					Immediate: true,
 				},
 			},
@@ -66,7 +67,7 @@ func regexp_init() {
 				Name: []byte("multiline"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_find,
+					Fn: RegExp_global,
 					Immediate: true,
 				},
 			},
@@ -74,7 +75,7 @@ func regexp_init() {
 				Name: []byte("source"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_findIndex,
+					Fn: RegExp_global,
 					Immediate: true,
 				},
 			},
@@ -82,7 +83,7 @@ func regexp_init() {
 				Name: []byte("sticky"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_findLast,
+					Fn: RegExp_sticky,
 					Immediate: true,
 				},
 			},
@@ -90,7 +91,7 @@ func regexp_init() {
 				Name: []byte("unicode"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_findLastIndex,
+					Fn: RegExp_global,
 					Immediate: true,
 				},
 			},
@@ -98,56 +99,56 @@ func regexp_init() {
 				Name: []byte("@@match"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_flat,
+					Fn: RegExp_global,
 				},
 			},
 			{
 				Name: []byte("@@matchAll"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_flatMap,
+					Fn: RegExp_global,
 				},
 			},
 			{
 				Name: []byte("@@replace"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_foreach,
+					Fn: RegExp_global,
 				},
 			},
 			{
 				Name: []byte("@@search"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_from,
+					Fn: RegExp_global,
 				},
 			},
 			{
 				Name: []byte("@@split"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_includes,
+					Fn: RegExp_global,
 				},
 			},
 			{
 				Name: []byte("exec"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_indexOf,
+					Fn: RegExp_global,
 				},
 			},
 			{
 				Name: []byte("test"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_isArray,
+					Fn: RegExp_global,
 				},
 			},
 			{
 				Name: []byte("toString"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: Array_join,
+					Fn: RegExp_global,
 				},
 			},
 		},
@@ -179,8 +180,12 @@ func regExpQuickCreation(thisVar interface{}, pattern interface{}, flags interfa
 		v = &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_OBJECT}
 	}
 	v.Prototype = dvevaluation.RegExpMaster
-	patternStr := ""
+	patternStr := dvevaluation.AnyToString(pattern)
 	flagsStr := dvevaluation.AnyToString(flags)
+	patternAlt:=getRegExpression(pattern)
+	if patternAlt!=nil {
+		patternStr = patternAlt.Pattern
+	}
 	rex, err := dvtextutils.NewRegExpression(patternStr, flagsStr)
 	if err != nil {
 		return nil, err
@@ -207,4 +212,49 @@ func RegExp_flags(context *dvgrammar.ExpressionContext, thisVariable interface{}
 		return "", nil
 	}
 	return rex.Flags, nil
+}
+
+func RegExp_dotAll(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	rex:=getRegExpression(thisVariable)
+	if rex==nil {
+		return "", nil
+	}
+	v:=strings.Contains(rex.Flags, "s")
+	return v, nil
+}
+
+func RegExp_global(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	rex:=getRegExpression(thisVariable)
+	if rex==nil {
+		return "", nil
+	}
+	v:=strings.Contains(rex.Flags, "g")
+	return v, nil
+}
+
+func RegExp_hasIndices(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	rex:=getRegExpression(thisVariable)
+	if rex==nil {
+		return "", nil
+	}
+	v:=strings.Contains(rex.Flags, "d")
+	return v, nil
+}
+
+func RegExp_ignoreCase(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	rex:=getRegExpression(thisVariable)
+	if rex==nil {
+		return "", nil
+	}
+	v:=strings.Contains(rex.Flags, "i")
+	return v, nil
+}
+
+func RegExp_sticky(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	rex:=getRegExpression(thisVariable)
+	if rex==nil {
+		return "", nil
+	}
+	v:=strings.Contains(rex.Flags, "y")
+	return v, nil
 }
