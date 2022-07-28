@@ -19,7 +19,7 @@ func regexp_init() {
 				Name: []byte("dotAll"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_dotAll,
+					Fn:        RegExp_dotAll,
 					Immediate: true,
 				},
 			},
@@ -27,7 +27,7 @@ func regexp_init() {
 				Name: []byte("flags"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_flags,
+					Fn:        RegExp_flags,
 					Immediate: true,
 				},
 			},
@@ -35,7 +35,7 @@ func regexp_init() {
 				Name: []byte("global"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_global,
+					Fn:        RegExp_global,
 					Immediate: true,
 				},
 			},
@@ -43,7 +43,7 @@ func regexp_init() {
 				Name: []byte("hasIndices"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_hasIndices,
+					Fn:        RegExp_hasIndices,
 					Immediate: true,
 				},
 			},
@@ -51,7 +51,7 @@ func regexp_init() {
 				Name: []byte("ignoreCase"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_ignoreCase,
+					Fn:        RegExp_ignoreCase,
 					Immediate: true,
 				},
 			},
@@ -59,7 +59,7 @@ func regexp_init() {
 				Name: []byte("lastIndex"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_global,
+					Fn:        RegExp_global,
 					Immediate: true,
 				},
 			},
@@ -67,7 +67,7 @@ func regexp_init() {
 				Name: []byte("multiline"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_global,
+					Fn:        RegExp_multiline,
 					Immediate: true,
 				},
 			},
@@ -75,7 +75,7 @@ func regexp_init() {
 				Name: []byte("source"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_global,
+					Fn:        RegExp_source,
 					Immediate: true,
 				},
 			},
@@ -83,7 +83,7 @@ func regexp_init() {
 				Name: []byte("sticky"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_sticky,
+					Fn:        RegExp_sticky,
 					Immediate: true,
 				},
 			},
@@ -91,7 +91,7 @@ func regexp_init() {
 				Name: []byte("unicode"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_global,
+					Fn:        RegExp_unicode,
 					Immediate: true,
 				},
 			},
@@ -141,7 +141,7 @@ func regexp_init() {
 				Name: []byte("test"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
-					Fn: RegExp_global,
+					Fn: RegExp_test,
 				},
 			},
 			{
@@ -182,15 +182,25 @@ func regExpQuickCreation(thisVar interface{}, pattern interface{}, flags interfa
 	v.Prototype = dvevaluation.RegExpMaster
 	patternStr := dvevaluation.AnyToString(pattern)
 	flagsStr := dvevaluation.AnyToString(flags)
-	patternAlt:=getRegExpression(pattern)
-	if patternAlt!=nil {
+	patternAlt := getRegExpression(pattern)
+	if patternAlt != nil {
 		patternStr = patternAlt.Pattern
+	}
+	if len(patternStr) == 0 {
+		patternStr = "(?:)"
 	}
 	rex, err := dvtextutils.NewRegExpression(patternStr, flagsStr)
 	if err != nil {
 		return nil, err
 	}
 	v.Extra = rex
+	v.Fields = []*dvevaluation.DvVariable{
+		{
+			Kind:  dvevaluation.FIELD_NUMBER,
+			Name:  []byte("lastIndex"),
+			Value: []byte("0"),
+		},
+	}
 	return v, nil
 }
 
@@ -207,54 +217,96 @@ func getRegExpression(item interface{}) *dvtextutils.RegExpession {
 }
 
 func RegExp_flags(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	rex:=getRegExpression(thisVariable)
-	if rex==nil {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
 		return "", nil
 	}
 	return rex.Flags, nil
 }
 
 func RegExp_dotAll(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	rex:=getRegExpression(thisVariable)
-	if rex==nil {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
 		return "", nil
 	}
-	v:=strings.Contains(rex.Flags, "s")
+	v := strings.Contains(rex.Flags, "s")
 	return v, nil
 }
 
 func RegExp_global(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	rex:=getRegExpression(thisVariable)
-	if rex==nil {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
 		return "", nil
 	}
-	v:=strings.Contains(rex.Flags, "g")
+	v := strings.Contains(rex.Flags, "g")
 	return v, nil
 }
 
 func RegExp_hasIndices(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	rex:=getRegExpression(thisVariable)
-	if rex==nil {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
 		return "", nil
 	}
-	v:=strings.Contains(rex.Flags, "d")
+	v := strings.Contains(rex.Flags, "d")
 	return v, nil
 }
 
 func RegExp_ignoreCase(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	rex:=getRegExpression(thisVariable)
-	if rex==nil {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
 		return "", nil
 	}
-	v:=strings.Contains(rex.Flags, "i")
+	v := strings.Contains(rex.Flags, "i")
+	return v, nil
+}
+
+func RegExp_multiline(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
+		return "", nil
+	}
+	v := strings.Contains(rex.Flags, "m")
 	return v, nil
 }
 
 func RegExp_sticky(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	rex:=getRegExpression(thisVariable)
-	if rex==nil {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
 		return "", nil
 	}
-	v:=strings.Contains(rex.Flags, "y")
+	v := strings.Contains(rex.Flags, "y")
 	return v, nil
+}
+
+func RegExp_source(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
+		return "", nil
+	}
+	return rex.Pattern, nil
+}
+
+func RegExp_unicode(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
+		return "", nil
+	}
+	v := strings.Contains(rex.Flags, "u")
+	return v, nil
+}
+
+func RegExp_test(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	rex := getRegExpression(thisVariable)
+	if rex == nil {
+		return "", nil
+	}
+	s := ""
+	if len(params) > 0 {
+		s = dvevaluation.AnyToString(params[0])
+	}
+	res := false
+	if rex.Compiled.MatchString(s) {
+		res = true
+	}
+	return res, nil
 }

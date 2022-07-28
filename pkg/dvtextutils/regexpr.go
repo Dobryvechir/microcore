@@ -11,14 +11,20 @@ import (
 )
 
 type RegExpession struct {
-	Pattern string
-	Flags string
+	Pattern  string
+	Flags    string
+	Compiled *regexp.Regexp
 }
 
 func NewRegExpression(pattern string, flags string) (*RegExpession, error) {
-	v:=&RegExpession{
-		Pattern: pattern,
-		Flags: flags,
+	compiled, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	v := &RegExpession{
+		Pattern:  pattern,
+		Flags:    flags,
+		Compiled: compiled,
 	}
 	return v, nil
 }
@@ -40,27 +46,27 @@ func FindByRegularExpression(source string, regexpr string, group string, defval
 	}
 	if isall {
 		if isIndex {
-			res:= reg.FindAllString(source, grp)
-			if count>0 {
-				if count<=len(res) {
+			res := reg.FindAllString(source, grp)
+			if count > 0 {
+				if count <= len(res) {
 					return res[count-1], nil
 				}
 				return defvalue, nil
 			}
 			return res, nil
 		}
-		res:= reg.FindAllStringSubmatch(source, -1)
-		if count>0 {
-			if count<=len(res) {
+		res := reg.FindAllStringSubmatch(source, -1)
+		if count > 0 {
+			if count <= len(res) {
 				return res[count-1], nil
 			}
-			return defvalue,nil
+			return defvalue, nil
 		}
 		return res, nil
 	}
 	if isIndex {
-		res:= reg.FindStringSubmatch(source)
-		if grp<len(res) {
+		res := reg.FindStringSubmatch(source)
+		if grp < len(res) {
 			return res[grp], nil
 		}
 		return defvalue, nil
