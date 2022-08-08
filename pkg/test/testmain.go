@@ -14,7 +14,7 @@ import (
 
 func testCurrent() {
 	initEnvironment()
-	testEvaluationSingle("", "V=new RegExp('\\w','g');V.flags", "g", KindANY)
+	testEvaluationSingle("", "V=new RegExp('ech','y');T='#vechir#';(V.test(T)?1000:0)+V.lastIndex", "0", KindANY)
 	showResume()
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
+	"strconv"
 	"strings"
 )
 
@@ -216,6 +217,25 @@ func getRegExpression(item interface{}) *dvtextutils.RegExpession {
 	return rex
 }
 
+func setRegExpressionLastIndex(item interface{}, value int) {
+	if item == nil {
+		return
+	}
+	v := dvevaluation.AnyToDvVariable(item)
+	if v == nil || v.Kind != dvevaluation.FIELD_OBJECT || v.Extra == nil {
+		return
+	}
+	lst := v.ReadSimpleChild("lastIndex")
+	if lst == nil {
+		return
+	}
+	lst.Value = []byte(strconv.Itoa(value))
+}
+
+func resetRegExpressionLastIndex(item interface{}) {
+	setRegExpressionLastIndex(item, 0)
+}
+
 func RegExp_flags(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
 	rex := getRegExpression(thisVariable)
 	if rex == nil {
@@ -296,17 +316,106 @@ func RegExp_unicode(context *dvgrammar.ExpressionContext, thisVariable interface
 }
 
 func RegExp_test(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
-	rex := getRegExpression(thisVariable)
-	if rex == nil {
-		return "", nil
-	}
 	s := ""
 	if len(params) > 0 {
 		s = dvevaluation.AnyToString(params[0])
 	}
-	res := false
-	if rex.Compiled.MatchString(s) {
-		res = true
+	res, _, _, err := RegExpExecution(thisVariable, s)
+	return res, err
+}
+
+func RegExpExecution(regexpVariable interface{}, s string) (res bool, from int, to int, err error) {
+	rex := getRegExpression(regexpVariable)
+	if rex == nil {
+		return
 	}
-	return res, nil
+	if rex.GlobalSearch {
+		sticky := strings.Contains(rex.Flags, "y")
+		lastIndex := getLastIndexInRegexp(regexpVariable)
+		multiCase := sticky && len(rex.Pattern) > 1 && rex.Pattern[0] == '^' && strings.Contains(rex.Flags, "m") && lastIndex > 0
+		if multiCase {
+			if lastIndex >= len(s) || (s[lastIndex-1] != 10 && s[lastIndex-1] != 13) {
+				rex.ResultIndices = nil
+			} else {
+				s = s[lastIndex:]
+				rex.ResultIndices = rex.Compiled.FindAllIndex([]byte(s), -1)
+				rex.ResultWord = s
+				adjustRegIndicesByValue(rex.ResultIndices, lastIndex)
+			}
+		} else if rex.ResultWord != s {
+			rex.ResultIndices = rex.Compiled.FindAllIndex([]byte(s), -1)
+			rex.ResultWord = s
+			rex.ResultCount = -1
+		}
+		if rex.ResultIndices != nil {
+			if sticky {
+				p := getNextPairIndex(rex.ResultIndices, lastIndex)
+				if p >= 0 && len(rex.ResultIndices[p]) == 2 {
+					res = true
+					from = rex.ResultIndices[p][0]
+					to = rex.ResultIndices[p][1]
+				}
+				if from!=lastIndex {
+					res = false
+				}
+			} else {
+				n := rex.ResultCount + 1
+				rex.ResultCount = n
+				if n < len(rex.ResultIndices) && len(rex.ResultIndices[n]) == 2 {
+					res = true
+					from = rex.ResultIndices[n][0]
+					to = rex.ResultIndices[n][1]
+				}
+			}
+		}
+		if !res {
+			resetRegExpressionLastIndex(regexpVariable)
+		} else {
+			setRegExpressionLastIndex(regexpVariable, to)
+		}
+	} else {
+		v := rex.Compiled.FindIndex([]byte(s))
+		if len(v) == 2 {
+			res = true
+			from = v[0]
+			to = v[1]
+		}
+	}
+	return
+}
+
+func getLastIndexInRegexp(regexpVariable interface{}) int {
+	v := dvevaluation.AnyToDvVariable(regexpVariable)
+	if v == nil || v.Kind != dvevaluation.FIELD_OBJECT || len(v.Fields) == 0 {
+		return 0
+	}
+	p := v.ReadSimpleChild("lastIndex")
+	if p == nil || len(p.Value) == 0 {
+		return 0
+	}
+	n, err := strconv.Atoi(string(p.Value))
+	if err != nil || n < 0 {
+		return 0
+	}
+	return n
+}
+
+func getNextPairIndex(indices [][]int, lastIndex int) int {
+	n := len(indices)
+	for i := 0; i < n; i++ {
+		if len(indices[i]) == 2 && lastIndex <= indices[i][0] {
+			return i
+		}
+	}
+	return -1
+}
+
+func adjustRegIndicesByValue(data [][]int, value int) {
+	n := len(data)
+	for i := 0; i < n; i++ {
+		m := len(data[i])
+		for j := 0; j < m; j++ {
+			data[i][j] += value
+		}
+	}
 }

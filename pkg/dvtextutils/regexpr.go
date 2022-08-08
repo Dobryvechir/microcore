@@ -8,12 +8,17 @@ package dvtextutils
 import (
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type RegExpession struct {
-	Pattern  string
-	Flags    string
-	Compiled *regexp.Regexp
+	Pattern       string
+	Flags         string
+	Compiled      *regexp.Regexp
+	ResultWord    string
+	ResultIndices [][]int
+	ResultCount   int
+	GlobalSearch  bool
 }
 
 func NewRegExpression(pattern string, flags string) (*RegExpession, error) {
@@ -22,9 +27,10 @@ func NewRegExpression(pattern string, flags string) (*RegExpession, error) {
 		return nil, err
 	}
 	v := &RegExpession{
-		Pattern:  pattern,
-		Flags:    flags,
-		Compiled: compiled,
+		Pattern:      pattern,
+		Flags:        flags,
+		Compiled:     compiled,
+		GlobalSearch: strings.Contains(pattern, "g") || strings.Contains(pattern, "y"),
 	}
 	return v, nil
 }
