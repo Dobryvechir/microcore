@@ -56,21 +56,31 @@ func execCallRun(data []interface{}) bool {
 
 func ExecCall(config *ExecCallConfig, ctx *dvcontext.RequestContext) bool {
 	if config != nil && config.Action != "" {
+		p := strings.Index(config.Action, ":")
 		if config.Action == "return" {
 			SetReturnParameters(config.Params, ctx)
 			ExecReturnShort(config.Result, ctx)
-		} else if strings.HasPrefix(config.Action, "error:") {
-			code, err := strconv.Atoi(config.Action[6:])
-			if err != nil || code < 200 || code >= 600 {
-				code = 500
-				dvlog.PrintlnError("Expected error:<code> (200-599) instead of " + config.Action)
+		} else if p > 0 {
+			subAction := config.Action[:p]
+			subParam := config.Action[p+1:]
+			if subAction == "error" {
+				code, err := strconv.Atoi(subParam)
+				if err != nil || code < 200 || code >= 600 {
+					code = 500
+					dvlog.PrintlnError("Expected error:<code> (200-599) instead of " + config.Action)
+				}
+				message, err := ctx.LocalContextEnvironment.CalculateString(config.Result)
+				if err != nil {
+					message = config.Result
+					dvlog.PrintfError("Error %s in %s", err.Error(), config.Result)
+				}
+				ActionInternalException(code, message, message, ctx)
+			} else if subAction == "redirect" {
+				ctx.Headers["location"] = []string{subParam}
+				ActionFinalException(302, []byte{}, ctx)
+			} else {
+				dvlog.PrintlnError("Wrong subaction" + config.Action)
 			}
-			message, err := ctx.LocalContextEnvironment.CalculateString(config.Result)
-			if err != nil {
-				message = config.Result
-				dvlog.PrintfError("Error %s in %s", err.Error(), config.Result)
-			}
-			ActionInternalException(code, message, message, ctx)
 		} else {
 			ExecuteAddSubsequence(ctx, config.Action, config.Params, config.Result)
 		}

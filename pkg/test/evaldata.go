@@ -336,6 +336,7 @@ func testEvaluation() {
 	testEvaluationSingle("", "V=new RegExp('^ech','my');T='#vechir#';V.lastIndex=2;(V.test(T)?1000:0)+V.lastIndex", "0", KindANY)
 	testEvaluationSingle("", "V=new RegExp('^ech','y');T='#\\nechir#';V.lastIndex=2;(V.test(T)?1000:0)+V.lastIndex", "0", KindANY)
 	testEvaluationSingle("", "V=new RegExp('^ech','y');T='#vechir#';V.lastIndex=2;(V.test(T)?1000:0)+V.lastIndex", "0", KindANY)
+	testEvaluationSingle("", "V={'a':'?1','b':2};encodeURIObjectKeyValues(V)", "a=%3F1&b=2", KindANY)
 
 	proveErrors()
 	showResume()

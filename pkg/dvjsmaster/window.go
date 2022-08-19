@@ -91,6 +91,13 @@ func window_init() {
 				},
 			},
 			{
+				Name: []byte("encodeURIObjectKeyValues"),
+				Kind: dvevaluation.FIELD_FUNCTION,
+				Extra: &dvevaluation.DvFunction{
+					Fn: Window_encodeURIObjectKeyValues,
+				},
+			},
+			{
 				Name: []byte("decodeURIComponent"),
 				Kind: dvevaluation.FIELD_FUNCTION,
 				Extra: &dvevaluation.DvFunction{
@@ -129,6 +136,29 @@ func Window_encodeURIComponent(context *dvgrammar.ExpressionContext, thisVariabl
 	s := dvevaluation.AnyToString(params[0])
 	s = EncodeURIComponent(s)
 	return s, nil
+}
+
+func Window_encodeURIObjectKeyValues(context *dvgrammar.ExpressionContext, thisVariable interface{}, params []interface{}) (interface{}, error) {
+	n := len(params)
+	if n == 0 {
+		return "", nil
+	}
+	s := dvevaluation.AnyToDvVariable(params[0])
+	if s == nil || len(s.Fields) == 0 {
+		return "", nil
+	}
+	r := ""
+	m := len(s.Fields)
+	for i := 0; i < m; i++ {
+		fld := s.Fields[i]
+		t := EncodeURIComponent(string(fld.Name)) + "=" + EncodeURIComponent(dvevaluation.AnyToString(fld))
+		if len(r) == 0 {
+			r = t
+		} else {
+			r += "&" + t
+		}
+	}
+	return r, nil
 }
 
 func EncodeURIComponent(s string) string {
