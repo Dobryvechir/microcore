@@ -307,13 +307,18 @@ func tryHttpForward(request *dvcontext.RequestContext, url string) bool {
 	req.Host = ""
 	if request.Server.ProxyName != "" {
 		name := request.Server.ProxyName
+		isPrefixed := strings.HasPrefix(name, "http:") || strings.HasPrefix(name, "https:")
 		if len(req.Header["Origin"]) > 0 {
 			origin := req.Header["Origin"][0]
-			p := strings.Index(origin, "//")
-			if p > 0 {
-				origin = origin[:p+2] + name
+			if isPrefixed {
+				origin = name
 			} else {
-				origin = "http://" + name
+				p := strings.Index(origin, "//")
+				if p > 0 {
+					origin = origin[:p+2] + name
+				} else {
+					origin = "http://" + name
+				}
 			}
 			req.Header["Origin"] = []string{origin}
 		}
@@ -323,7 +328,11 @@ func tryHttpForward(request *dvcontext.RequestContext, url string) bool {
 			p := strings.Index(referer, "//") + 2
 			n := strings.IndexByte(referer[p:], '/') + p
 			if p > 2 {
-				proxyReferer = referer[:p] + name
+				if isPrefixed {
+					proxyReferer = name
+				} else {
+					proxyReferer = referer[:p] + name
+				}
 				if n > p {
 					proxyReferer += referer[n:]
 				}
@@ -587,7 +596,7 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 			} else if currentServer.ProxyServerMap != nil && len(currentServer.ProxyServerMap[host]) != 0 {
 				tryHttpForward(request, currentServer.ProxyServerMap[host])
 				place = "*/*"
-				if request.StatusCode>=300 {
+				if request.StatusCode >= 300 {
 					place += " " + strconv.Itoa(request.StatusCode)
 				}
 			} else if currentServer.HasProxyServers && tryProxyServers(request) {
