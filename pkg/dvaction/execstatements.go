@@ -76,6 +76,9 @@ func ExecCall(config *ExecCallConfig, ctx *dvcontext.RequestContext) bool {
 				}
 				ActionInternalException(code, message, message, ctx)
 			} else if subAction == "redirect" {
+				if ctx.Headers==nil {
+					ctx.Headers = make(map[string][]string)
+				}
 				ctx.Headers["location"] = []string{subParam}
 				ActionFinalException(302, []byte{}, ctx)
 			} else {

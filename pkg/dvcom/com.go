@@ -604,6 +604,9 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 			} else if currentServer.ProxyServerHttp {
 				tryHttpForward(request, currentServer.ProxyServerUrl)
 				place = "http"
+				if request.StatusCode!=200 && request.StatusCode!=201 {
+					place += " " + strconv.Itoa(request.StatusCode)
+				}
 			} else {
 				request.HandleFileNotFound()
 				place = "none"
