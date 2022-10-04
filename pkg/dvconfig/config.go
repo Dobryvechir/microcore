@@ -55,7 +55,6 @@ type DvRewrite struct {
 type ProxyServerInfo struct {
 	Filter string `json:"filter"`
 	Url    string `json:"url"`
-	Kind   string `json:"kind"`
 }
 
 type ServerSession struct {
