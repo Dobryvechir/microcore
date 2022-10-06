@@ -58,8 +58,11 @@ func (item *DvVariable) ContainsItemIn(v interface{}) bool {
 	switch item.Kind {
 	case FIELD_OBJECT, FIELD_FUNCTION:
 		for i := 0; i < n; i++ {
-			if string(item.Fields[i].Name) == s {
-				return true
+			if item.Fields[i] != nil {
+				b := item.Fields[i].Name
+				if len(b) > 0 && string(b) == s {
+					return true
+				}
 			}
 		}
 	case FIELD_ARRAY:
@@ -339,8 +342,8 @@ func (item *DvVariable) ReadSimpleChild(fieldName string) *DvVariable {
 	}
 	name := []byte(fieldName)
 	for i := 0; i < n; i++ {
-		r:=item.Fields[i]
-		if r==nil {
+		r := item.Fields[i]
+		if r == nil {
 			continue
 		}
 		if bytes.Equal(r.Name, name) {

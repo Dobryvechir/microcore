@@ -417,6 +417,15 @@ func ConvertInterfaceListsToStringLists(list [][]interface{}, options int) [][]s
 	return r
 }
 
+func ConvertStringMapToDvVariable(m map[string]string) *DvVariable {
+	dv := &DvVariable{Kind: FIELD_OBJECT, Fields: make([]*DvVariable, len(m))}
+	for k, v := range m {
+		item := &DvVariable{Kind: FIELD_STRING, Name: []byte(k), Value: []byte(v)}
+		dv.Fields = append(dv.Fields, item)
+	}
+	return dv
+}
+
 func AnyToDvVariable(v interface{}) *DvVariable {
 	switch v.(type) {
 	case *DvVariable:
@@ -451,6 +460,8 @@ func AnyToDvVariable(v interface{}) *DvVariable {
 			}
 		}
 		return rd
+	case map[string]string:
+		return ConvertStringMapToDvVariable(v.(map[string]string))
 	}
 	return nil
 }
