@@ -18,6 +18,8 @@ Compares 2 objects or arrays and provides the sources of updated, created, uncha
              from the json reference.
      "unchangedAsUpdated" true/false, false is default, if true, the unchanged are treated as the updated.
 }
+Note: added, removed, updated, unchanged, updatedRef can be either simple variable names or complex stream names
+    started with request:, file:, log:, global:, error:, session:, map:, ...
 Example:
 UPDATE_STEP_1=compare:{"sample":{"var":"S","ids":["name","key"]},"ref":{"var":"T","ids":["name","key"]}},"added":"RESULT"}
 </pre>

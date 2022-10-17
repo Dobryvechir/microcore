@@ -125,21 +125,20 @@ func CompareJsonByConfig(config *CompareJsonConfig, ctx *dvcontext.RequestContex
 	added, removed, updated, unchanged, counterparts := dvjson.FindDifferenceForAnyType(sample, ref,
 		config.Added != "", config.Removed != "", config.Updated != "", config.Unchanged != "",
 		config.UpdatedRef != "", config.UnchangedAsUpdated, false)
-	env := ctx.LocalContextEnvironment.Properties
-	if added != nil {
-		env[config.Added] = added
+	if config.Added != "" {
+		SaveActionResult(config.Added, added, ctx)
 	}
-	if removed != nil {
-		env[config.Removed] = removed
+	if config.Removed != "" {
+		SaveActionResult(config.Removed, removed, ctx)
 	}
-	if updated != nil {
-		env[config.Updated] = updated
+	if config.Updated != "" {
+		SaveActionResult(config.Updated, updated, ctx)
 	}
-	if unchanged != nil {
-		env[config.Unchanged] = unchanged
+	if config.Unchanged != "" {
+		SaveActionResult(config.Unchanged, unchanged, ctx)
 	}
-	if counterparts != nil {
-		env[config.UpdatedRef] = counterparts
+	if config.UpdatedRef != "" {
+		SaveActionResult(config.UpdatedRef, counterparts, ctx)
 	}
 	return true
 }
