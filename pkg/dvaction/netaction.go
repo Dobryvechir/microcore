@@ -181,7 +181,7 @@ func smartNetProcessBody(body string, ctx *dvcontext.RequestContext) (string, bo
 
 func smartNetProcessHeaders(headers map[string]string, newHeaders string, method string, body string) map[string]string {
 	if newHeaders != "" {
-		dvtextutils.PutDescribedAttributesToMapFromCommaSeparatedList(dvparser.GlobalProperties, headers, newHeaders)
+		dvtextutils.PutDescribedAttributesToMapFromEOLSeparatedList(dvparser.GlobalProperties, headers, newHeaders)
 	}
 	if _, ok := headers["accept"]; !ok {
 		headers["accept"] = "application/json"

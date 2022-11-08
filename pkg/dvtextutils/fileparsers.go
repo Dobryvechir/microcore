@@ -146,6 +146,10 @@ func PutDescribedAttributesToMapFromCommaSeparatedList(params map[string]string,
 	return PutDescribedAttributesToMapFromList(params, pool, ConvertToNonEmptyList(list))
 }
 
+func PutDescribedAttributesToMapFromEOLSeparatedList(params map[string]string, pool map[string]string, list string) error {
+	return PutDescribedAttributesToMapFromList(params, pool, ConvertToNonEmptyListByEOL(list))
+}
+
 func ComposeParametersInTemplate(template string, brackets int, value string) (res map[string]string, ok bool) {
 	res = make(map[string]string)
 	ok = true

@@ -134,6 +134,15 @@ func ConvertToNonEmptyList(lst string) []string {
 	return ReduceListToNonEmptyList(ConvertToList(lst))
 }
 
+func ConvertToNonEmptyListBySeparator(lst string, separator string) []string {
+    r:=	strings.Split(lst, separator)
+	return ReduceListToNonEmptyList(r)
+}
+
+func ConvertToNonEmptyListByEOL(lst string) []string {
+	return ConvertToNonEmptyListBySeparator(lst, "\n")
+}
+
 func ConvertURLToList(url string) []string {
 	return ReduceListToNonEmptyList(strings.Split(url, "/"))
 }
