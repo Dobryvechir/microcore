@@ -151,7 +151,11 @@ func GetTaskSubFolder(subFolder string) string {
 }
 
 func WriteRequestToLog(body []byte, r *http.Request) string {
-	return WriteNetRequestToLog(body, r.Method, r.URL.Path, CurrentLogLevel >= LogDetail, r.Host, "R", r.Header, nil)
+	finalUrl := r.URL.Path
+	if r.URL.RawQuery != "" {
+		finalUrl += "?" + r.URL.RawQuery
+	}
+	return WriteNetRequestToLog(body, r.Method, finalUrl, CurrentLogLevel >= LogDetail, r.Host, "R", r.Header, nil)
 }
 
 func WriteNetRequestToLog(body []byte, method string, url string, moreDetail bool,

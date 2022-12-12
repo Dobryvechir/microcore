@@ -26,30 +26,31 @@ type ProcessFunction struct {
 }
 
 const (
-	CommandHttp        = "http"
-	CommandNet         = "net"
-	CommandProxy       = "proxy"
-	CommandOs          = "os"
-	CommandPortForward = "forward"
-	CommandSql         = "sql"
-	CommandFile        = "file"
-	CommandPaging      = "paging"
-	CommandConvert     = "convert"
 	CommandCall        = "call"
-	CommandIf          = "if"
-	CommandIfEmpty     = "ifempty"
-	CommandIfArray     = "ifarray"
+	CommandCompareJson = "compare"
+	CommandConvert     = "convert"
+	CommandFile        = "file"
 	CommandFor         = "for"
-	CommandSwitch      = "switch"
+	CommandHttp        = "http"
+	CommandIf          = "if"
+	CommandIfArray     = "ifarray"
+	CommandIfEmpty     = "ifempty"
+	CommandJs          = "js"
+	CommandNet         = "net"
+	CommandOs          = "os"
+	CommandPaging      = "paging"
+	CommandPortForward = "forward"
+	CommandProxy       = "proxy"
 	CommandRange       = "range"
 	CommandReturn      = "return"
-	CommandVoid        = "void"
-	CommandCompareJson = "compare"
-	CommandVar         = "var"
 	CommandStore       = "store"
-	CommandVersion     = "version"
-	CommandValidate    = "validate"
+	CommandSql         = "sql"
+	CommandSwitch      = "switch"
 	CommandUpsert      = "upsert"
+	CommandValidate    = "validate"
+	CommandVar         = "var"
+	CommandVersion     = "version"
+	CommandVoid        = "void"
 )
 
 var processFunctions = map[string]ProcessFunction{
@@ -58,11 +59,12 @@ var processFunctions = map[string]ProcessFunction{
 	CommandPortForward: {Init: portForwardInit, Run: portForwardRun, Async: true},
 	CommandNet:         {Init: SmartNetInit, Run: SmartNetRun},
 	CommandProxy:       {Init: ProxyNetInit, Run: ProxyNetRun},
-	CommandSql:         {Init: dvdbdata.SqlInit, Run: dvdbdata.SqlRun},
 	CommandFile:        {Init: readFileActionInit, Run: readFileActionRun},
+	CommandJs:          {Init: jsInit, Run: jsRun},
 	CommandConvert:     {Init: jsonConvertInit, Run: jsonConvertRun},
 	CommandCompareJson: {Init: compareJsonInit, Run: compareJsonRun},
 	CommandVar:         {Init: varTransformInit, Run: varTransformRun},
+	CommandSql:         {Init: dvdbdata.SqlInit, Run: dvdbdata.SqlRun},
 	CommandStore:       {Init: storeInit, Run: storeRun},
 	CommandValidate:    {Init: validationInit, Run: validationRun},
 	CommandUpsert:      {Init: upsertJsonInit, Run: upsertJsonRun},
