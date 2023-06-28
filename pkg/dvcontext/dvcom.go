@@ -31,6 +31,7 @@ const (
 )
 
 const LogHandled = -2000
+const ENCODED_HOST_PORT_URL_PARAM = "_ENCODED_HOST_PORT_URL_PARAM_"
 
 var isRecord = false
 

@@ -83,7 +83,14 @@ func (ctx *RequestContext) GetEnvironment() *dvevaluation.DvObject {
 }
 
 func (ctx *RequestContext) StoreStoringSession() {
-	if ctx.Session!=nil && ctx.PrimaryContextEnvironment!=nil {
+	if ctx.Session != nil && ctx.PrimaryContextEnvironment != nil {
 		ctx.PrimaryContextEnvironment.Set(ServerSessionStoringKey, ctx.Session)
 	}
+}
+
+func (ctx *RequestContext) GetUrlParameter(param string) string {
+	if ctx.UrlInlineParams == nil {
+		return ""
+	}
+	return ctx.UrlInlineParams[param]
 }

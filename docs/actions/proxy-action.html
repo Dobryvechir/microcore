@@ -34,6 +34,7 @@ Proxy command has the following parameters:
     "not_return_headers"  bool, true or false (default), in case of true, the
        headers from this request are not returned back upon action execution end,
       otherwise they are returned at the end of the action execution.
+    "url_from_param" string, take the full url from this param, if not empty
 }
 Example:
 UPDATE_STEP_1=proxy:{"url":"{{{MY_URL}}}","method":"PUT","body":"@@MY_SOURCE??"}

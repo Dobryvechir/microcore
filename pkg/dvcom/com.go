@@ -21,6 +21,10 @@ import (
 	"time"
 )
 
+const (
+	TRY_HTTP_FORWARD_URL_ALREADY_COMPOSED = 1
+)
+
 var LogServer bool
 var LogFileServer bool
 var LogHosts bool
@@ -148,7 +152,7 @@ func tryProxyServers(request *dvcontext.RequestContext) bool {
 	for i := 0; i < n; i++ {
 		srv := request.Server.ProxyServers[i]
 		if dvurl.MatchMasksForUrlParts(srv.FilterUrls, urls, request.PrimaryContextEnvironment) {
-			if tryHttpForward(request, srv.ServerUrl) {
+			if tryHttpForward(request, srv.ServerUrl, 0) {
 				return true
 			}
 		}
@@ -253,7 +257,21 @@ func postCookDomain(domain string, w http.ResponseWriter) {
 	}
 }
 
-func tryHttpForward(request *dvcontext.RequestContext, url string) bool {
+func tryHttpForwardWithEncodingCheck(request *dvcontext.RequestContext, proxyUrl string, options int) bool {
+	pos := strings.Index(proxyUrl, dvcontext.ENCODED_HOST_PORT_URL_PARAM)
+	if pos > 0 {
+		encoded := request.Reader.Host + request.Reader.URL.Path
+		if request.Reader.URL.RawQuery != "" {
+			encoded += "?" + request.Reader.URL.RawQuery
+		}
+		encoded = url.QueryEscape(encoded)
+		proxyUrl = proxyUrl[:pos] + encoded + proxyUrl[pos+len(dvcontext.ENCODED_HOST_PORT_URL_PARAM):]
+		options |= TRY_HTTP_FORWARD_URL_ALREADY_COMPOSED
+	}
+	return tryHttpForward(request, proxyUrl, options)
+}
+
+func tryHttpForward(request *dvcontext.RequestContext, url string, options int) bool {
 	if request.Server.Client == nil {
 		createClientForMicroCoreInfo(request.Server)
 	}
@@ -278,9 +296,12 @@ func tryHttpForward(request *dvcontext.RequestContext, url string) bool {
 		}
 		logFile = dvlog.WriteRequestToLog(body, request.Reader)
 	}
-	finalUrl := url + request.Reader.URL.Path
-	if request.Reader.URL.RawQuery != "" {
-		finalUrl += "?" + request.Reader.URL.RawQuery
+	finalUrl := url
+	if (options & TRY_HTTP_FORWARD_URL_ALREADY_COMPOSED) == 0 {
+		finalUrl += request.Reader.URL.Path
+		if request.Reader.URL.RawQuery != "" {
+			finalUrl += "?" + request.Reader.URL.RawQuery
+		}
 	}
 	req, err := http.NewRequest(method, finalUrl, bodyIo)
 	if err != nil {
@@ -594,7 +615,7 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 			if currentServer.ExtraStaticServer && tryLocalFile(request, currentServer.ProxyServerUrl) {
 				place = "ExtraStatic"
 			} else if currentServer.ProxyServerMap != nil && len(currentServer.ProxyServerMap[host]) != 0 {
-				tryHttpForward(request, currentServer.ProxyServerMap[host])
+				tryHttpForward(request, currentServer.ProxyServerMap[host], 0)
 				place = "*/*"
 				if request.StatusCode >= 300 {
 					place += " " + strconv.Itoa(request.StatusCode)
@@ -602,9 +623,9 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 			} else if currentServer.HasProxyServers && tryProxyServers(request) {
 				place = "proxy"
 			} else if currentServer.ProxyServerHttp {
-				tryHttpForward(request, currentServer.ProxyServerUrl)
+				tryHttpForwardWithEncodingCheck(request, currentServer.ProxyServerUrl, 0)
 				place = "http"
-				if request.StatusCode!=200 && request.StatusCode!=201 {
+				if request.StatusCode != 200 && request.StatusCode != 201 {
 					place += " " + strconv.Itoa(request.StatusCode)
 				}
 			} else {

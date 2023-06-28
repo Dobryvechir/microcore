@@ -66,6 +66,7 @@ type ProxyNetConfig struct {
 	NotReturnHeaders  bool   `json:"not_return_headers"`
 	Ignorable         bool   `json:"ignorable"`
 	M2MSimple         bool   `json:"m2m_simple"`
+	UrlFromParam      string `json:"url_from_param"`
 }
 
 func convertToHeader(list []string) (res map[string]string) {
@@ -334,11 +335,14 @@ func ProxyNetRunByConfig(config *ProxyNetConfig, ctx *dvcontext.RequestContext) 
 	}
 	headers = smartNetProcessHeaders(headers, config.Headers, method, body)
 	url := config.Url
-	if !config.NotAddUrlPath {
+	if len(config.UrlFromParam) != 0 {
+		url = ctx.GetUrlParameter(config.UrlFromParam)
+		if len(url) == 0 {
+			ctx.SetHttpErrorCode(400, "Unset "+config.UrlFromParam)
+			return false
+		}
+	} else if !config.NotAddUrlPath {
 		url = smartNetProcessUrl(url, ctx)
-	}
-	if !config.NotAddUrlPath {
-		url = smartNetAddUrlParams(url, ctx)
 	}
 	var logFile string
 	if ctx.LogLevel >= dvlog.LogInfo {
