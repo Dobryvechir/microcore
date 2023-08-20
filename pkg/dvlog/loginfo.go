@@ -215,6 +215,9 @@ func WriteNetResponseToLog(logFile string, body []byte, err error, headsDouble m
 	status int, moreDetail bool) {
 	respStatus := strconv.Itoa(status)
 	fileName := logFile + "S." + GetSafeFileName(respStatus)
+	if (len(body)>3 && body[0]<32) {
+		fileName += ".zip"
+	}
 	ioutil.WriteFile(fileName, body, os.ModePerm)
 	if err != nil {
 		fileName = logFile + "E." + GetSafeFileName(respStatus)
