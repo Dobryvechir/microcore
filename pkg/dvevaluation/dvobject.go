@@ -62,6 +62,20 @@ func (obj *DvObject) GetString(key string) string {
 	return AnyToString(v)
 }
 
+func (obj *DvObject) GetFirstString(key string) string {
+	v, ok := obj.Get(key)
+	if !ok || v == nil {
+		return ""
+	}
+	switch v.(type) {
+	case string:
+		return v.(string)
+	case []string:
+		return v.([]string)[0];
+	}
+	return AnyToString(v)
+}
+
 func (obj *DvObject) GetInt(key string) int {
 	v, ok := obj.Get(key)
 	if !ok || v == nil {

@@ -291,7 +291,7 @@ func ProxyNetInit(command string, ctx *dvcontext.RequestContext) ([]interface{},
 	if !DefaultInitWithObject(command, config, GetEnvironment(ctx)) {
 		return nil, false
 	}
-	if config.Url == "" {
+	if config.Url == "" && config.UrlFromParam == "" {
 		log.Printf("Url must be specified in %s", command)
 		return nil, false
 	}
