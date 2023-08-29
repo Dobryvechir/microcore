@@ -127,6 +127,9 @@ func NewRequestRepeatPause(method string, url string, body string, headers map[s
 		request, err = http.NewRequest(method, url, bodyIo)
 		request.Header = httpHeaders
 		if err != nil {
+			if Log >= LogDebug {
+				dvlog.PrintfFullOnly("NewRequest error [" + CreateRequestInfoForLog(method, url, body, httpHeaders) + "]")
+			}
 			return nil, err, nil, 400 // bad request
 		}
 		tr := http.DefaultTransport.(*http.Transport)
@@ -143,11 +146,14 @@ func NewRequestRepeatPause(method string, url string, body string, headers map[s
 			statusCode = response.StatusCode
 			buf, err = ioutil.ReadAll(response.Body)
 		} else {
-			statusCode = 502; // Bad Gateway
+			statusCode = 502 // Bad Gateway
 		}
 		if response != nil {
 			response.Body.Close()
 			respHeaders = response.Header
+		}
+		if (err != nil || statusCode >= 400) && Log >= LogDebug {
+			dvlog.Printf("Http Error %s %v %d", CreateRequestInfoForLog(method, url, body, httpHeaders), err, statusCode)
 		}
 		if statusCode < 500 {
 			break
@@ -190,6 +196,30 @@ func NewRequestRepeatPause(method string, url string, body string, headers map[s
 		return nil, errors.New(message + " " + string(buf)), nil, statusCode
 	}
 	return buf, nil, respHeaders, statusCode
+}
+
+func CreateRequestInfoForLog(method string, url string, body string, headers http.Header) string {
+	return "(method=[" + method + "] url=[" + url + "] body=[" + body + "] headers=[" + CreateHeadersForLog(headers) + "]"
+}
+
+func CreateHeadersForLog(headers http.Header) string {
+	s := ""
+	for k, v := range http.Header {
+		s += k + "=[" + CreateStringArrayForLog(v) + "]"
+	}
+	return s
+}
+
+func CreateStringArrayForLog(v []string) string {
+	n := len(v)
+	s := ""
+	for i := 0; i < n; i++ {
+		if i != 0 {
+			s += ","
+		}
+		s += "'" + v + "'"
+	}
+	return s
 }
 
 func NewJsonRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}) ([]byte, error, http.Header, int) {
@@ -235,8 +265,8 @@ func LoadStruct(method string, url string, body string, headers map[string]strin
 	if err != nil {
 		return err
 	}
-	if stat>=400 {
-		return errors.New("Failed net "+method+" "+url+" "+strconv.Itoa(stat))
+	if stat >= 400 {
+		return errors.New("Failed net " + method + " " + url + " " + strconv.Itoa(stat))
 	}
 	return json.Unmarshal(buf, v)
 }

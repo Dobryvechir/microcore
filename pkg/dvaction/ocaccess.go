@@ -172,7 +172,7 @@ func GetM2MToken(microserviceName string) (token string, okFinal bool) {
 	if accessToken.TokenType == "" || accessToken.AccessToken == "" {
 		err = dvnet.LoadStructFormUrlEncoded("POST", m2mTokenUrl, body, headers, &accessToken, dvnet.AveragePersistentOptions)
 		if accessToken.TokenType == "" || accessToken.AccessToken == "" {
-			dvlog.PrintfError("Cannot get M2M Access Token for %s (%v)", microserviceName, err)
+			dvlog.PrintfError("Cannot get M2M Access Token for %s (%v) %s", microserviceName, err, )
 			return
 		}
 	}
