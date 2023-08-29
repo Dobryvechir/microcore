@@ -248,6 +248,9 @@ func ExecuteAddSubsequence(ctx *dvcontext.RequestContext, actionName string,
 	paramStr map[string]string, returnKey string) {
 	level := ctx.PrimaryContextEnvironment.GetInt(ExSeqLevel)
 	level++
+	if ctx.PrimaryContextEnvironment.GetString(actionName +"_1")=="" {
+		dvlog.PrintfError("Action not exist %s", actionName)
+	}
 	pushSubsequence(ctx, actionName, returnKey, paramStr, level)
 }
 

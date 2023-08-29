@@ -133,6 +133,9 @@ func GetM2MToken(microserviceName string) (token string, okFinal bool) {
 		}
 		username = dvparser.GlobalProperties[M2M_USERNAME]
 		passwrd = dvparser.GlobalProperties[M2M_PASSWORD]
+		if dvnet.Log >= dvnet.LogDebug {
+			dvlog.Printf("U=[%s] P=[%s]", username, passwrd)
+		}
 	} else {
 		token, okFinal = dvparser.GlobalProperties[M2MTokenPrefix+GetMicroServicePropertyName(microserviceName)]
 		if okFinal {
@@ -172,7 +175,7 @@ func GetM2MToken(microserviceName string) (token string, okFinal bool) {
 	if accessToken.TokenType == "" || accessToken.AccessToken == "" {
 		err = dvnet.LoadStructFormUrlEncoded("POST", m2mTokenUrl, body, headers, &accessToken, dvnet.AveragePersistentOptions)
 		if accessToken.TokenType == "" || accessToken.AccessToken == "" {
-			dvlog.PrintfError("Cannot get M2M Access Token for %s (%v) %s", microserviceName, err, )
+			dvlog.PrintfError("Cannot get M2M Access Token for %s (%v) %s", microserviceName, err)
 			return
 		}
 	}
@@ -190,7 +193,7 @@ func GetMicroServicePropertyName(microServiceName string) string {
 	return strings.ToUpper(strings.ReplaceAll(microServiceName, "-", "_"))
 }
 
-func NetRequest(method string, url string, body string, headers map[string]string, options map[string]interface{},forceM2mSimple bool) ([]byte, error, http.Header, int) {
+func NetRequest(method string, url string, body string, headers map[string]string, options map[string]interface{}, forceM2mSimple bool) ([]byte, error, http.Header, int) {
 	_, m2mSimple := headers[M2M]
 	microServiceName, m2mComplex := headers[Authorization]
 	if m2mComplex {

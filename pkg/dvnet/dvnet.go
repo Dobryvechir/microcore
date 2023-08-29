@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2023 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvnet
@@ -204,7 +204,7 @@ func CreateRequestInfoForLog(method string, url string, body string, headers htt
 
 func CreateHeadersForLog(headers http.Header) string {
 	s := ""
-	for k, v := range http.Header {
+	for k, v := range headers {
 		s += k + "=[" + CreateStringArrayForLog(v) + "]"
 	}
 	return s
@@ -217,7 +217,7 @@ func CreateStringArrayForLog(v []string) string {
 		if i != 0 {
 			s += ","
 		}
-		s += "'" + v + "'"
+		s += "'" + v[i] + "'"
 	}
 	return s
 }
