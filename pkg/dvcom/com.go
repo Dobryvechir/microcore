@@ -257,18 +257,21 @@ func postCookDomain(domain string, w http.ResponseWriter) {
 	}
 }
 
-func tryHttpForwardWithEncodingCheck(request *dvcontext.RequestContext, proxyUrl string, options int) bool {
+func tryHttpForwardWithEncodingCheck(request *dvcontext.RequestContext, proxyUrl string, options int) (bool,string) {
 	pos := strings.Index(proxyUrl, dvcontext.ENCODED_HOST_PORT_URL_PARAM)
+	place:="http"
 	if pos > 0 {
-		encoded := request.Reader.Host + request.Reader.URL.Path
+		encoded := "http://" + request.Reader.Host + request.Reader.URL.Path
+		place = request.Reader.Host
 		if request.Reader.URL.RawQuery != "" {
 			encoded += "?" + request.Reader.URL.RawQuery
+			place += " (" + request.Reader.URL.RawQuery + ")"
 		}
 		encoded = url.QueryEscape(encoded)
 		proxyUrl = proxyUrl[:pos] + encoded + proxyUrl[pos+len(dvcontext.ENCODED_HOST_PORT_URL_PARAM):]
 		options |= TRY_HTTP_FORWARD_URL_ALREADY_COMPOSED
 	}
-	return tryHttpForward(request, proxyUrl, options)
+	return tryHttpForward(request, proxyUrl, options), place
 }
 
 func tryHttpForward(request *dvcontext.RequestContext, url string, options int) bool {
@@ -623,8 +626,7 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 			} else if currentServer.HasProxyServers && tryProxyServers(request) {
 				place = "proxy"
 			} else if currentServer.ProxyServerHttp {
-				tryHttpForwardWithEncodingCheck(request, currentServer.ProxyServerUrl, 0)
-				place = "http"
+				_, place = tryHttpForwardWithEncodingCheck(request, currentServer.ProxyServerUrl, 0)
 				if request.StatusCode != 200 && request.StatusCode != 201 {
 					place += " " + strconv.Itoa(request.StatusCode)
 				}

@@ -28,4 +28,20 @@ The json source is used in many actions and describes the operations to take the
 }
 Example:
 {"var":"JSON_SOURCE"}
+Example:
+  Suppose, JSON_SOURCE is as follows:
+  [
+     {"id":"1","key":"shared","name":"delt","value":"geteilt"},
+     {"id":"2","key":"dedicated","name":"delt","value":"geteilt"},
+     {"id":"3","key":"dedicated","name":"enkelt","value":"einzel"},
+     {"id":"4","key":"shared","name":"alminnelig","value":"gemein"},
+  ]
+
+{"var":"JSON_SOURCE","filter":"key=='dedicated'","convert":""}
+The result is as follows:
+  [
+     {"id":"2","key":"dedicated","name":"delt","value":"geteilt"},
+     {"id":"3","key":"dedicated","name":"enkelt","value":"einzel"},
+  ]
+
 </pre>

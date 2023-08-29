@@ -89,6 +89,13 @@ func (ctx *RequestContext) StoreStoringSession() {
 }
 
 func (ctx *RequestContext) GetUrlParameter(param string) string {
+	if ctx.PrimaryContextEnvironment == nil {
+		return ""
+	}
+	return ctx.PrimaryContextEnvironment.GetFirstString("URL_PARAMS_" + param);
+}
+
+func (ctx *RequestContext) GetUrlInlineParameter(param string) string {
 	if ctx.UrlInlineParams == nil {
 		return ""
 	}
