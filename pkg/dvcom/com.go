@@ -23,6 +23,7 @@ import (
 
 const (
 	TRY_HTTP_FORWARD_URL_ALREADY_COMPOSED = 1
+	TRY_HTTP_FORWARD_URL_MAIN_COMPOSED = 2
 )
 
 var LogServer bool
@@ -152,7 +153,13 @@ func tryProxyServers(request *dvcontext.RequestContext) bool {
 	for i := 0; i < n; i++ {
 		srv := request.Server.ProxyServers[i]
 		if dvurl.MatchMasksForUrlParts(srv.FilterUrls, urls, request.PrimaryContextEnvironment) {
-			if tryHttpForward(request, srv.ServerUrl, 0) {
+            options:=0
+			urlFinal:=srv.ServerUrl
+			if len(srv.RewritePrefix)>0 && len(request.Reader.URL.Path)>=srv.RewritePoint {
+				urlFinal += srv.RewritePrefix + request.Reader.URL.Path[srv.RewritePoint:]
+				options |= TRY_HTTP_FORWARD_URL_MAIN_COMPOSED
+			}
+			if tryHttpForward(request, urlFinal, options) {
 				return true
 			}
 		}
@@ -301,7 +308,9 @@ func tryHttpForward(request *dvcontext.RequestContext, url string, options int) 
 	}
 	finalUrl := url
 	if (options & TRY_HTTP_FORWARD_URL_ALREADY_COMPOSED) == 0 {
-		finalUrl += request.Reader.URL.Path
+		if (options & TRY_HTTP_FORWARD_URL_MAIN_COMPOSED)==0 {
+			finalUrl += request.Reader.URL.Path
+		}
 		if request.Reader.URL.RawQuery != "" {
 			finalUrl += "?" + request.Reader.URL.RawQuery
 		}

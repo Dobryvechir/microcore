@@ -37,8 +37,10 @@ type MicroCoreHeaderAttribute struct {
 }
 
 type ProxyServerBlock struct {
-	ServerUrl  string
-	FilterUrls []*MaskInfo
+	ServerUrl     string
+	FilterUrls    []*MaskInfo
+	RewritePoint  int
+	RewritePrefix string
 }
 
 type RewriteMapItem struct {
