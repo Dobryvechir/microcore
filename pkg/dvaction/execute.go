@@ -26,48 +26,62 @@ type ProcessFunction struct {
 }
 
 const (
-	CommandCall        = "call"
-	CommandCompareJson = "compare"
-	CommandConvert     = "convert"
-	CommandFile        = "file"
-	CommandFor         = "for"
-	CommandHttp        = "http"
-	CommandIf          = "if"
-	CommandIfArray     = "ifarray"
-	CommandIfEmpty     = "ifempty"
-	CommandJs          = "js"
-	CommandNet         = "net"
-	CommandOs          = "os"
-	CommandPaging      = "paging"
-	CommandPortForward = "forward"
-	CommandProxy       = "proxy"
-	CommandRange       = "range"
-	CommandReturn      = "return"
-	CommandStore       = "store"
-	CommandSql         = "sql"
-	CommandSwitch      = "switch"
-	CommandUpsert      = "upsert"
-	CommandValidate    = "validate"
-	CommandVar         = "var"
-	CommandVersion     = "version"
-	CommandVoid        = "void"
+	CommandCall          = "call"
+	CommandCompareJson   = "compare"
+	CommandConvert       = "convert"
+	CommandFile          = "file"
+	CommandFor           = "for"
+	CommandHttp          = "http"
+	CommandIf            = "if"
+	CommandIfArray       = "ifarray"
+	CommandIfEmpty       = "ifempty"
+	CommandJs            = "js"
+	CommandNet           = "net"
+	CommandOs            = "os"
+	CommandPaging        = "paging"
+	CommandPortForward   = "forward"
+	CommandProxy         = "proxy"
+	CommandRange         = "range"
+	CommandRecordBind    = "recordbind"
+	CommandRecordCreate  = "recordcreate"
+	CommandRecordDelete  = "recorddelete"
+	CommandRecordReadAll = "recordreadall"
+	CommandRecordReadOne = "recordreadone"
+	CommandRecordScan    = "recordscan"
+	CommandRecordUpdate  = "recordupdate"
+	CommandReturn        = "return"
+	CommandStore         = "store"
+	CommandSql           = "sql"
+	CommandSwitch        = "switch"
+	CommandUpsert        = "upsert"
+	CommandValidate      = "validate"
+	CommandVar           = "var"
+	CommandVersion       = "version"
+	CommandVoid          = "void"
 )
 
 var processFunctions = map[string]ProcessFunction{
-	CommandHttp:        {Init: processNetInit, Run: processNetRun},
-	CommandOs:          {Init: processOsInit, Run: processOsRun},
-	CommandPortForward: {Init: portForwardInit, Run: portForwardRun, Async: true},
-	CommandNet:         {Init: SmartNetInit, Run: SmartNetRun},
-	CommandProxy:       {Init: ProxyNetInit, Run: ProxyNetRun},
-	CommandFile:        {Init: readFileActionInit, Run: readFileActionRun},
-	CommandJs:          {Init: jsInit, Run: jsRun},
-	CommandConvert:     {Init: jsonConvertInit, Run: jsonConvertRun},
-	CommandCompareJson: {Init: compareJsonInit, Run: compareJsonRun},
-	CommandVar:         {Init: varTransformInit, Run: varTransformRun},
-	CommandSql:         {Init: dvdbdata.SqlInit, Run: dvdbdata.SqlRun},
-	CommandStore:       {Init: storeInit, Run: storeRun},
-	CommandValidate:    {Init: validationInit, Run: validationRun},
-	CommandUpsert:      {Init: upsertJsonInit, Run: upsertJsonRun},
+	CommandCompareJson:   {Init: compareJsonInit, Run: compareJsonRun},
+	CommandConvert:       {Init: jsonConvertInit, Run: jsonConvertRun},
+	CommandFile:          {Init: readFileActionInit, Run: readFileActionRun},
+	CommandHttp:          {Init: processNetInit, Run: processNetRun},
+	CommandJs:            {Init: jsInit, Run: jsRun},
+	CommandNet:           {Init: SmartNetInit, Run: SmartNetRun},
+	CommandOs:            {Init: processOsInit, Run: processOsRun},
+	CommandPortForward:   {Init: portForwardInit, Run: portForwardRun, Async: true},
+	CommandProxy:         {Init: ProxyNetInit, Run: ProxyNetRun},
+	CommandRecordBind:    {Init: recordBindInit, Run: recordBindRun},
+	CommandRecordCreate:  {Init: recordCreateInit, Run: recordCreateRun},
+	CommandRecordDelete:  {Init: recordDeleteInit, Run: recordDeleteRun},
+	CommandRecordReadAll: {Init: recordReadAllInit, Run: recordReadAllRun},
+	CommandRecordReadOne: {Init: recordReadOneInit, Run: recordReadOneRun},
+	CommandRecordScan:    {Init: recordScanInit, Run: recordScanRun},
+	CommandRecordUpdate:  {Init: recordUpdateInit, Run: recordUpdateRun},
+	CommandSql:           {Init: dvdbdata.SqlInit, Run: dvdbdata.SqlRun},
+	CommandStore:         {Init: storeInit, Run: storeRun},
+	CommandValidate:      {Init: validationInit, Run: validationRun},
+	CommandVar:           {Init: varTransformInit, Run: varTransformRun},
+	CommandUpsert:        {Init: upsertJsonInit, Run: upsertJsonRun},
 }
 
 var logicProcessFunctions = map[string]ProcessFunction{
@@ -248,7 +262,7 @@ func ExecuteAddSubsequence(ctx *dvcontext.RequestContext, actionName string,
 	paramStr map[string]string, returnKey string) {
 	level := ctx.PrimaryContextEnvironment.GetInt(ExSeqLevel)
 	level++
-	if ctx.PrimaryContextEnvironment.GetString(actionName +"_1")=="" {
+	if ctx.PrimaryContextEnvironment.GetString(actionName+"_1") == "" {
 		dvlog.PrintfError("Action not exist %s", actionName)
 	}
 	pushSubsequence(ctx, actionName, returnKey, paramStr, level)

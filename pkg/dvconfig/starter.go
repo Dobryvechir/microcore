@@ -17,6 +17,7 @@ import (
 
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvdbmanager"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvmodules"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
@@ -119,6 +120,9 @@ func serverStartByConfigDirect(cf *DvConfig) {
 	dvprocessors.MakePostProcessorGlobalInitialization(cf.PostProcessors)
 	dvproviders.MakeProviderGlobalInitialization(cf.Providers)
 	ProcessBaseFolder(&cf.Server, cf.HostServers)
+        if len(cf.Dbs)!=0 {
+            dvdbmanager.DbManagerInit(cf.Dbs) 
+        }
 	dvcom.ResolveAdministrativeTasks()
 	err := dvmodules.FireStartHookEvent([]interface{}{cf})
 	if err != nil {

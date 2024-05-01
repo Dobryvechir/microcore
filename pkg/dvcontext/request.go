@@ -81,6 +81,19 @@ type ActionPolicy struct {
 	LogNextTime   int `json:"log_next_time"`
 }
 
+type DatabaseTable struct {
+        Name                    string   `json:"name"`
+        Kind                    string   `json:"kind"`
+        Web                     string   `json:"web"`
+}
+
+type DatabaseConfig struct {
+        Name                     string           `json:"name"`
+        Root                     string           `json:"root"`
+        WebRoot                  string           `json:"webroot"`
+        Tables                   []*DatabaseTable `json:"tables"`
+}
+
 type MicroCoreInfo struct {
 	sync.RWMutex
 	Client                    *http.Client

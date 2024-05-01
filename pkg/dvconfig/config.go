@@ -102,6 +102,7 @@ type DvHostServer struct {
 	DynamicActions                bool                               `json:"dynamic"`
 	Session                       *ServerSession                     `json:"session"`
 	UrlIncludeOption              int                                `json:"urlIncludeOption"`
+        Dbs                           []*dvcontext.DatabaseConfig        `json:"dbs"`
 }
 
 // DvConfig is a full structure of the config for http server
