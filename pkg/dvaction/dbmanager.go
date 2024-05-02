@@ -4,29 +4,17 @@
 package dvaction
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvdbmanager"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
-	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"io/ioutil"
-	"log"
-	"strconv"
-	"strings"
-	"time"
 )
 
 /*****************************************************
-ACTION_PICTURE_READ_1=recordreadall:{"table":"picture","result":"request:RESULT"}
 
 ACTION_PICTURE_UPLOAD_1=recordcreate:{"table":"picture","result":"request:RESULT"}
 
 ACTION_PICTURE_DELETE_1=recorddelete:{"table":"picture","key":"URL_PARAM_ID","result":"request:RESULT"}
 
-ACTION_GROUP_ALL_1=recordreadone:{"table":"group","key":"URL_PARAM_PARENT","result":"request:RESULT"}
 ACTION_GROUP_ALL_2=recordbind:{"table":"group","src":"groupIds","dst":"groups","root":"request:RESULT","kind":"array","fields":"id,title"}
 ACTION_GROUP_ALL_3=recordscan:{"table":"group","fields":"id,title","result":"request.RESULT.allGroups"}
 
@@ -36,26 +24,16 @@ ACTION_GROUP_UPDATE_1=recordupdate:{"table":"group","result":"request:RESULT"}
 
 ACTION_GROUP_DELETE_1=recorddelete:{"table":"group","key":"URL_PARAM_ID","result":"request:RESULT"}
 
-
-
-
-
-
-
-	CommandRecordBind:    {Init: recordBindInit, Run: recordBindRun},
-	CommandRecordCreate:  {Init: recordCreateInit, Run: recordCreateRun},
-	CommandRecordDelete:  {Init: recordDeleteInit, Run: recordDeleteRun},
-	CommandRecordReadAll: {Init: recordReadAllInit, Run: recordReadAllRun},
-	CommandRecordReadOne: {Init: recordReadOneInit, Run: recordReadOneRun},
-	CommandRecordScan:    {Init: recordScanInit, Run: recordScanRun},
-
-
 *******************************************************/
 /************** BIND ***************************************************/
 
 type recordBindConfig struct {
-	Table  string `json:"table"`
-	Result string `json:"result"`
+	Table      string `json:"table"`
+	SrcField   string `json:"src"`
+	DstField   string `json:"dst"`
+	RootObject string `json:"root"`
+	Kind       string `json:"kind"`
+	Fields     string `json:"fields"`
 }
 
 func recordBindInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -76,9 +54,31 @@ func recordBindRun(data []interface{}) bool {
 }
 
 func recordBindRunByConfig(config *recordBindConfig, ctx *dvcontext.RequestContext) bool {
-	env := GetEnvironment(ctx)
-	r := dvdbmanager.RecordBind(config.Table)
-	SaveActionResult(config.Result, r, ctx)
+	root, ok := ReadActionResult(config.RootObject, ctx)
+	if !ok {
+		return true
+	}
+	dv := dvevaluation.AnyToDvVariable(root)
+	if dv == nil || dv.Kind != dvevaluation.FIELD_OBJECT || len(dv.Fields) == 0 {
+		return true
+	}
+	item, ok := dv.FindChildByKey(config.SrcField)
+	if !ok {
+		return true
+	}
+	r, err := dvdbmanager.RecordBind(config.Table, item, config.Kind, config.Fields)
+	if err != nil {
+		return true
+	}
+	resItem, ok := dv.FindChildByKey(config.DstField)
+	if ok && resItem != nil {
+		resItem.Fields = r.Fields
+		resItem.Kind = r.Kind
+	} else {
+		r.Name = []byte(config.DstField)
+		dv.Fields = append(dv.Fields, r)
+	}
+	SaveActionResult(config.RootObject, dv, ctx)
 	return true
 }
 
@@ -169,7 +169,6 @@ func recordReadAllRun(data []interface{}) bool {
 }
 
 func recordReadAllRunByConfig(config *recordReadAllConfig, ctx *dvcontext.RequestContext) bool {
-	env := GetEnvironment(ctx)
 	r := dvdbmanager.RecordReadAll(config.Table)
 	SaveActionResult(config.Result, r, ctx)
 	return true
@@ -180,6 +179,7 @@ func recordReadAllRunByConfig(config *recordReadAllConfig, ctx *dvcontext.Reques
 type recordReadOneConfig struct {
 	Table  string `json:"table"`
 	Result string `json:"result"`
+	Key    string `json:"key"`
 }
 
 func recordReadOneInit(command string, ctx *dvcontext.RequestContext) ([]interface{}, bool) {
@@ -200,8 +200,12 @@ func recordReadOneRun(data []interface{}) bool {
 }
 
 func recordReadOneRunByConfig(config *recordReadOneConfig, ctx *dvcontext.RequestContext) bool {
-	env := GetEnvironment(ctx)
-	r := dvdbmanager.RecordReadOne(config.Table)
+	key, ok := ReadActionResult(config.Key, ctx)
+	if !ok {
+		SaveActionResult(config.Result, "Error key "+config.Key+" is not provided", ctx)
+		return true
+	}
+	r := dvdbmanager.RecordReadOne(config.Table, key)
 	SaveActionResult(config.Result, r, ctx)
 	return true
 }

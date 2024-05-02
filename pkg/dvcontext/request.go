@@ -6,9 +6,10 @@ Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@
 package dvcontext
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"net/http"
 	"sync"
+
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 )
 
 const (
@@ -82,16 +83,17 @@ type ActionPolicy struct {
 }
 
 type DatabaseTable struct {
-        Name                    string   `json:"name"`
-        Kind                    string   `json:"kind"`
-        Web                     string   `json:"web"`
+	Name     string `json:"name"`
+	Kind     string `json:"kind"`
+	Web      string `json:"web"`
+	KeyFirst string `json:"keyFirst"`
 }
 
 type DatabaseConfig struct {
-        Name                     string           `json:"name"`
-        Root                     string           `json:"root"`
-        WebRoot                  string           `json:"webroot"`
-        Tables                   []*DatabaseTable `json:"tables"`
+	Name    string           `json:"name"`
+	Root    string           `json:"root"`
+	WebRoot string           `json:"webroot"`
+	Tables  []*DatabaseTable `json:"tables"`
 }
 
 type MicroCoreInfo struct {

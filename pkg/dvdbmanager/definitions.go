@@ -3,40 +3,33 @@
 
 package dvdbmanager
 
-import (
-	"encoding/json"
-	"fmt"
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
-	"io/ioutil"
-	"log"
-	"os"
-	"strings"
-)
-
 const (
-	emptyArray  = "[]"
-	emptyObject = "{}"
+	emptyArray      = "[]"
+	emptyObject     = "{}"
+	defaultKeyFirst = "id"
 )
 
 type genTable interface {
-	//      ReadAll()
-	//      ReadSingle()
+	ReadAll() interface{}
+	ReadOne(key interface{}) interface{}
 	//      UpdateSingle()
 	//      DeleteBatch()
 }
 
-var tableMap map[string]*genTable
+var tableMap map[string]genTable
 
 type fileTable struct {
-	path string
+	path     string
+	keyFirst string
 }
 
 type folderTable struct {
-	path string
+	path     string
+	keyFirst string
 }
 
 type fileWebTable struct {
-	path    string
-	webPath string
+	path     string
+	webPath  string
+	keyFirst string
 }

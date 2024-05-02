@@ -4,21 +4,26 @@
 package dvdbmanager
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
-	"io/ioutil"
-	"log"
+	"errors"
 	"os"
-	"strings"
+
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 )
 
-func fileKindInit(tbl *dvcontext.DatabaseTable, db *DatabaseConfig) *genTable {
+func fileKindInit(tbl *dvcontext.DatabaseTable, db *dvcontext.DatabaseConfig) genTable {
 	path := db.Root + "/" + tbl.Name + ".json"
 	if _, err := os.Stat(path); err != nil && errors.Is(err, os.ErrNotExist) {
-		ioutil.WriteFile(path, emptyArray, 0644)
+		os.WriteFile(path, []byte(emptyArray), 0644)
 	}
-	ref := &fileTable{path}
+	keyFirst := evaluateKeyFirst(tbl)
+	ref := &fileTable{path, keyFirst}
 	return ref
+}
+
+func (tbl *fileTable) ReadAll() interface{} {
+	return readWholeFileAsJsonArray(tbl.path)
+}
+
+func (tbl *fileTable) ReadOne(key interface{}) interface{} {
+	return findSingleEntryInJsonArray(tbl.path, key, tbl.keyFirst)
 }

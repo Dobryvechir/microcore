@@ -4,14 +4,10 @@
 package dvdbmanager
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
-	"io/ioutil"
-	"log"
 	"os"
-	"strings"
+	"strconv"
+
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 )
 
 const (
@@ -22,12 +18,12 @@ const (
 
 var dbAmount = 0
 
-func DbManagerInit(conf []*DatabaseConfig) {
+func DbManagerInit(conf []*dvcontext.DatabaseConfig) {
 	dbAmount = len(conf)
 	if dbAmount == 0 {
 		return
 	}
-	tableMap = make(map[string]*genTable)
+	tableMap = make(map[string]genTable)
 	for i := 0; i < dbAmount; i++ {
 		db := conf[i]
 		if db == nil || len(db.Root) == 0 {
@@ -39,9 +35,9 @@ func DbManagerInit(conf []*DatabaseConfig) {
 		}
 		n := len(db.Tables)
 		if len(db.Name) == 0 {
-			db.Name = strings.Itoa(i)
+			db.Name = strconv.Itoa(i)
 		}
-		var tableRef *genTable
+		var tableRef genTable
 		for j := 0; j < n; j++ {
 			tbl := db.Tables[i]
 			switch tbl.Kind {
@@ -60,4 +56,12 @@ func DbManagerInit(conf []*DatabaseConfig) {
 			tableMap[db.Name+"."+tbl.Name] = tableRef
 		}
 	}
+}
+
+func evaluateKeyFirst(tbl *dvcontext.DatabaseTable) string {
+	res := tbl.KeyFirst
+	if len(res) == 0 {
+		res = defaultKeyFirst
+	}
+	return res
 }

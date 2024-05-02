@@ -3,19 +3,10 @@
 
 package dvdbmanager
 
-import (
-	"encoding/json"
-	"fmt"
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
-	"io/ioutil"
-	"log"
-	"os"
-	"strings"
-)
+import "github.com/Dobryvechir/microcore/pkg/dvevaluation"
 
-func RecordBind(table string) interface{} {
-	return nil
+func RecordBind(table string, items *dvevaluation.DvVariable, kind string, fields string) (*dvevaluation.DvVariable, error) {
+	return nil, nil
 }
 
 func RecordCreate(table string) interface{} {
@@ -27,11 +18,21 @@ func RecordDelete(table string) interface{} {
 }
 
 func RecordReadAll(table string) interface{} {
-	return nil
+	r, ok := tableMap[table]
+	if !ok {
+		return "Table " + table + " does not exist"
+	}
+	d := r.ReadAll()
+	return d
 }
 
-func RecordReadOne(table string) interface{} {
-	return nil
+func RecordReadOne(table string, key interface{}) interface{} {
+	r, ok := tableMap[table]
+	if !ok {
+		return "Table " + table + " does not exist"
+	}
+	d := r.ReadOne(key)
+	return d
 }
 
 func RecordScan(table string) interface{} {

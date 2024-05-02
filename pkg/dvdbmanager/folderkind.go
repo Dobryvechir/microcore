@@ -4,19 +4,23 @@
 package dvdbmanager
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
-	"io/ioutil"
-	"log"
 	"os"
-	"strings"
+
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 )
 
-func folderKindInit(tbl *dvcontext.DatabaseTable, db *DatabaseConfig) *genTable {
+func folderKindInit(tbl *dvcontext.DatabaseTable, db *dvcontext.DatabaseConfig) genTable {
 	path := db.Root + "/" + tbl.Name
 	os.MkdirAll(path, 0755)
-	ref := &folderTable{path}
+	keyFirst := evaluateKeyFirst(tbl)
+	ref := &folderTable{path, keyFirst}
 	return ref
+}
+
+func (tbl *folderTable) ReadAll() interface{} {
+	return readAllFolderItemsAsList(tbl.path)
+}
+
+func (tbl *folderTable) ReadOne(key interface{}) interface{} {
+	return findSingleEntryInFolder(tbl.path, key, tbl.keyFirst)
 }
