@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvtextutils
@@ -370,4 +370,13 @@ func IsValidVariableName(data string, uniAllowed bool) int {
 		}
 	}
 	return -1
+}
+
+func CalculateStringCheckSum(data string) int64 {
+	var res int64 = 0
+	n := len(data)
+	for i := 0; i < n; i++ {
+		res = res*31 + data[i]
+	}
+	return res
 }

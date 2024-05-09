@@ -7,22 +7,17 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvdbmanager"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"strconv"
 )
 
 /*****************************************************
 
 ACTION_PICTURE_UPLOAD_1=recordcreate:{"table":"picture","result":"request:RESULT"}
 
-ACTION_PICTURE_DELETE_1=recorddelete:{"table":"picture","key":"URL_PARAM_ID","result":"request:RESULT"}
-
-ACTION_GROUP_ALL_2=recordbind:{"table":"group","src":"groupIds","dst":"groups","root":"request:RESULT","kind":"array","fields":"id,title"}
-ACTION_GROUP_ALL_3=recordscan:{"table":"group","fields":"id,title","result":"request.RESULT.allGroups"}
-
 ACTION_GROUP_CREATE_1=recordcreate:{"table":"group","result":"request:RESULT"}
 
 ACTION_GROUP_UPDATE_1=recordupdate:{"table":"group","result":"request:RESULT"}
 
-ACTION_GROUP_DELETE_1=recorddelete:{"table":"group","key":"URL_PARAM_ID","result":"request:RESULT"}
 
 *******************************************************/
 /************** BIND ***************************************************/
@@ -107,8 +102,9 @@ func recordCreateRun(data []interface{}) bool {
 }
 
 func recordCreateRunByConfig(config *recordCreateConfig, ctx *dvcontext.RequestContext) bool {
-	env := GetEnvironment(ctx)
-	r := dvdbmanager.RecordCreate(config.Table)
+	body := ctx.PrimaryContextEnvironment.GetString(dvcontext.BODY_STRING)
+	id := strconv.FormatInt(ctx.Id, 10)
+	r := dvdbmanager.RecordCreate(config.Table, body, id)
 	SaveActionResult(config.Result, r, ctx)
 	return true
 }
@@ -117,6 +113,7 @@ func recordCreateRunByConfig(config *recordCreateConfig, ctx *dvcontext.RequestC
 
 type recordDeleteConfig struct {
 	Table  string `json:"table"`
+	Key    string `json:"key"`
 	Result string `json:"result"`
 }
 
@@ -138,8 +135,13 @@ func recordDeleteRun(data []interface{}) bool {
 }
 
 func recordDeleteRunByConfig(config *recordDeleteConfig, ctx *dvcontext.RequestContext) bool {
-	env := GetEnvironment(ctx)
-	r := dvdbmanager.RecordDelete(config.Table)
+	key, ok := ReadActionResult(config.Key, ctx)
+	if !ok {
+		SaveActionResult(config.Result, "Error key "+config.Key+" is not provided", ctx)
+		return true
+	}
+	v := dvevaluation.AnyToString(key)
+	r := dvdbmanager.RecordDelete(config.Table, v)
 	SaveActionResult(config.Result, r, ctx)
 	return true
 }
@@ -214,6 +216,7 @@ func recordReadOneRunByConfig(config *recordReadOneConfig, ctx *dvcontext.Reques
 
 type recordScanConfig struct {
 	Table  string `json:"table"`
+	Fields string `json:"fields"`
 	Result string `json:"result"`
 }
 
@@ -236,7 +239,7 @@ func recordScanRun(data []interface{}) bool {
 
 func recordScanRunByConfig(config *recordScanConfig, ctx *dvcontext.RequestContext) bool {
 	env := GetEnvironment(ctx)
-	r := dvdbmanager.RecordScan(config.Table)
+	r := dvdbmanager.RecordScan(config.Table, config.Fields)
 	SaveActionResult(config.Result, r, ctx)
 	return true
 }
@@ -266,8 +269,8 @@ func recordUpdateRun(data []interface{}) bool {
 }
 
 func recordUpdateRunByConfig(config *recordUpdateConfig, ctx *dvcontext.RequestContext) bool {
-	env := GetEnvironment(ctx)
-	r := dvdbmanager.RecordUpdate(config.Table)
+	body := ctx.PrimaryContextEnvironment.GetString(dvcontext.BODY_STRING)
+	r := dvdbmanager.RecordUpdate(config.Table, body)
 	SaveActionResult(config.Result, r, ctx)
 	return true
 }

@@ -27,3 +27,27 @@ func (tbl *fileTable) ReadAll() interface{} {
 func (tbl *fileTable) ReadOne(key interface{}) interface{} {
 	return findSingleEntryInJsonArray(tbl.path, key, tbl.keyFirst)
 }
+
+func (tbl *fileTable) ReadFieldsForIds(ids []*dvevaluation.DvVariable, fields []string) (*dvevaluation.DvVariable, error) {
+	return readFieldsForIdsInJson(tbl.path, ids, fields, tbl.keyFirst)
+}
+
+func (tbl *fileTable) ReadFieldsForId(id *dvevaluation.DvVariable, fields []string) (*dvevaluation.DvVariable, error) {
+	return readFieldsForIdInJson(tbl.path, id, fields, tbl.keyFirst)
+}
+
+func (tbl *fileTable) ReadFieldsForAll(fields []string) (*dvevaluation.DvVariable, error) {
+	return readFieldsForAllInJson(tbl.path, fields)
+}
+
+func (tbl *fileTable) DeleteKeys(keys []string) interface{} {
+	return deleteKeysInJson(tbl.path, keys, tbl.keyFirst)
+}
+
+func (tbl *fileTable) CreateRecord(record *dvevaluation.DvVariable, newId string) (*dvevaluation.DvVariable, error) {
+	return createRecordInJson(tbl.path, record, tbl.keyFirst, newId)
+}
+
+func (tbl *fileTable) UpdateRecord(record *dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
+	return updateRecordInJson(tbl.path, record, tbl.keyFirst)
+}

@@ -24,3 +24,28 @@ func (tbl *folderTable) ReadAll() interface{} {
 func (tbl *folderTable) ReadOne(key interface{}) interface{} {
 	return findSingleEntryInFolder(tbl.path, key, tbl.keyFirst)
 }
+
+func (tbl *folderTable) ReadFieldsForIds(ids []*dvevaluation.DvVariable, fields []string) (*dvevaluation.DvVariable, error) {
+	return readFieldsForIdsInFolder(tbl.path, ids, fields, tbl.keyFirst)
+}
+
+func (tbl *folderTable) ReadFieldsForId(id *dvevaluation.DvVariable, fields []string) (*dvevaluation.DvVariable, error) {
+	return readFieldsForIdInFolder(tbl.path, id, fields, tbl.keyFirst)
+}
+
+func (tbl *folderTable) ReadFieldsForAll(fields []string) (*dvevaluation.DvVariable, error) {
+	return readFieldsForAllInFolder(tbl.path, fields)
+}
+
+func (tbl *folderTable) DeleteKeys(keys []string) interface{} {
+	deleteWebFiles(tbl.path, keys)
+	return keys
+}
+
+func (tbl *folderTable) CreateRecord(record *dvevaluation.DvVariable, newId string) (*dvevaluation.DvVariable, error) {
+	return createRecordInFolder(tbl.path, record, tbl.keyFirst, newId)
+}
+
+func (tbl *folderTable) UpdateRecord(record *dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
+	return updateRecordInFolder(tbl.path, record, tbl.keyFirst)
+}

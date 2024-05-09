@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2022 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvaction

@@ -65,3 +65,27 @@ func evaluateKeyFirst(tbl *dvcontext.DatabaseTable) string {
 	}
 	return res
 }
+
+func evaluateWebField(tbl *dvcontext.DatabaseTable) string {
+	res := tbl.WebField
+	if len(res) == 0 {
+		res = defaultWebField
+	}
+	return res
+}
+
+func evaluateWebFileName(tbl *dvcontext.DatabaseTable) string {
+	res := tbl.WebFileName
+	if len(res) == 0 {
+		res = defaultWebFileName
+	}
+	return res
+}
+
+func evaluateWebFormats(tbl *dvcontext.DatabaseTable) string {
+	res := tbl.WebFormats
+	if len(res) == 0 {
+		res = defaultWebAllowedFormats
+	}
+	return res
+}

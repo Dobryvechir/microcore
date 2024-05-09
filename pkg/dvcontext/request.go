@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvcontext
@@ -83,10 +83,13 @@ type ActionPolicy struct {
 }
 
 type DatabaseTable struct {
-	Name     string `json:"name"`
-	Kind     string `json:"kind"`
-	Web      string `json:"web"`
-	KeyFirst string `json:"keyFirst"`
+	Name        string `json:"name"`
+	Kind        string `json:"kind"`
+	Web         string `json:"web"`
+	KeyFirst    string `json:"keyFirst"`
+	WebField    string `json:"webField"`
+	WebFileName string `json:"webFileName"`
+	WebFormats  string `json:"webFormats"`
 }
 
 type DatabaseConfig struct {
