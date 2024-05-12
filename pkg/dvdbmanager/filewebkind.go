@@ -15,6 +15,8 @@ func fileWebKindInit(tbl *dvcontext.DatabaseTable, db *dvcontext.DatabaseConfig)
 	if _, err := os.Stat(path); err != nil && errors.Is(err, os.ErrNotExist) {
 		os.WriteFile(path, []byte(emptyArray), 0644)
 	}
+        allowCustomId:=tbl.AllowCustomId
+        version:=tbl.Version
 	webUrl := tbl.Web
 	webPath := db.WebRoot + tbl.Web
 	keyFirst := evaluateKeyFirst(tbl)
@@ -22,36 +24,55 @@ func fileWebKindInit(tbl *dvcontext.DatabaseTable, db *dvcontext.DatabaseConfig)
 	webFileName := evaluateWebFileName(tbl)
 	webAllowedFormats := evaluateWebFormats(tbl)
 	os.MkdirAll(webPath, 0755)
-	ref := &fileWebTable{path, webUrl, webPath, keyFirst, webField, webFileName, webAllowedFormats}
+	ref := &fileWebTable{path, webUrl, webPath, keyFirst, webField, webFileName, webAllowedFormats, allowCustomId, version}
 	return ref
 }
 
 func (tbl *fileWebTable) ReadAll() interface{} {
+        tbl.mu.Lock()
+        defer tbl.mu.Unlock()
 	return readWholeFileAsJsonArray(tbl.path)
 }
 
 func (tbl *fileWebTable) ReadOne(key interface{}) interface{} {
+        tbl.mu.Lock()
+        defer tbl.mu.Unlock()
 	return findSingleEntryInJsonArray(tbl.path, key, tbl.keyFirst)
 }
 
 func (tbl *fileWebTable) ReadFieldsForIds(ids []*dvevaluation.DvVariable, fields []string) (*dvevaluation.DvVariable, error) {
+        tbl.mu.Lock()
+        defer tbl.mu.Unlock()
 	return readFieldsForIdsInJson(tbl.path, ids, fields, tbl.keyFirst)
 }
 
 func (tbl *fileWebTable) ReadFieldsForId(id *dvevaluation.DvVariable, fields []string) (*dvevaluation.DvVariable, error) {
+        tbl.mu.Lock()
+        defer tbl.mu.Unlock()
 	return readFieldsForIdInJson(tbl.path, id, fields, tbl.keyFirst)
 }
 
 func (tbl *fileWebTable) ReadFieldsForAll(fields []string) (*dvevaluation.DvVariable, error) {
+        tbl.mu.Lock()
+        defer tbl.mu.Unlock()
 	return readFieldsForAllInJson(tbl.path, fields)
 }
 
 func (tbl *fileWebTable) DeleteKeys(keys []string) interface{} {
+        tbl.mu.Lock()
+        defer tbl.mu.Unlock()
 	deleteWebFiles(tbl.webPath, keys)
 	return deleteKeysInJson(tbl.path, keys, tbl.keyFirst)
 }
 
 func (tbl *fileWebTable) CreateRecord(record *dvevaluation.DvVariable, newId string) (*dvevaluation.DvVariable, error) {
+        tbl.mu.Lock()
+        defer tbl.mu.Unlock()
+        var err error  
+        newId, err = resolveCustomId(record, newId, tbl.allowCustomId, tbl.keyFirst, tbl.version)
+	if err != nil {
+		return nil, err
+	}
 	name, err := updateWebFiles(tbl.webPath, record, newId, tbl.webField, tbl.webFileName, tbl.webUrl, tbl.webAllowedFormats)
 	if err != nil {
 		return nil, err
@@ -65,6 +86,8 @@ func (tbl *fileWebTable) CreateRecord(record *dvevaluation.DvVariable, newId str
 }
 
 func (tbl *fileWebTable) UpdateRecord(record *dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
+        tbl.mu.Lock()
+        defer tbl.mu.Unlock()
 	id, ok := readFieldInJsonAsString(record, tbl.keyFirst)
 	if !ok || len(id) == 0 {
 		return nil, errors.New(tbl.keyFirst + " field is missing")
@@ -73,5 +96,5 @@ func (tbl *fileWebTable) UpdateRecord(record *dvevaluation.DvVariable) (*dvevalu
 	if err != nil {
 		return nil, err
 	}
-	return updateRecordInJson(tbl.path, record, tbl.keyFirst)
+	return updateRecordInJson(tbl.path, record, tbl.keyFirst, tbl.version)
 }

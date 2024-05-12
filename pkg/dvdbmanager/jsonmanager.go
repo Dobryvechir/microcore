@@ -263,7 +263,7 @@ func createRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst s
 	return record, err
 }
 
-func updateRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst string) (*dvevaluation.DvVariable, error) {
+func updateRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst string, version string) (*dvevaluation.DvVariable, error) {
 	id, ok := readFieldInJsonAsString(record, keyFirst)
 	if !ok || !checkIntId(id) == 0 {
 		return nil, errors.New("object has no id")
@@ -279,6 +279,7 @@ func updateRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst s
 	if i < 0 {
 		return nil, nil
 	}
+        resolveVersion(pool.Fields[i], record, version)
 	pool.Fields[i] = record
 	err = writeWholeFileAsJson(path, pool)
 	return record, err

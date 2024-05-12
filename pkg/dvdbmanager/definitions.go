@@ -5,6 +5,7 @@ package dvdbmanager
 
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"sync"
 )
 
 const (
@@ -30,17 +31,26 @@ type genTable interface {
 var tableMap map[string]genTable
 
 type fileTable struct {
-	path     string
-	keyFirst string
+	mu            sync.Mutex
+	path          string
+	keyFirst      string
+	allowCustomId bool
+	version       string
 }
 
 type folderTable struct {
-	path     string
-	keyFirst string
+	mu            sync.Mutex
+	path          string
+	keyFirst      string
+	allowCustomId bool
+	version       string
 }
 
 type fileWebTable struct {
+	mu                sync.Mutex
 	path              string
+	allowCustomId     bool
+	version           string
 	webUrl            string
 	webPath           string
 	keyFirst          string

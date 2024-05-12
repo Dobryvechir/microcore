@@ -89,3 +89,37 @@ func evaluateWebFormats(tbl *dvcontext.DatabaseTable) string {
 	}
 	return res
 }
+
+func resolveCustomId(record *dvevaluation.DvVariable, newId string, allowCustomId bool, keyFirst string, version string) (string, error) {
+	if record==nil || record.Kind!=dvevaluation.FIELD_OBJECT {
+             return newId, errors.New("Body must contain json object")
+        }
+        if len(version)>0 {
+             setFieldInJsonAsString(record, version, "1")  
+        }
+        if !allowCustomId {
+             return newId, nil
+        }
+        id,ok:=readFieldInJsonAsString(record, keyFirst)
+        if !ok || len(id)==0 {
+             return newId, nil
+        }
+        return id, nil
+}
+
+func resolveVersion(oldRecord *dvevaluation.DvVariable, newRecord  *dvevaluation.DvVariable, version string) {
+	if len(version)==0 || newRecord==nil {
+             return
+        }
+        value:=0
+        if oldRecord!=nil && oldRecord.Kind==dvevaluation.FIELD_OBJECT {
+              str,ok:=readFieldInJsonAsString(record, version)
+              if ok && len(str)>0 {
+                   n,err:=strconv.Atoi(str)
+                   if err==nil && n>0 {
+                        value = n
+                   }
+              }
+        }
+        setFieldInJsonAsString(record, version, strconv.Itoa(value+1))
+}

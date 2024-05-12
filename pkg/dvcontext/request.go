@@ -83,13 +83,15 @@ type ActionPolicy struct {
 }
 
 type DatabaseTable struct {
-	Name        string `json:"name"`
-	Kind        string `json:"kind"`
-	Web         string `json:"web"`
-	KeyFirst    string `json:"keyFirst"`
-	WebField    string `json:"webField"`
-	WebFileName string `json:"webFileName"`
-	WebFormats  string `json:"webFormats"`
+	Name          string `json:"name"`
+	Kind          string `json:"kind"`
+	Web           string `json:"web"`
+	KeyFirst      string `json:"keyFirst"`
+	WebField      string `json:"webField"`
+	WebFileName   string `json:"webFileName"`
+	WebFormats    string `json:"webFormats"`
+	AllowCustomId bool   `json:"customId"`
+	Version       string `json:"version"`
 }
 
 type DatabaseConfig struct {

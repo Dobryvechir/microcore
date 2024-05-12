@@ -117,16 +117,17 @@ func createRecordInFolder(path string, record *dvevaluation.DvVariable, keyFirst
 	return record, err
 }
 
-func updateRecordInFolder(path string, record *dvevaluation.DvVariable, keyFirst string) (*dvevaluation.DvVariable, error) {
+func updateRecordInFolder(path string, record *dvevaluation.DvVariable, keyFirst string, version string) (*dvevaluation.DvVariable, error) {
 	id, ok := readFieldInJsonAsString(record, keyFirst)
 	if !ok || !checkIntId(id) == 0 {
 		return nil, errors.New("object has no id")
 	}
 	keyPath := getEntryName(path, id)
-	_, err := readWholeFileAsJson(keyPath)
+	oldRecord, err := readWholeFileAsJson(keyPath)
 	if err != nil {
 		return nil, err
 	}
+        resolveVersion(oldRecord, record, version)
 	err := writeWholeFileAsJson(keyPath, record)
 	return record, err
 }
