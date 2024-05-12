@@ -4,11 +4,12 @@
 package dvdbmanager
 
 import (
-	"bytes"
+	"errors"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
-	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
 
@@ -18,7 +19,6 @@ func deleteWebFiles(webPath string, keys []string) {
 	if err != nil {
 		return
 	}
-	n := len(entries)
 	for _, e := range entries {
 		name := e.Name()
 		if e.Type().IsRegular() {
@@ -33,7 +33,6 @@ func deleteWebFiles(webPath string, keys []string) {
 			}
 		}
 	}
-	return
 }
 
 func cleanWebFiles(name string) {
@@ -45,9 +44,8 @@ func cleanWebFiles(name string) {
 func findResourceForId(webPath string, id string) string {
 	entries, err := os.ReadDir(webPath)
 	if err != nil {
-		return
+		return ""
 	}
-	n := len(entries)
 	for _, e := range entries {
 		name := e.Name()
 		if e.Type().IsRegular() {
@@ -78,7 +76,7 @@ func updateWebFiles(webPath string, record *dvevaluation.DvVariable, id string, 
 	if !ok || len(userFile) == 0 {
 		return "", nil
 	}
-	extension, position, prefix, transorm := analyzeUserFile(userFile)
+	extension, position, prefix, transform := analyzeUserFile(userFile)
 	if len(prefix) == 0 {
 		return "", nil
 	}
@@ -92,7 +90,7 @@ func updateWebFiles(webPath string, record *dvevaluation.DvVariable, id string, 
 		return "", err
 	}
 	setFieldInJsonAsString(record, webField, urlName)
-	sum := dvtextutils.CalculateCheckSum(userFile)
+	sum := dvtextutils.CalculateStringCheckSum(userFile)
 	if sum < 0 {
 		sum = -sum
 	}

@@ -238,9 +238,12 @@ func recordScanRun(data []interface{}) bool {
 }
 
 func recordScanRunByConfig(config *recordScanConfig, ctx *dvcontext.RequestContext) bool {
-	env := GetEnvironment(ctx)
-	r := dvdbmanager.RecordScan(config.Table, config.Fields)
-	SaveActionResult(config.Result, r, ctx)
+	r, err := dvdbmanager.RecordScan(config.Table, config.Fields)
+	if err != nil {
+		SaveActionResult(config.Result, err.Error(), ctx)
+	} else {
+		SaveActionResult(config.Result, r, ctx)
+	}
 	return true
 }
 

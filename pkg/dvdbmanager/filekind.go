@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 )
 
 func fileKindInit(tbl *dvcontext.DatabaseTable, db *dvcontext.DatabaseConfig) genTable {
@@ -16,53 +17,53 @@ func fileKindInit(tbl *dvcontext.DatabaseTable, db *dvcontext.DatabaseConfig) ge
 		os.WriteFile(path, []byte(emptyArray), 0644)
 	}
 	keyFirst := evaluateKeyFirst(tbl)
-        allowCustomId:=tbl.AllowCustomId
-        version:=tbl.Version
-	ref := &fileTable{path, keyFirst, allowCustomId, version}
+	allowCustomId := tbl.AllowCustomId
+	version := tbl.Version
+	ref := &fileTable{path: path, keyFirst: keyFirst, allowCustomId: allowCustomId, version: version}
 	return ref
 }
 
 func (tbl *fileTable) ReadAll() interface{} {
-        tbl.mu.Lock()
-        defer tbl.mu.Unlock()
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
 	return readWholeFileAsJsonArray(tbl.path)
 }
 
 func (tbl *fileTable) ReadOne(key interface{}) interface{} {
-        tbl.mu.Lock()
-        defer tbl.mu.Unlock()
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
 	return findSingleEntryInJsonArray(tbl.path, key, tbl.keyFirst)
 }
 
 func (tbl *fileTable) ReadFieldsForIds(ids []*dvevaluation.DvVariable, fields []string) (*dvevaluation.DvVariable, error) {
-        tbl.mu.Lock()
-        defer tbl.mu.Unlock()
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
 	return readFieldsForIdsInJson(tbl.path, ids, fields, tbl.keyFirst)
 }
 
 func (tbl *fileTable) ReadFieldsForId(id *dvevaluation.DvVariable, fields []string) (*dvevaluation.DvVariable, error) {
-        tbl.mu.Lock()
-        defer tbl.mu.Unlock()
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
 	return readFieldsForIdInJson(tbl.path, id, fields, tbl.keyFirst)
 }
 
 func (tbl *fileTable) ReadFieldsForAll(fields []string) (*dvevaluation.DvVariable, error) {
-        tbl.mu.Lock()
-        defer tbl.mu.Unlock()
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
 	return readFieldsForAllInJson(tbl.path, fields)
 }
 
 func (tbl *fileTable) DeleteKeys(keys []string) interface{} {
-        tbl.mu.Lock()
-        defer tbl.mu.Unlock()
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
 	return deleteKeysInJson(tbl.path, keys, tbl.keyFirst)
 }
 
 func (tbl *fileTable) CreateRecord(record *dvevaluation.DvVariable, newId string) (*dvevaluation.DvVariable, error) {
-        tbl.mu.Lock()
-        defer tbl.mu.Unlock()
-        var err error  
-        newId, err = resolveCustomId(record, newId, tbl.allowCustomId, tbl.keyFirst, tbl.version)
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
+	var err error
+	newId, err = resolveCustomId(record, newId, tbl.allowCustomId, tbl.keyFirst, tbl.version)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +71,7 @@ func (tbl *fileTable) CreateRecord(record *dvevaluation.DvVariable, newId string
 }
 
 func (tbl *fileTable) UpdateRecord(record *dvevaluation.DvVariable) (*dvevaluation.DvVariable, error) {
-        tbl.mu.Lock()
-        defer tbl.mu.Unlock()
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
 	return updateRecordInJson(tbl.path, record, tbl.keyFirst, tbl.version)
 }

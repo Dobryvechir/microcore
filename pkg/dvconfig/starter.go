@@ -120,9 +120,9 @@ func serverStartByConfigDirect(cf *DvConfig) {
 	dvprocessors.MakePostProcessorGlobalInitialization(cf.PostProcessors)
 	dvproviders.MakeProviderGlobalInitialization(cf.Providers)
 	ProcessBaseFolder(&cf.Server, cf.HostServers)
-        if len(cf.Dbs)!=0 {
-            dvdbmanager.DbManagerInit(cf.Dbs) 
-        }
+	if len(cf.Dbs) != 0 {
+		dvdbmanager.DbManagerInit(cf.Dbs)
+	}
 	dvcom.ResolveAdministrativeTasks()
 	err := dvmodules.FireStartHookEvent([]interface{}{cf})
 	if err != nil {

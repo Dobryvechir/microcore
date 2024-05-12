@@ -102,7 +102,6 @@ type DvHostServer struct {
 	DynamicActions                bool                               `json:"dynamic"`
 	Session                       *ServerSession                     `json:"session"`
 	UrlIncludeOption              int                                `json:"urlIncludeOption"`
-        Dbs                           []*dvcontext.DatabaseConfig        `json:"dbs"`
 }
 
 // DvConfig is a full structure of the config for http server
@@ -122,6 +121,7 @@ type DvConfig struct {
 	PostProcessors     map[string]map[string]string  `json:"postProcessors"`
 	Providers          map[string]map[string]string  `json:"providers"`
 	ParallelProcessing *dvcontext.ParallelProcessing `json:"parallel_processing"`
+	Dbs                []*dvcontext.DatabaseConfig   `json:"dbs"`
 }
 
 // CurrentDir is a current folder where the application started

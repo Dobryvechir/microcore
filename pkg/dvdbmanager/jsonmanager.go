@@ -5,6 +5,7 @@ package dvdbmanager
 
 import (
 	"bytes"
+	"errors"
 	"os"
 
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
@@ -120,13 +121,13 @@ func readFieldsForAllInJson(path string, fields []string) (*dvevaluation.DvVaria
 	return d, nil
 }
 
-func reduceJsonToFields(res *dvevaluation.DvVariable, names map[string]int) *dvevaluation.DvVariable {
-	if res == nil || len(res.Fields) == 0 || res.Kind != dvevaluation.FIELD_OBJECT {
+func reduceJsonToFields(d *dvevaluation.DvVariable, names map[string]int) *dvevaluation.DvVariable {
+	if d == nil || len(d.Fields) == 0 || d.Kind != dvevaluation.FIELD_OBJECT {
 		return &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_OBJECT, Fields: make([]*dvevaluation.DvVariable, 0, 0)}
 	}
-	fields = make([]*dvevaluation.DvVariable, 0, n)
 	oldFields := d.Fields
 	m := len(oldFields)
+	fields := make([]*dvevaluation.DvVariable, 0, m)
 	for i := 0; i < m; i++ {
 		p := oldFields[i]
 		if p != nil {
@@ -150,11 +151,31 @@ func convertIdsToMap(ids []*dvevaluation.DvVariable) map[string]int {
 	return m
 }
 
+func convertStringIdsToMap(ids []string) map[string]int {
+	n := len(ids)
+	m := make(map[string]int, n)
+	for i := 0; i < n; i++ {
+		s := ids[i]
+		m[s] = i
+	}
+	return m
+}
+
 func convertFieldsToMap(fields []string) map[string]int {
 	n := len(fields)
 	m := make(map[string]int, n)
 	for i := 0; i < n; i++ {
 		m[fields[i]] = i
+	}
+	return m
+}
+
+func convertDvVariableFieldsToMap(fields []*dvevaluation.DvVariable) map[string]int {
+	n := len(fields)
+	m := make(map[string]int, n)
+	for i := 0; i < n; i++ {
+		s := dvevaluation.AnyToString(fields[i])
+		m[s] = i
 	}
 	return m
 }
@@ -167,7 +188,7 @@ func isKeyInMap(p *dvevaluation.DvVariable, key []byte, idMap map[string]int) bo
 	n := len(fields)
 	for i := 0; i < n; i++ {
 		e := fields[i]
-		if e != nil && bytes.Equals(e.Name, key) {
+		if e != nil && bytes.Equal(e.Name, key) {
 			s := dvevaluation.AnyToString(e)
 			_, ok := idMap[s]
 			return ok
@@ -181,16 +202,16 @@ func deleteKeysInJson(path string, ids []string, keyFirst string) interface{} {
 	n := len(ids)
 	d, err := readWholeFileAsJson(path)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if d == nil || len(d.Fields) == 0 || d.Kind != dvevaluation.FIELD_ARRAY {
-		return &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: make([]*dvevaluation.DvVariable, 0, 0)}, nil
+		return &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_ARRAY, Fields: make([]*dvevaluation.DvVariable, 0, 0)}
 	}
 	oldFields := d.Fields
 	m := len(oldFields)
 	newFields := make([]*dvevaluation.DvVariable, 0, n)
 	key := []byte(keyFirst)
-	idMap := convertIdsToMap(ids)
+	idMap := convertStringIdsToMap(ids)
 	for i := 0; i < m; i++ {
 		p := oldFields[i]
 		if isKeyInMap(p, key, idMap) {
@@ -214,7 +235,7 @@ func readFieldInJsonAsString(record *dvevaluation.DvVariable, key string) (strin
 		return "", false
 	}
 	n := len(record.Fields)
-	keyBytes := []bytes(key)
+	keyBytes := []byte(key)
 	for i := 0; i < n; i++ {
 		v := record.Fields[i]
 		if v != nil && bytes.Equal(keyBytes, v.Name) {
@@ -229,20 +250,20 @@ func setFieldInJsonAsString(record *dvevaluation.DvVariable, key string, value s
 		return false
 	}
 	n := len(record.Fields)
-	keyBytes := []bytes(key)
+	keyBytes := []byte(key)
 	if n == 0 {
 		record.Fields = make([]*dvevaluation.DvVariable, 0, 1)
 	} else {
 		for i := 0; i < n; i++ {
 			v := record.Fields[i]
 			if v != nil && bytes.Equal(keyBytes, v.Name) {
-				v.Value = []bytes(value)
+				v.Value = []byte(value)
 				v.Kind = dvevaluation.FIELD_STRING
 				return true
 			}
 		}
 	}
-	p := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING, Name: keyBytes, Value: []bytes(value)}
+	p := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_STRING, Name: keyBytes, Value: []byte(value)}
 	record.Fields = append(record.Fields, p)
 	return true
 }
@@ -265,7 +286,7 @@ func createRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst s
 
 func updateRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst string, version string) (*dvevaluation.DvVariable, error) {
 	id, ok := readFieldInJsonAsString(record, keyFirst)
-	if !ok || !checkIntId(id) == 0 {
+	if !ok || !checkIntId(id) {
 		return nil, errors.New("object has no id")
 	}
 	pool, err := readWholeFileAsJson(path)
@@ -279,7 +300,7 @@ func updateRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst s
 	if i < 0 {
 		return nil, nil
 	}
-        resolveVersion(pool.Fields[i], record, version)
+	resolveVersion(pool.Fields[i], record, version)
 	pool.Fields[i] = record
 	err = writeWholeFileAsJson(path, pool)
 	return record, err

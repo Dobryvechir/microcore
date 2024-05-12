@@ -6,6 +6,7 @@ package dvdbmanager
 import (
 	"encoding/base64"
 	"errors"
+	"os"
 	"strings"
 )
 
@@ -72,7 +73,7 @@ func saveUserFile(fileName string, position int, transform int, data string) (in
 	}
 	if buf != nil {
 		err := os.WriteFile(fileName, buf, 0644)
-		return len(buf), err
+		return int64(len(buf)), err
 	}
 	return 0, errors.New("Unsupported transformation")
 }

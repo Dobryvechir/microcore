@@ -72,11 +72,11 @@ func prepareProxyInfo(servers []ProxyServerInfo) []*dvcontext.ProxyServerBlock {
 		}
 		filters := dvurl.PreparseMaskExpressions(servers[i].Filter)
 		if len(filters) > 0 {
-			pos:=0
-			rewrite:=servers[i].Rewrite
-			if len(rewrite)>0 {
-				pos = strings.Index(servers[i].Filter,"*")
-				if pos<0 {
+			pos := 0
+			rewrite := servers[i].Rewrite
+			if len(rewrite) > 0 {
+				pos = strings.Index(servers[i].Filter, "*")
+				if pos < 0 {
 					pos = len(servers[i].Filter)
 				}
 			}

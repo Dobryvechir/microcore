@@ -376,7 +376,7 @@ func CalculateStringCheckSum(data string) int64 {
 	var res int64 = 0
 	n := len(data)
 	for i := 0; i < n; i++ {
-		res = res*31 + data[i]
+		res = res*31 + int64(data[i])
 	}
 	return res
 }

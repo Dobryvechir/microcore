@@ -4,7 +4,9 @@
 package dvdbmanager
 
 import (
+	"errors"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
 
@@ -48,7 +50,7 @@ func RecordCreate(table string, body string, newId string) interface{} {
 func RecordDelete(table string, keys string) interface{} {
 	ids := dvtextutils.ConvertToNonEmptyList(keys)
 	if len(ids) == 0 {
-		return
+		return ""
 	}
 	r, ok := tableMap[table]
 	if !ok {

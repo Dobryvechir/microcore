@@ -4,6 +4,7 @@
 package dvdbmanager
 
 import (
+	"errors"
 	"os"
 	"strings"
 
@@ -64,10 +65,10 @@ func findSingleEntryInFolder(path string, key interface{}, _ string) interface{}
 func readFieldsForIdsInFolder(path string, ids []*dvevaluation.DvVariable, fieldNames []string, key string) (*dvevaluation.DvVariable, error) {
 	n := len(ids)
 	fields := make([]*dvevaluation.DvVariable, 0, n)
-	fieldMap := convertFieldsToMap(fields)
+	fieldMap := convertDvVariableFieldsToMap(fields)
 	for i := 0; i < n; i++ {
-		p := readFieldMapForIdInFolder(path, ids[i], fieldMap, key)
-		if p != nil {
+		p, err := readFieldMapForIdInFolder(path, ids[i], fieldMap)
+		if err == nil && p != nil {
 			fields = append(fields, p)
 		}
 	}
@@ -77,30 +78,30 @@ func readFieldsForIdsInFolder(path string, ids []*dvevaluation.DvVariable, field
 
 func readFieldsForIdInFolder(path string, id *dvevaluation.DvVariable, fields []string, key string) (*dvevaluation.DvVariable, error) {
 	fieldMap := convertFieldsToMap(fields)
-	return readFieldMapForIdInFolder(path, id, fieldMap, key)
+	return readFieldMapForIdInFolder(path, id, fieldMap)
 }
 
-func readFieldMapForIdInFolder(path string, id interface{}, fieldMap map[string]int, key string) (*dvevaluation.DvVariable, error) {
+func readFieldMapForIdInFolder(path string, id interface{}, fieldMap map[string]int) (*dvevaluation.DvVariable, error) {
 	keyPath := path + "/" + dvevaluation.AnyToString(id) + ".json"
 	d, err := readWholeFileAsJson(keyPath)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	v := reduceJsonToFields(d, fieldMap)
-	return v
+	return v, nil
 }
 
-func readFieldsForAllInFolder(path string, fields []string) (*dvevaluation.DvVariable, error) {
+func readFieldsForAllInFolder(path string, fieldNames []string) (*dvevaluation.DvVariable, error) {
 	ids, err := collectAllFolderItemsAsList(path)
 	if err != nil {
 		return nil, err
 	}
 	n := len(ids)
 	fields := make([]*dvevaluation.DvVariable, 0, n)
-	fieldMap := convertFieldsToMap(fields)
+	fieldMap := convertFieldsToMap(fieldNames)
 	for i := 0; i < n; i++ {
-		p := readFieldMapForIdInFolder(path, ids[i], fieldMap, key)
-		if p != nil {
+		p, err := readFieldMapForIdInFolder(path, ids[i], fieldMap)
+		if err == nil && p != nil {
 			fields = append(fields, p)
 		}
 	}
@@ -112,14 +113,14 @@ func createRecordInFolder(path string, record *dvevaluation.DvVariable, keyFirst
 	if !setFieldInJsonAsString(record, keyFirst, newId) {
 		return nil, errors.New("Request body is not a JSON object")
 	}
-	keyPath := getEntryName(path, id)
+	keyPath := getEntryName(path, newId)
 	err := writeWholeFileAsJson(keyPath, record)
 	return record, err
 }
 
 func updateRecordInFolder(path string, record *dvevaluation.DvVariable, keyFirst string, version string) (*dvevaluation.DvVariable, error) {
 	id, ok := readFieldInJsonAsString(record, keyFirst)
-	if !ok || !checkIntId(id) == 0 {
+	if !ok || !checkIntId(id) {
 		return nil, errors.New("object has no id")
 	}
 	keyPath := getEntryName(path, id)
@@ -127,7 +128,7 @@ func updateRecordInFolder(path string, record *dvevaluation.DvVariable, keyFirst
 	if err != nil {
 		return nil, err
 	}
-        resolveVersion(oldRecord, record, version)
-	err := writeWholeFileAsJson(keyPath, record)
+	resolveVersion(oldRecord, record, version)
+	err = writeWholeFileAsJson(keyPath, record)
 	return record, err
 }
