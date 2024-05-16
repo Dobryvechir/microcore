@@ -5,6 +5,7 @@ package dvdbmanager
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 
@@ -41,7 +42,8 @@ func DbManagerInit(conf []*dvcontext.DatabaseConfig) {
 		}
 		var tableRef genTable
 		for j := 0; j < n; j++ {
-			tbl := db.Tables[i]
+			tbl := db.Tables[j]
+			fmt.Printf("%d of %d Table %s Kind %s\n", j, n, tbl.Name, tbl.Kind)
 			switch tbl.Kind {
 			case KindFile:
 				tableRef = fileKindInit(tbl, db)
