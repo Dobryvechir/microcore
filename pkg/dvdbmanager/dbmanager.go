@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 )
 
 const (
@@ -56,6 +57,7 @@ func DbManagerInit(conf []*dvcontext.DatabaseConfig) {
 				tableMap[tbl.Name] = tableRef
 			}
 			tableMap[db.Name+"."+tbl.Name] = tableRef
+			dvlog.PrintlnError("Registered table " + tbl.Name)
 		}
 	}
 }

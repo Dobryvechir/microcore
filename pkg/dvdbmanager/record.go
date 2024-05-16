@@ -10,11 +10,22 @@ import (
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
 
+func generateTableDoesNotExist(table string) string {
+	s := ""
+	for k, _ := range tableMap {
+		if len(s) > 0 {
+			s += ","
+		}
+		s += k
+	}
+	return "{\"error\":\"Table " + table + " does not exist [" + s + "]\"}"
+}
+
 func RecordBind(table string, items *dvevaluation.DvVariable, kind string, fields string) (res *dvevaluation.DvVariable, err error) {
 	fieldList := dvtextutils.ConvertToNonEmptyList(fields)
 	r, ok := tableMap[table]
 	if !ok {
-		err = errors.New("Table " + table + " does not exist")
+		err = errors.New(generateTableDoesNotExist(table))
 		return
 	}
 	if items == nil {
@@ -31,7 +42,7 @@ func RecordBind(table string, items *dvevaluation.DvVariable, kind string, field
 func RecordCreate(table string, body string, newId string) interface{} {
 	r, ok := tableMap[table]
 	if !ok {
-		return "Table " + table + " does not exist"
+		return generateTableDoesNotExist(table)
 	}
 	js, err := dvjson.JsonFullParser([]byte(body))
 	if err != nil {
@@ -54,7 +65,7 @@ func RecordDelete(table string, keys string) interface{} {
 	}
 	r, ok := tableMap[table]
 	if !ok {
-		return "Table " + table + " does not exist"
+		return generateTableDoesNotExist(table)
 	}
 	d := r.DeleteKeys(ids)
 	return d
@@ -63,7 +74,7 @@ func RecordDelete(table string, keys string) interface{} {
 func RecordReadAll(table string) interface{} {
 	r, ok := tableMap[table]
 	if !ok {
-		return "Table " + table + " does not exist"
+		return generateTableDoesNotExist(table)
 	}
 	d := r.ReadAll()
 	return d
@@ -72,7 +83,7 @@ func RecordReadAll(table string) interface{} {
 func RecordReadOne(table string, key interface{}) interface{} {
 	r, ok := tableMap[table]
 	if !ok {
-		return "Table " + table + " does not exist"
+		return generateTableDoesNotExist(table)
 	}
 	d := r.ReadOne(key)
 	return d
@@ -82,7 +93,7 @@ func RecordScan(table string, fields string) (res *dvevaluation.DvVariable, err 
 	fieldList := dvtextutils.ConvertToNonEmptyList(fields)
 	r, ok := tableMap[table]
 	if !ok {
-		err = errors.New("Table " + table + " does not exist")
+		err = errors.New(generateTableDoesNotExist(table))
 		return
 	}
 	res, err = r.ReadFieldsForAll(fieldList)
@@ -92,7 +103,7 @@ func RecordScan(table string, fields string) (res *dvevaluation.DvVariable, err 
 func RecordUpdate(table string, body string) interface{} {
 	r, ok := tableMap[table]
 	if !ok {
-		return "Table " + table + " does not exist"
+		return generateTableDoesNotExist(table)
 	}
 	js, err := dvjson.JsonFullParser([]byte(body))
 	if err != nil {
