@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2017 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 package dvlog
 
@@ -28,7 +28,7 @@ const (
 	LogTrace
 )
 
-var StartTime = time.Now().Unix() - 1654740000
+var StartTime = time.Now().Unix() - 1715740000
 var _startTimeMutex = &sync.Mutex{}
 var logsFolder string
 var CurrentLogLevel = LogError

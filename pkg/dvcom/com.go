@@ -552,6 +552,16 @@ func logRequest(request *dvcontext.RequestContext, place string) {
 	}
 }
 
+func HandleDefaultOptionHeaders(server *dvcontext.MicroCoreInfo, w http.ResponseWriter) {
+	optionHeaders := server.HeadersStaticOptions
+	for nm, hd := range optionHeaders {
+		for _, h := range hd {
+			w.Header().Set(nm, h)
+		}
+	}
+	w.WriteHeader(200)
+}
+
 func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerInfo map[string]*dvcontext.MicroCoreInfo) http.HandlerFunc {
 	prepareMicroCoreInfo(defaultServerInfo)
 	for _, c := range hostServerInfo {
@@ -571,9 +581,13 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 		if d, okey := hostServerInfo[lightHost]; okey {
 			currentServer = d
 		}
+		if r.Method == "OPTIONS" {
+			HandleDefaultOptionHeaders(currentServer, w)
+			return
+		}
 		extra, queries := calculateRequestContextParameters(r)
 		request := &dvcontext.RequestContext{
-			Id:      dvcontext.GetUniqueId(),
+			Id:      dvcontext.GetUniqueId() + dvlog.StartTime,
 			Extra:   extra,
 			Server:  currentServer,
 			Writer:  w,

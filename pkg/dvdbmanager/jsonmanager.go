@@ -48,7 +48,7 @@ func findInJsonArrayByKeyFirst(d *dvevaluation.DvVariable, key interface{}, keyF
 	keyValue := dvevaluation.AnyToByteArray(key)
 	keyName := []byte(keyFirst)
 	for _, item := range d.Fields {
-		if item != nil && len(item.Fields) != 0 && findKeyNameValue(item.Fields, keyValue, keyName) {
+		if item != nil && len(item.Fields) != 0 && findKeyNameValue(item.Fields, keyName, keyValue) {
 			return item
 		}
 	}
@@ -214,7 +214,7 @@ func deleteKeysInJson(path string, ids []string, keyFirst string) interface{} {
 	idMap := convertStringIdsToMap(ids)
 	for i := 0; i < m; i++ {
 		p := oldFields[i]
-		if isKeyInMap(p, key, idMap) {
+		if !isKeyInMap(p, key, idMap) {
 			newFields = append(newFields, p)
 		}
 	}

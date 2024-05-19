@@ -131,10 +131,6 @@ func Send(w http.ResponseWriter, r *http.Request, message []byte) {
 	if w.Header().Get("Content-Type") == "" {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	}
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
-	w.Header().Set("Access-Control-Max-Age", "3600")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if message != nil {
 		w.Write(message)
 	}

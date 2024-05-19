@@ -32,6 +32,9 @@ func DvFieldInfoToStringConverter(v interface{}) (string, bool) {
 	switch v.(type) {
 	case *dvevaluation.DvVariable:
 		r:=v.(*dvevaluation.DvVariable)
+                if r==nil {
+                   return "",true
+                }
 		if r.Kind!=dvevaluation.FIELD_OBJECT && r.Kind!=dvevaluation.FIELD_ARRAY {
 			return string(r.Value), true
 		}
