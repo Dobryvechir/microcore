@@ -1,7 +1,9 @@
-/***********************************************************************
+/*
+**********************************************************************
 MicroCore
-Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+***********************************************************************
+*/
 package dvtextutils
 
 import (
@@ -135,7 +137,7 @@ func ConvertToNonEmptyList(lst string) []string {
 }
 
 func ConvertToNonEmptyListBySeparator(lst string, separator string) []string {
-    r:=	strings.Split(lst, separator)
+	r := strings.Split(lst, separator)
 	return ReduceListToNonEmptyList(r)
 }
 
@@ -616,6 +618,24 @@ func createBytesFromPointCode(v int, first byte, bits int, rest int) []byte {
 		buf[rest-i] = byte(v&0x3f) | 0x80
 		v >>= 6
 	}
-	buf[0] = first | byte(v & ((1 << bits) - 1))
+	buf[0] = first | byte(v&((1<<bits)-1))
 	return buf
+}
+
+func FindNonEmptyLastString(data []string) string {
+	n := len(data) - 1
+	for ; n >= 0; n-- {
+		if len(data[n]) > 0 {
+			return data[n]
+		}
+	}
+	return ""
+}
+
+func GetLowCaseExtension(name string) string {
+	p := strings.LastIndex(name, ".")
+	if p < 0 {
+		return ""
+	}
+	return strings.ToLower(name[p:])
 }

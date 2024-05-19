@@ -1,17 +1,14 @@
-/***********************************************************************
+/*
+**********************************************************************
 MicroCore
-Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+***********************************************************************
+*/
 package dvcom
 
 import (
 	"bytes"
-	"github.com/Dobryvechir/microcore/pkg/dvcontext"
-	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvparser"
-	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
-	"github.com/Dobryvechir/microcore/pkg/dvurl"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -19,11 +16,17 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Dobryvechir/microcore/pkg/dvcontext"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
+	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
+	"github.com/Dobryvechir/microcore/pkg/dvurl"
 )
 
 const (
 	TRY_HTTP_FORWARD_URL_ALREADY_COMPOSED = 1
-	TRY_HTTP_FORWARD_URL_MAIN_COMPOSED = 2
+	TRY_HTTP_FORWARD_URL_MAIN_COMPOSED    = 2
 )
 
 var LogServer bool
@@ -92,7 +95,7 @@ func HandleFromFile(request *dvcontext.RequestContext) {
 	if request.DataType == "" {
 		request.DataType = GetContentTypeByFileName(request.FileName)
 	}
-	request.Output, request.Error = ioutil.ReadFile(request.FileName)
+	request.Output, request.Error = os.ReadFile(request.FileName)
 	request.HandleCommunication()
 }
 
@@ -104,7 +107,7 @@ func HandleFromFileWithProcessorCheck(request *dvcontext.RequestContext) {
 		var err error
 		var body []byte
 		if bodyIo != nil {
-			body, err = ioutil.ReadAll(bodyIo)
+			body, err = io.ReadAll(bodyIo)
 			if err != nil {
 				message := err.Error()
 				log.Print(message)
@@ -153,9 +156,9 @@ func tryProxyServers(request *dvcontext.RequestContext) bool {
 	for i := 0; i < n; i++ {
 		srv := request.Server.ProxyServers[i]
 		if dvurl.MatchMasksForUrlParts(srv.FilterUrls, urls, request.PrimaryContextEnvironment) {
-            options:=0
-			urlFinal:=srv.ServerUrl
-			if len(srv.RewritePrefix)>0 && len(request.Reader.URL.Path)>=srv.RewritePoint {
+			options := 0
+			urlFinal := srv.ServerUrl
+			if len(srv.RewritePrefix) > 0 && len(request.Reader.URL.Path) >= srv.RewritePoint {
 				urlFinal += srv.RewritePrefix + request.Reader.URL.Path[srv.RewritePoint:]
 				options |= TRY_HTTP_FORWARD_URL_MAIN_COMPOSED
 			}
@@ -264,9 +267,9 @@ func postCookDomain(domain string, w http.ResponseWriter) {
 	}
 }
 
-func tryHttpForwardWithEncodingCheck(request *dvcontext.RequestContext, proxyUrl string, options int) (bool,string) {
+func tryHttpForwardWithEncodingCheck(request *dvcontext.RequestContext, proxyUrl string, options int) (bool, string) {
 	pos := strings.Index(proxyUrl, dvcontext.ENCODED_HOST_PORT_URL_PARAM)
-	place:="http"
+	place := "http"
 	if pos > 0 {
 		encoded := "http://" + request.Reader.Host + request.Reader.URL.Path
 		place = request.Reader.Host
@@ -291,7 +294,7 @@ func tryHttpForward(request *dvcontext.RequestContext, url string, options int) 
 	var bodyIo = request.Reader.Body
 	toLog := LogServer && dvlog.CurrentLogLevel >= dvlog.LogInfo && (method != "OPTIONS" || dvlog.CurrentLogLevel >= dvlog.LogDetail)
 	if toLog {
-		body, err := ioutil.ReadAll(bodyIo)
+		body, err := io.ReadAll(bodyIo)
 		if err != nil {
 			message := err.Error()
 			log.Print(message)
@@ -302,13 +305,13 @@ func tryHttpForward(request *dvcontext.RequestContext, url string, options int) 
 		if len(body) == 0 {
 			bodyIo = nil
 		} else {
-			bodyIo = ioutil.NopCloser(bytes.NewReader(body))
+			bodyIo = io.NopCloser(bytes.NewReader(body))
 		}
 		logFile = dvlog.WriteRequestToLog(body, request.Reader)
 	}
 	finalUrl := url
 	if (options & TRY_HTTP_FORWARD_URL_ALREADY_COMPOSED) == 0 {
-		if (options & TRY_HTTP_FORWARD_URL_MAIN_COMPOSED)==0 {
+		if (options & TRY_HTTP_FORWARD_URL_MAIN_COMPOSED) == 0 {
 			finalUrl += request.Reader.URL.Path
 		}
 		if request.Reader.URL.RawQuery != "" {
@@ -388,7 +391,7 @@ func tryHttpForward(request *dvcontext.RequestContext, url string, options int) 
 		request.HandleCommunication()
 		return false
 	}
-	body, err2 := ioutil.ReadAll(resp.Body)
+	body, err2 := io.ReadAll(resp.Body)
 	if err2 != nil {
 		if dvlog.CurrentLogLevel >= dvlog.LogError {
 			log.Printf("Error reading body %s: %s", url+request.Reader.URL.Path, err2.Error())
@@ -647,6 +650,7 @@ func MakeDefaultHandler(defaultServerInfo *dvcontext.MicroCoreInfo, hostServerIn
 		if currentServer.LogLevel > dvcontext.LogLevelNone {
 			logRequest(request, place)
 		}
+		request.CleanUpRequest()
 	}
 
 }

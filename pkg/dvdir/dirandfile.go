@@ -1,6 +1,6 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvdir
@@ -8,7 +8,6 @@ package dvdir
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,7 +16,7 @@ import (
 func CopyWholeFolder(src string, dest string) error {
 	src = GetFolderNameWithoutLastSlash(src)
 	dest = GetFolderNameWithoutLastSlash(dest)
-	entries, err := ioutil.ReadDir(src)
+	entries, err := os.ReadDir(src)
 	if err != nil {
 		return err
 	}
@@ -47,10 +46,13 @@ func CopyWholeFolder(src string, dest string) error {
 				return err
 			}
 		}
-
-		isSymlink := entry.Mode()&os.ModeSymlink != 0
+		info, e := entry.Info()
+		if e != nil {
+			continue
+		}
+		isSymlink := (info.Mode() & os.ModeSymlink) != 0
 		if !isSymlink {
-			if err := os.Chmod(destPath, entry.Mode()); err != nil {
+			if err := os.Chmod(destPath, info.Mode()); err != nil {
 				return err
 			}
 		}
@@ -60,16 +62,16 @@ func CopyWholeFolder(src string, dest string) error {
 
 func CopySingleFile(srcFile, dstFile string) error {
 	out, err := os.Create(dstFile)
-	defer out.Close()
 	if err != nil {
 		return err
 	}
+	defer out.Close()
 
 	in, err := os.Open(srcFile)
-	defer in.Close()
 	if err != nil {
 		return err
 	}
+	defer in.Close()
 
 	_, err = io.Copy(out, in)
 	if err != nil {
@@ -170,4 +172,40 @@ func EnsureFolderForUsualFileToBeSaved(fileName string) {
 		return
 	}
 	os.MkdirAll(fileName[:pos+1], 0755)
+}
+
+func MoveFile(sourcePath, destPath string, strictRemove bool) error {
+	inputFile, err := os.Open(sourcePath)
+	if err != nil {
+		return fmt.Errorf("couldn't open source file: %v", err)
+	}
+	defer inputFile.Close()
+
+	outputFile, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("couldn't open dest file: %v", err)
+	}
+	defer outputFile.Close()
+
+	_, err = io.Copy(outputFile, inputFile)
+	if err != nil {
+		return fmt.Errorf("couldn't copy to dest from source: %v", err)
+	}
+
+	inputFile.Close() // for Windows, close before trying to remove
+
+	err = os.Remove(sourcePath)
+	if err != nil && strictRemove {
+		return fmt.Errorf("couldn't remove source file: %v", err)
+	}
+	return nil
+}
+
+func RenameOrMoveFile(sourcePath, destPath string, strictRemove bool) error {
+	err := os.Rename(sourcePath, destPath)
+	if err == nil {
+		return nil
+	}
+	err = MoveFile(sourcePath, destPath, strictRemove)
+	return err
 }

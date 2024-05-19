@@ -170,6 +170,7 @@ type RequestContext struct {
 	ExecutorFn                InterfaceExecutor
 	LogLevel                  int
 	PlaceInfo                 string
+	TempFiles                 []string
 }
 
 type HandlerFunc func(request *RequestContext) bool

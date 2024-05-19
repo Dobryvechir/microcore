@@ -1,20 +1,21 @@
 /***********************************************************************
 MicroCore
-Copyright 2020 - 2022 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ************************************************************************/
 
 package dvcontext
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvlog"
-	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
 
 const (
@@ -88,6 +89,21 @@ func (request *RequestContext) HandleCommunication() {
 	request.LogLevel = LogHandled
 }
 
+func (request *RequestContext) GetContentType() string {
+	if request.Reader == nil || len(request.Reader.Header) == 0 {
+		return ""
+	}
+	info := request.Reader.Header.Values("Content-Type")
+	if len(info) != 0 {
+		return info[0]
+	}
+	info = request.Reader.Header.Values("content-type")
+	if len(info) != 0 {
+		return info[0]
+	}
+	return ""
+}
+
 func HandlerError(w http.ResponseWriter, r *http.Request, message string) {
 	log.Printf("Error %s: %s [%s]", message, r.URL.Path, r.Method)
 	errCode := 0
@@ -131,7 +147,7 @@ func Send(w http.ResponseWriter, r *http.Request, message []byte) {
 }
 
 func saveRequest(filename string, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error reading body: %v", err)
 		body = []byte("!!!Error reading body!!!!!")
@@ -237,7 +253,7 @@ func getSystemSafeFileName(name string) string {
 	return string(a[:len])
 }
 
-//TODO: not effective, need to be rewritten
+// TODO: not effective, need to be rewritten
 func presentStringArray(dat []string) string {
 	s := "["
 	if dat != nil {
@@ -305,4 +321,20 @@ func GetUniqueId() int64 {
 	uniqueId++
 	idMutex.Unlock()
 	return v
+}
+
+func (ctx *RequestContext) AddTempFile(name string) {
+	if ctx.TempFiles == nil {
+		ctx.TempFiles = make([]string, 1)
+		ctx.TempFiles[0] = name
+	} else {
+		ctx.TempFiles = append(ctx.TempFiles, name)
+	}
+}
+
+func (ctx *RequestContext) CleanUpRequest() {
+	n := len(ctx.TempFiles)
+	for i := 0; i < n; i++ {
+		os.Remove(ctx.TempFiles[i])
+	}
 }

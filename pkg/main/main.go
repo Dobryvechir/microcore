@@ -1,8 +1,14 @@
 // package main is a sample for extending applications
-// MicroCore Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+// MicroCore Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 
 package main
 
+import (
+	"github.com/Dobryvechir/microcore/pkg/dvconfig"
+	_ "github.com/Dobryvechir/microcore/pkg/dvoc"
+)
+
+/************************** MAXIMUM CONFIGURATION *********************************************************
 import (
 	"github.com/Dobryvechir/microcore/pkg/dvconfig"
 	_ "github.com/Dobryvechir/microcore/pkg/dvdbdata"
@@ -13,7 +19,9 @@ import (
 	_ "github.com/Dobryvechir/microcore/pkg/dvzoo"
 	_ "github.com/lib/pq"
 )
+***************************************************************************************************************/
 
 func main() {
+	dvconfig.SetApplicationName("tvserver")
 	dvconfig.ServerStart()
 }

@@ -8,10 +8,18 @@ import (
 	"errors"
 	"os"
 	"strings"
+
+	"github.com/Dobryvechir/microcore/pkg/dvdir"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
 
 const (
 	TRANSFORM_BASE64 = iota
+	TRANSFORM_MOVE_FILE
+)
+
+const (
+	filePrefix = "file:"
 )
 
 type FormatDescription struct {
@@ -60,30 +68,55 @@ var FormatDefinitions = []*FormatDescription{
 	},
 }
 
-func saveUserFile(fileName string, position int, transform int, data string) (int64, error) {
-	data = data[position:]
+func saveUserFile(fileName string, position int, transform int, data string, src string) (int64, error) {
 	var buf []byte = nil
 	var err error = nil
 	switch transform {
 	case TRANSFORM_BASE64:
+		data = data[position:]
 		buf, err = base64.StdEncoding.DecodeString(data)
+	case TRANSFORM_MOVE_FILE:
+		err = dvdir.RenameOrMoveFile(src, fileName, false)
+		if err != nil {
+			return 0, err
+		}
+		fi, err := os.Stat(fileName)
+		if err != nil {
+			return 0, err
+		}
+		return fi.Size(), nil
 	}
 	if err != nil {
 		return 0, err
 	}
 	if buf != nil {
-		err := os.WriteFile(fileName, buf, 0644)
+		err = os.WriteFile(fileName, buf, 0644)
 		return int64(len(buf)), err
 	}
-	return 0, errors.New("Unsupported transformation")
+	return 0, errors.New("unsupported transformation")
 }
 
-func analyzeUserFile(data string) (extension string, position int, prefix string, transorm int) {
+func analyzeUserFile(data string) (extension string, position int, prefix string, transorm int, src string) {
 	n := len(FormatDefinitions)
+	if strings.HasPrefix(data, filePrefix) {
+		data = data[len(filePrefix):]
+		p := strings.Index(data, ":")
+		if p <= 0 {
+			return
+		}
+		extension = dvtextutils.GetLowCaseExtension(data[:p])
+		for i := 0; i < n; i++ {
+			v := FormatDefinitions[i]
+			if v.Extension == extension {
+				return v.Extension, 0, v.FormatLetter, TRANSFORM_MOVE_FILE, data[p+1:]
+			}
+		}
+		return
+	}
 	for i := 0; i < n; i++ {
 		v := FormatDefinitions[i]
 		if strings.HasPrefix(data, v.DataPrefix) {
-			return v.Extension, len(v.DataPrefix), v.FormatLetter, v.Transform
+			return v.Extension, len(v.DataPrefix), v.FormatLetter, v.Transform, ""
 		}
 	}
 	return

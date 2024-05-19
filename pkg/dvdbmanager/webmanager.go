@@ -76,16 +76,16 @@ func updateWebFiles(webPath string, record *dvevaluation.DvVariable, id string, 
 	if !ok || len(userFile) == 0 {
 		return "", nil
 	}
-	extension, position, prefix, transform := analyzeUserFile(userFile)
+	extension, position, prefix, transform, src := analyzeUserFile(userFile)
 	if len(prefix) == 0 {
 		return "", nil
 	}
 	if !strings.Contains(formats, prefix) {
-		return "", errors.New("Unsupported format")
+		return "", errors.New("unsupported format")
 	}
 	saveName := webPath + "/" + id + extension
 	urlName := webUrl + "/" + id + extension
-	fileSize, err := saveUserFile(saveName, position, transform, userFile)
+	fileSize, err := saveUserFile(saveName, position, transform, userFile, src)
 	if err != nil {
 		return "", err
 	}

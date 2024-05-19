@@ -4,22 +4,13 @@
 package dvaction
 
 import (
+	"strconv"
+
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvdbmanager"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
-	"strconv"
 )
 
-/*****************************************************
-
-ACTION_PICTURE_UPLOAD_1=recordcreate:{"table":"picture","result":"request:RESULT"}
-
-ACTION_GROUP_CREATE_1=recordcreate:{"table":"group","result":"request:RESULT"}
-
-ACTION_GROUP_UPDATE_1=recordupdate:{"table":"group","result":"request:RESULT"}
-
-
-*******************************************************/
 /************** BIND ***************************************************/
 
 type recordBindConfig struct {
