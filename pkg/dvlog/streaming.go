@@ -106,6 +106,12 @@ func PrintlnError(s string) {
 	Println(s, s)
 }
 
+func PrintError(err error) {
+   if err!=nil {
+        PrintlnError(err.Error())
+   }
+}
+
 func Printf(formatShort, formatFull string, a ...interface{}) {
 	short := fmt.Sprintf(formatShort, a...)
 	full := fmt.Sprintf(formatFull, a...)
