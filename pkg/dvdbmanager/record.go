@@ -71,6 +71,15 @@ func RecordDelete(table string, keys string) interface{} {
 	return d
 }
 
+func CreateOrUpdateByConditionsAndUpdateFields(table string,row *dvevaluation.DvVariable, conditions []string, fields  []string) (*dvevaluation.DvVariable, error) {
+	r, ok := tableMap[table]
+	if !ok {
+		return nil, generateTableDoesNotExist(table)
+	}
+        // TODO implement
+	return nil, nil
+}
+
 func RecordReadAll(table string) interface{} {
 	r, ok := tableMap[table]
 	if !ok {

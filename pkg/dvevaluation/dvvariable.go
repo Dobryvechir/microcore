@@ -2,6 +2,7 @@ package dvevaluation
 
 import (
 	"bytes"
+        "encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
@@ -390,6 +391,33 @@ func (item *DvVariable) ReadChildStringArrayValue(fieldName string) []string {
 	return res
 }
 
+func (item *DvVariable) ReadChildIntArrayValue(fieldName string) (res []int,err error) {
+	subItem, _, err := item.ReadChild(fieldName, nil)
+	if err != nil || subItem == nil || subItem.Fields == nil {
+		return nil
+	}
+	n := len(subItem.Fields)
+	res = make([]int, n)
+        var err1 error
+        var val int
+	for i := 0; i < n; i++ {
+		s := subItem.Fields[i]
+		if s == nil {
+                        err = errors.New("empty value at position " + strconv.Itoa(i)) 
+			res[i] = 0
+		} else {
+			t:= dvtextutils.GetUnquotedString(s.GetStringValue())
+                        val, err1 = strconv.ParseInt(t, 10, 64) 
+                        if err1!=nil {
+                             err = err1
+                             val = 0    
+                        } 
+                        res[i] = val 
+		}
+	}
+	return
+}
+
 func (item *DvVariable) ReadChildMapValue(fieldName string) map[string]string {
 	subItem, _, err := item.ReadChild(fieldName, nil)
 	if err != nil || subItem == nil || subItem.Kind != FIELD_OBJECT && subItem.Kind != FIELD_FUNCTION || len(subItem.Fields) == 0 {
@@ -647,6 +675,7 @@ func (item *DvVariable) ReadSimpleStringList(data []string) ([]string, error) {
 	}
 	return data, nil
 }
+
 
 func (item *DvVariable) ReadSimpleString() (string, error) {
 	if item.Kind == FIELD_OBJECT || item.Kind == FIELD_ARRAY {
@@ -1107,3 +1136,19 @@ func (item *DvVariable) IndexOfByKey(field []byte) int {
 	}
 	return -1
 }
+
+func (item *DvVariable) DvVariableToAnyStruct(result interface{}) error {
+        str := AnyToString(item)
+	err := json.Unmarshal([]byte(str), result)
+	return err
+} 
+
+func AnyStructToDvVariable(source interface{}) (*DvVariable, error) {
+	bts, err:= json.Marshal(source)
+        if err!=nil {
+            return nil, err
+        }
+	res, err:=JsonFullParser(bts)
+	return res, err
+}
+
