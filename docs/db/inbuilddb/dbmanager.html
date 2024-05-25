@@ -1,0 +1,34 @@
+<pre>
+  dvdbmanager.CreateOrUpdateByConditionsAndUpdateFields(tableName string, rowRecord *dvevaluation.DvVariable, conditions []string, fields []string) (*dvevaluation.DvVariable, error)
+ACTION:
+  This function has a new record and compares it with the old record based on id, 
+and depending on the conditions, it can either replace partially or fully, or do nothing or clear some fields.
+    all changes must be transactional, that is, noone can read write a record with the same id until the operation completes.
+INPUT:
+  tableName - the name of the table as usual,
+  rowRecord - a new record for this table   
+  conditions - some conditions to be checked, if none of them is met, no changes are made in the table.
+  fields - fields which must be updated.
+  For each row of task conditions must be a corresponding line in the task fields. If their length is not equal, it is error.
+  conditions can have some special values: NEW, DEFAULT. NEW must be on the first place, DEFAULT must be on the last place.
+  All other conditions must be between them, however both NEW and DEFAULT are optional.
+  Conditions are checked line by line and the if the first condition is met, the operation is fulfilled according to this condition.
+  If NEW is absent, it means that if there is no record with such id in the database, we do nothing. 
+  If NEW is present and there is no record with such id, the whole rowRecord becomes a new record in the database and nothing more.
+  Fields are not important in this case.
+  If DEFAULT is not present and no conditions are met, no change is done in the database.
+  If DEFAULT is present, but no conditions are met, then this fields are applied.
+
+  Fields in general means only the comma-separated list of fields to be taken from the old record, but if ! is on the first place,
+   it means that no changes from rowRecord should be applied, but these fields must be cleared in the old record.
+  If ^ is on the first place, the list is to the contrary, contains only fields that must be taken from the new record. 
+
+OUTPUT:
+  *dvevaluation.DvVariable the resulted record saved. If the record was deleted and not restored by this operation, then nil is returned.
+  error any error happening during this operation.
+
+
+
+
+
+</pre>

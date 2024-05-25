@@ -23,13 +23,13 @@ func fileKindInit(tbl *dvcontext.DatabaseTable, db *dvcontext.DatabaseConfig) ge
 	return ref
 }
 
-func (tbl *fileTable) ReadAll() interface{} {
+func (tbl *fileTable) ReadAll() (*dvevaluation.DvVariable, error) {
 	tbl.mu.Lock()
 	defer tbl.mu.Unlock()
 	return readWholeFileAsJsonArray(tbl.path)
 }
 
-func (tbl *fileTable) ReadOne(key interface{}) interface{} {
+func (tbl *fileTable) ReadOne(key interface{}) (*dvevaluation.DvVariable, error) {
 	tbl.mu.Lock()
 	defer tbl.mu.Unlock()
 	return findSingleEntryInJsonArray(tbl.path, key, tbl.keyFirst)
@@ -74,4 +74,10 @@ func (tbl *fileTable) UpdateRecord(record *dvevaluation.DvVariable) (*dvevaluati
 	tbl.mu.Lock()
 	defer tbl.mu.Unlock()
 	return updateRecordInJson(tbl.path, record, tbl.keyFirst, tbl.version)
+}
+
+func (tbl *fileTable) CreateOrUpdateByConditionsAndUpdateFields(record *dvevaluation.DvVariable, conditions []string, fields []string) (*dvevaluation.DvVariable, error) {
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
+	return CreateOrUpdateByConditionsAndUpdateFieldsForJson(tbl.path, record, conditions, fields, tbl.keyFirst, tbl.version)
 }

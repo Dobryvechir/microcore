@@ -7,17 +7,17 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"strings"
 
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
+	"github.com/Dobryvechir/microcore/pkg/dvparser"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
 
-func readWholeFileAsJsonArray(path string) interface{} {
+func readWholeFileAsJsonArray(path string) (*dvevaluation.DvVariable, error) {
 	d, err := readWholeFileAsJson(path)
-	if err != nil {
-		return err
-	}
-	return d
+	return d, err
 }
 
 func readWholeFileAsJson(path string) (*dvevaluation.DvVariable, error) {
@@ -32,13 +32,13 @@ func readWholeFileAsJson(path string) (*dvevaluation.DvVariable, error) {
 	return js, nil
 }
 
-func findSingleEntryInJsonArray(path string, key interface{}, keyFirst string) interface{} {
+func findSingleEntryInJsonArray(path string, key interface{}, keyFirst string) (*dvevaluation.DvVariable, error) {
 	d, err := readWholeFileAsJson(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	res := findInJsonArrayByKeyFirst(d, key, keyFirst)
-	return res
+	return res, nil
 }
 
 func findInJsonArrayByKeyFirst(d *dvevaluation.DvVariable, key interface{}, keyFirst string) *dvevaluation.DvVariable {
@@ -284,19 +284,27 @@ func createRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst s
 	return record, err
 }
 
-func updateRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst string, version string) (*dvevaluation.DvVariable, error) {
+func retrieveUpdateInfo(path string, record *dvevaluation.DvVariable, keyFirst string) (*dvevaluation.DvVariable, int, error) {
 	id, ok := readFieldInJsonAsString(record, keyFirst)
 	if !ok || !checkIntId(id) {
-		return nil, errors.New("object has no id")
+		return nil, 0, errors.New("object has no id")
 	}
 	pool, err := readWholeFileAsJson(path)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if pool == nil || pool.Kind != dvevaluation.FIELD_ARRAY {
-		return nil, errors.New("table is not active yet")
+		return nil, 0, errors.New("table is not active yet")
 	}
 	i := findIndexOfJsonObject(pool.Fields, keyFirst, id)
+	return pool, i, err
+}
+
+func updateRecordInJson(path string, record *dvevaluation.DvVariable, keyFirst string, version string) (*dvevaluation.DvVariable, error) {
+	pool, i, err := retrieveUpdateInfo(path, record, keyFirst)
+	if err != nil {
+		return nil, err
+	}
 	if i < 0 {
 		return nil, nil
 	}
@@ -329,4 +337,102 @@ func checkIntId(id string) bool {
 		}
 	}
 	return true
+}
+
+func CreateEnvironmentForPreviousCurrent(previousRecord *dvevaluation.DvVariable, currentRecord *dvevaluation.DvVariable) *dvevaluation.DvObject {
+	data := make(map[string]interface{})
+	previousRecord.CopyFieldsToMap("previous.", data)
+	currentRecord.CopyFieldsToMap("current.", data)
+	env := dvparser.GetPropertiesPrototypedToGlobalProperties(data)
+	return env
+}
+
+func findFirstMetCondition(previousRecord *dvevaluation.DvVariable, currentRecord *dvevaluation.DvVariable, conditions []string) (int, error) {
+	n := len(conditions)
+	var env *dvevaluation.DvObject = nil
+	for i := 0; i < n; i++ {
+		condition := conditions[i]
+		if condition == "NEW" {
+			continue
+		}
+		if condition == "DEFAULT" {
+			return i, nil
+		}
+		if env == nil {
+			env = CreateEnvironmentForPreviousCurrent(previousRecord, currentRecord)
+		}
+		r, err := env.EvaluateAnyTypeExpression(condition)
+		if err != nil {
+			return 0, errors.New("Error in expression " + condition + ":" + err.Error())
+		}
+		if dvevaluation.AnyToBoolean(r) {
+			return i, nil
+		}
+	}
+	return -1, nil
+}
+
+func updateRecordByFields(previousRecord *dvevaluation.DvVariable, currentRecord *dvevaluation.DvVariable, fields string) bool {
+	fields = strings.TrimSpace(fields)
+	if len(fields) == 0 {
+		return true
+	}
+	c := fields[0]
+	cleaning := false
+	if c == '!' {
+		cleaning = true
+		fields = fields[1:]
+		if len(fields) == 0 {
+			return false
+		}
+	} else if c == '^' {
+		fields = fields[1:]
+		newPrevious := &dvevaluation.DvVariable{Kind: dvevaluation.FIELD_OBJECT, Fields: currentRecord.Fields}
+		currentRecord.Fields = previousRecord.Fields
+		previousRecord = newPrevious
+		if len(fields) == 0 {
+			return false
+		}
+	}
+	fieldList := dvtextutils.ConvertToNonEmptyList(fields)
+	if cleaning {
+		currentRecord.Fields = previousRecord.Fields
+		currentRecord.CleanFields(fieldList)
+	} else {
+		currentRecord.CopyFieldsFromOther(fieldList, previousRecord)
+	}
+	return true
+}
+
+func CreateOrUpdateByConditionsAndUpdateFieldsForJson(path string, record *dvevaluation.DvVariable, conditions []string, fields []string, keyFirst string, version string) (*dvevaluation.DvVariable, error) {
+	pool, i, err := retrieveUpdateInfo(path, record, keyFirst)
+	if err != nil {
+		return nil, err
+	}
+	if i < 0 {
+		if dvtextutils.IsStringContainedInArray("NEW", conditions) {
+			if len(version) > 0 {
+				setFieldInJsonAsString(record, version, "1")
+			}
+			pool.Fields = append(pool.Fields, record)
+			err = writeWholeFileAsJson(path, pool)
+			return record, err
+		}
+		return nil, nil
+	}
+	n, err := findFirstMetCondition(pool.Fields[i], record, conditions)
+	if err != nil {
+		return nil, err
+	}
+	if n < 0 {
+		return pool.Fields[i], nil
+	}
+	changed := updateRecordByFields(pool.Fields[i], record, fields[n])
+	if !changed {
+		return pool.Fields[i], nil
+	}
+	resolveVersion(pool.Fields[i], record, version)
+	pool.Fields[i] = record
+	err = writeWholeFileAsJson(path, pool)
+	return record, err
 }

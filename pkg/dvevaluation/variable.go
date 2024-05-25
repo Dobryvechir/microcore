@@ -7,6 +7,7 @@ package dvevaluation
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 )
 
@@ -342,4 +343,77 @@ func (variable *DvVariable) IsEmpty() bool {
 		return len(variable.Value) == 0
 	}
 	return false
+}
+
+func (variable *DvVariable) CleanValue() {
+	if variable == nil {
+		return
+	}
+	switch variable.Kind {
+	case FIELD_UNDEFINED:
+	case FIELD_NULL:
+		break
+	case FIELD_OBJECT:
+	case FIELD_ARRAY:
+		variable.Fields = nil
+	default:
+		variable.Value = make([]byte, 0, 8)
+	}
+}
+
+func (variable *DvVariable) CleanFields(keys []string) {
+	if variable == nil || variable.Kind != FIELD_OBJECT || len(variable.Fields) == 0 {
+		return
+	}
+	keyMap := collectKeysToMap(keys)
+	n := len(variable.Fields)
+	for i := 0; i < n; i++ {
+		f := variable.Fields[i]
+		if f == nil {
+			continue
+		}
+		k := string(f.Name)
+		if keyMap[k] == 1 {
+			f.CleanValue()
+		}
+	}
+}
+
+func (variable *DvVariable) CopyFieldsFromOther(keys []string, other *DvVariable) {
+	if variable == nil || variable.Kind != FIELD_OBJECT || other == nil || len(other.Fields) == 0 {
+		return
+	}
+	keyMap := collectKeysToMap(keys)
+	n := len(other.Fields)
+	for i := 0; i < n; i++ {
+		f := variable.Fields[i]
+		if f == nil {
+			continue
+		}
+		k := string(f.Name)
+		if keyMap[k] == 1 {
+			variable.SetField(k, f)
+		}
+	}
+}
+
+func (variable *DvVariable) CopyFieldsToMap(prefix string, data map[string]interface{}) {
+	if variable == nil || len(variable.Fields) == 0 {
+		return
+	}
+	f := variable.Fields
+	n := len(f)
+	if variable.Kind == FIELD_ARRAY {
+		for i := 0; i < n; i++ {
+			data[prefix+strconv.Itoa(i)] = f[i]
+		}
+	} else {
+		for i := 0; i < n; i++ {
+			v := f[i]
+			if v == nil || len(v.Name) == 0 {
+				continue
+			}
+			data[prefix+string(v.Name)] = v
+		}
+	}
 }

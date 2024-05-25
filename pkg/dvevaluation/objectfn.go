@@ -7,9 +7,10 @@ package dvevaluation
 
 import (
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"strconv"
 	"strings"
+
+	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 )
 
 const LENGTH_PROPERTY = "length"
@@ -78,10 +79,10 @@ func (variable *DvVariable) GetVariableArray(force bool) ([]*DvVariable, error) 
 		}
 		return nil, errors.New("Array is expected")
 	}
-	if variable.Fields!=nil {
+	if variable.Fields != nil {
 		return variable.Fields, nil
 	}
-	res := make([]*DvVariable, 0,7)
+	res := make([]*DvVariable, 0, 7)
 	return res, nil
 }
 
@@ -148,8 +149,8 @@ func (variable *DvVariable) GetStringMap() (res map[string]string) {
 		return
 	}
 	for k, v := range variable.Fields {
-		key:=string(v.Name)
-		if key=="" {
+		key := string(v.Name)
+		if key == "" {
 			key = strconv.Itoa(k)
 		}
 		res[key] = v.GetStringValue()
@@ -163,8 +164,8 @@ func (variable *DvVariable) GetStringInterfaceMap() (res map[string]interface{})
 		return
 	}
 	for k, v := range variable.Fields {
-		key:=string(v.Name)
-		if key=="" {
+		key := string(v.Name)
+		if key == "" {
 			key = strconv.Itoa(k)
 		}
 		res[key] = v
@@ -178,8 +179,8 @@ func (variable *DvVariable) GetStringArrayMap() (res map[string][]string) {
 		return
 	}
 	for k, v := range variable.Fields {
-		key:=string(v.Name)
-		if key=="" {
+		key := string(v.Name)
+		if key == "" {
 			key = strconv.Itoa(k)
 		}
 		res[key] = v.GetStringArrayValue()
@@ -194,6 +195,21 @@ func (variable *DvVariable) SetSimpleValue(value string, kind int) error {
 	variable.Value = []byte(value)
 	variable.Kind = kind
 	return nil
+}
+
+func (variable *DvVariable) SetField(key string, value *DvVariable) int {
+	if variable == nil || variable.Kind != FIELD_OBJECT {
+		return -2
+	}
+	newValue := value.CloneExceptKey(value, true)
+	newValue.Name = []byte(key)
+	n := variable.FindIndex(key)
+	if n < 0 {
+		variable.Fields = append(variable.Fields, newValue)
+	} else {
+		variable.Fields[n] = newValue
+	}
+	return n
 }
 
 func ValidateNumber(data string) error {
@@ -284,7 +300,7 @@ func QuickStringEvaluation(parent *DvVariable, data string) (res *DvVariable, er
 	if (c != '\'' && c != '"' && c != '`') || data[l-1] != c {
 		err = errors.New("Wrong string: " + data)
 	}
-	res.Value =[]byte(dvgrammar.GetEscapedString([]byte(data[i+1 : l-1])))
+	res.Value = []byte(dvgrammar.GetEscapedString([]byte(data[i+1 : l-1])))
 	return
 }
 

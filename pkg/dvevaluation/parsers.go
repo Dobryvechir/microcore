@@ -1,13 +1,16 @@
-/***********************************************************************
+/*
+**********************************************************************
 MicroCore
 Copyright 2020 - 2020 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+***********************************************************************
+*/
 package dvevaluation
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 	"math"
 	"strconv"
+
+	"github.com/Dobryvechir/microcore/pkg/dvgrammar"
 )
 
 func StringToNumber(v string) float64 {
@@ -100,4 +103,15 @@ func GetNumberKindFromString(v []byte, n int) (int, int, int64, float64) {
 		resFloat = resFloat * math.Pow10(power)
 	}
 	return dvgrammar.TYPE_NUMBER, i, resInt, resFloat
+}
+
+func collectKeysToMap(keys []string) map[string]int {
+	res := make(map[string]int)
+	if keys == nil {
+		return res
+	}
+	for _, v := range keys {
+		res[v] = 1
+	}
+	return res
 }

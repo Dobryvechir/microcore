@@ -5,6 +5,7 @@ package dvdbmanager
 
 import (
 	"errors"
+
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
@@ -71,31 +72,33 @@ func RecordDelete(table string, keys string) interface{} {
 	return d
 }
 
-func CreateOrUpdateByConditionsAndUpdateFields(table string,row *dvevaluation.DvVariable, conditions []string, fields  []string) (*dvevaluation.DvVariable, error) {
+func CreateOrUpdateByConditionsAndUpdateFields(table string, row *dvevaluation.DvVariable, conditions []string, fields []string) (*dvevaluation.DvVariable, error) {
 	r, ok := tableMap[table]
 	if !ok {
-		return nil, generateTableDoesNotExist(table)
+		return nil, errors.New(generateTableDoesNotExist(table))
 	}
-        // TODO implement
-	return nil, nil
+	if row == nil || len(conditions) == 0 || len(conditions) != len(fields) {
+		return nil, errors.New("Error call to CreateOrUpdateByConditionsAndUpdateFields")
+	}
+	return r.CreateOrUpdateByConditionsAndUpdateFields(row, conditions, fields)
 }
 
-func RecordReadAll(table string) interface{} {
+func RecordReadAll(table string) (*dvevaluation.DvVariable, error) {
 	r, ok := tableMap[table]
 	if !ok {
-		return generateTableDoesNotExist(table)
+		return nil, errors.New(generateTableDoesNotExist(table))
 	}
-	d := r.ReadAll()
-	return d
+	d, err := r.ReadAll()
+	return d, err
 }
 
-func RecordReadOne(table string, key interface{}) interface{} {
+func RecordReadOne(table string, key interface{}) (*dvevaluation.DvVariable, error) {
 	r, ok := tableMap[table]
 	if !ok {
-		return generateTableDoesNotExist(table)
+		return nil, errors.New(generateTableDoesNotExist(table))
 	}
-	d := r.ReadOne(key)
-	return d
+	d, err := r.ReadOne(key)
+	return d, err
 }
 
 func RecordScan(table string, fields string) (res *dvevaluation.DvVariable, err error) {

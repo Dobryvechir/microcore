@@ -162,7 +162,10 @@ func recordReadAllRun(data []interface{}) bool {
 }
 
 func recordReadAllRunByConfig(config *recordReadAllConfig, ctx *dvcontext.RequestContext) bool {
-	r := dvdbmanager.RecordReadAll(config.Table)
+	r, err := dvdbmanager.RecordReadAll(config.Table)
+	if err != nil {
+		ActionExceptionByError("", err, ctx)
+	}
 	SaveActionResult(config.Result, r, ctx)
 	return true
 }
@@ -198,7 +201,10 @@ func recordReadOneRunByConfig(config *recordReadOneConfig, ctx *dvcontext.Reques
 		SaveActionResult(config.Result, "Error key "+config.Key+" is not provided", ctx)
 		return true
 	}
-	r := dvdbmanager.RecordReadOne(config.Table, key)
+	r, err := dvdbmanager.RecordReadOne(config.Table, key)
+	if err != nil {
+		ActionExceptionByError("", err, ctx)
+	}
 	SaveActionResult(config.Result, r, ctx)
 	return true
 }

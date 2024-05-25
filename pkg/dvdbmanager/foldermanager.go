@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
 
 func collectAllFolderItemsAsList(path string) ([]string, error) {
@@ -28,10 +29,10 @@ func collectAllFolderItemsAsList(path string) ([]string, error) {
 	return res, nil
 }
 
-func readAllFolderItemsAsList(path string) interface{} {
+func readAllFolderItemsAsList(path string) (*dvevaluation.DvVariable, error) {
 	items, err := collectAllFolderItemsAsList(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	n := len(items)
 	res := &dvevaluation.DvVariable{
@@ -47,19 +48,20 @@ func readAllFolderItemsAsList(path string) interface{} {
 			}
 		}
 	}
-	return res
+	return res, nil
 }
 
 func getEntryName(path string, key interface{}) string {
 	return path + "/" + dvevaluation.AnyToString(key) + ".json"
 }
-func findSingleEntryInFolder(path string, key interface{}, _ string) interface{} {
+
+func findSingleEntryInFolder(path string, key interface{}, _ string) (*dvevaluation.DvVariable, error) {
 	keyPath := getEntryName(path, key)
 	d, err := readWholeFileAsJson(keyPath)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
-	return d
+	return d, nil
 }
 
 func readFieldsForIdsInFolder(path string, ids []*dvevaluation.DvVariable, fieldNames []string, key string) (*dvevaluation.DvVariable, error) {
@@ -129,6 +131,39 @@ func updateRecordInFolder(path string, record *dvevaluation.DvVariable, keyFirst
 		return nil, err
 	}
 	resolveVersion(oldRecord, record, version)
+	err = writeWholeFileAsJson(keyPath, record)
+	return record, err
+}
+
+func CreateOrUpdateByConditionsAndUpdateFieldsForFolder(path string, record *dvevaluation.DvVariable, conditions []string, fields []string, keyFirst string, version string) (*dvevaluation.DvVariable, error) {
+	id, ok := readFieldInJsonAsString(record, keyFirst)
+	if !ok || !checkIntId(id) {
+		return nil, errors.New("object has no id")
+	}
+	keyPath := getEntryName(path, id)
+	previousRecord, err := readWholeFileAsJson(keyPath)
+	if err != nil || previousRecord == nil {
+		if dvtextutils.IsStringContainedInArray("NEW", conditions) {
+			if len(version) > 0 {
+				setFieldInJsonAsString(record, version, "1")
+			}
+			err = writeWholeFileAsJson(keyPath, record)
+			return record, err
+		}
+		return nil, nil
+	}
+	n, err := findFirstMetCondition(previousRecord, record, conditions)
+	if err != nil {
+		return nil, err
+	}
+	if n < 0 {
+		return previousRecord, nil
+	}
+	changed := updateRecordByFields(previousRecord, record, fields[n])
+	if !changed {
+		return previousRecord, nil
+	}
+	resolveVersion(previousRecord, record, version)
 	err = writeWholeFileAsJson(keyPath, record)
 	return record, err
 }

@@ -25,13 +25,13 @@ func folderKindInit(tbl *dvcontext.DatabaseTable, db *dvcontext.DatabaseConfig) 
 	return ref
 }
 
-func (tbl *folderTable) ReadAll() interface{} {
+func (tbl *folderTable) ReadAll() (*dvevaluation.DvVariable, error) {
 	tbl.mu.Lock()
 	defer tbl.mu.Unlock()
 	return readAllFolderItemsAsList(tbl.path)
 }
 
-func (tbl *folderTable) ReadOne(key interface{}) interface{} {
+func (tbl *folderTable) ReadOne(key interface{}) (*dvevaluation.DvVariable, error) {
 	tbl.mu.Lock()
 	defer tbl.mu.Unlock()
 	return findSingleEntryInFolder(tbl.path, key, tbl.keyFirst)
@@ -77,4 +77,10 @@ func (tbl *folderTable) UpdateRecord(record *dvevaluation.DvVariable) (*dvevalua
 	tbl.mu.Lock()
 	defer tbl.mu.Unlock()
 	return updateRecordInFolder(tbl.path, record, tbl.keyFirst, tbl.version)
+}
+
+func (tbl *folderTable) CreateOrUpdateByConditionsAndUpdateFields(record *dvevaluation.DvVariable, conditions []string, fields []string) (*dvevaluation.DvVariable, error) {
+	tbl.mu.Lock()
+	defer tbl.mu.Unlock()
+	return CreateOrUpdateByConditionsAndUpdateFieldsForFolder(tbl.path, record, conditions, fields, tbl.keyFirst, tbl.version)
 }
