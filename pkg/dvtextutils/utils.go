@@ -380,3 +380,13 @@ func CalculateStringCheckSum(data string) int64 {
 	}
 	return res
 }
+
+func FindIndexInStringArray(data []string, key string) int {
+ 	n:=len(data)
+	for i:=0;i<n;i++ {
+             if data[i]==key {
+                    return i
+             }
+        }
+        return -1
+}
