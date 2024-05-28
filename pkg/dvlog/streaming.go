@@ -106,6 +106,11 @@ func PrintlnError(s string) {
 	Println(s, s)
 }
 
+func Print(s string) {
+	Println(s, s)
+}
+
+
 func PrintError(err error) {
    if err!=nil {
         PrintlnError(err.Error())
