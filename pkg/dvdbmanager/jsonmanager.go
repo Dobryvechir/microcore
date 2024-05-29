@@ -341,8 +341,8 @@ func checkIntId(id string) bool {
 
 func CreateEnvironmentForPreviousCurrent(previousRecord *dvevaluation.DvVariable, currentRecord *dvevaluation.DvVariable) *dvevaluation.DvObject {
 	data := make(map[string]interface{})
-	previousRecord.CopyFieldsToMap("previous.", data)
-	currentRecord.CopyFieldsToMap("current.", data)
+        data["previous"]=previousRecord
+        data["current"]=currentRecord
 	env := dvparser.GetPropertiesPrototypedToGlobalProperties(data)
 	return env
 }
