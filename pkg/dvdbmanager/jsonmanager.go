@@ -11,6 +11,7 @@ import (
 
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvjson"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 )
@@ -398,8 +399,16 @@ func updateRecordByFields(previousRecord *dvevaluation.DvVariable, currentRecord
 	if cleaning {
 		currentRecord.Fields = previousRecord.Fields
 		currentRecord.CleanFields(fieldList)
+		if LogLevel {
+                    cr:=""; // dvevaluation.AnyToString(currentRecord)
+                    dvlog.PrintfError("cleaned list %v %s",fieldList, cr)
+                }
 	} else {
 		currentRecord.CopyFieldsFromOther(fieldList, previousRecord)
+		if LogLevel {
+                    cr:=""; // dvevaluation.AnyToString(currentRecord)
+                    dvlog.PrintfError("changed list %v %s",fieldList, cr)
+                }
 	}
 	return true
 }
@@ -421,6 +430,11 @@ func CreateOrUpdateByConditionsAndUpdateFieldsForJson(path string, record *dveva
 		return nil, nil
 	}
 	n, err := findFirstMetCondition(pool.Fields[i], record, conditions)
+        if LogLevel {
+            sr:=""; // dvevaluation.AnyToString(record)
+            sp:=""; // dvevaluation.AnyToString(pool.Fields[i]) 
+            dvlog.PrintfError("n=%d err=%v conditions=%v record=%s old=%s", n, err, conditions, sr, sp)
+        }
 	if err != nil {
 		return nil, err
 	}
@@ -429,6 +443,9 @@ func CreateOrUpdateByConditionsAndUpdateFieldsForJson(path string, record *dveva
 	}
 	changed := updateRecordByFields(pool.Fields[i], record, fields[n])
 	if !changed {
+                if LogLevel {
+                    dvlog.PrintfError("Not changed %v", fields[n])
+                }
 		return pool.Fields[i], nil
 	}
 	resolveVersion(pool.Fields[i], record, version)

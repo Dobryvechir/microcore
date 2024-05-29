@@ -22,6 +22,8 @@ const (
 
 var dbAmount = 0
 
+var LogLevel = true
+
 func DbManagerInit(conf []*dvcontext.DatabaseConfig) {
 	dbAmount = len(conf)
 	if dbAmount == 0 {

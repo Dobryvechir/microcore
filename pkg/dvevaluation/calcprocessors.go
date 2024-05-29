@@ -431,7 +431,12 @@ func ProcessorNotEqual(values []*dvgrammar.ExpressionValue, tree *dvgrammar.Buil
 	if l != 2 {
 		return nil, errors.New("Only 2 parameters are allowed for " + operator)
 	}
-	res := AnyCompareAnyWithTypes(values[0].DataType, values[0].Value, values[1].DataType, values[1].Value) != 0
+        res:=false
+        if values[0]==nil {
+           res  = values[1]==nil
+        } else if values[1]!=nil {
+	   res = AnyCompareAnyWithTypes(values[0].DataType, values[0].Value, values[1].DataType, values[1].Value) != 0
+        }
 	return &dvgrammar.ExpressionValue{Value: res, DataType: dvgrammar.TYPE_BOOLEAN}, nil
 }
 
