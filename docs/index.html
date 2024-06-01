@@ -26,10 +26,10 @@ MicroCore can be used as a library for various purposes:
 <div>
    <p>For this task, you should provide the port (1-65535) number and optionally the local IP</p>
    <p>For example, for port #80, you should specify in the config:</p>
-   <p class="dv_subinfo">"listen": ":80"</p>
+   <p class="dv_subinfo">"listen": [":80"]</p>
    <p>This is already provided in the default config</p>
    <p>Specifying IP is not necessary in the majority of cases, but if you wish to specify, for example, 127.0.0.2, you can write in the config as follows:</p>
-   <p class="dv_subinfo">"listen": "127.0.0.2:80"</p>
+   <p class="dv_subinfo">"listen": ["127.0.0.2:80"]</p>
    <p>If you specify IP, you will have to use only this IP for local development. If you do not specify IP, this port will be valid for all local hosts (local hosts are all hosts whose IP starts with 127 (127.X.X.X))</p>
    <p>If the listener is running, it can find data in local file system (so server as a local server), give control to processors, process templates or forward requests to external servers</p>
 </div>
@@ -103,12 +103,12 @@ MicroCore can be used as a library for various purposes:
    <p>If you wish to run this server as a simple static server, you can specify a field <span class="dv_cmd">baseServer</span> inside the <span class="dv_cmd">server</span>, providing either relative or absolute paths. To specify relative path, you can use . (one dot) to refer to the current directory and
       .. (two dots) to refer to the parent directory. In the example below we use one dot (.) to have the current folder as the root folder for the static server</p>
    <p class="dv_subinfo">
-       "listen": ":80", <br/>
+       "listen": [":80"], <br/>
        "server": {"baseFolder": "."}
    </p>
    <p>To forward a request to another server, you should specify <span class="dv_cmd">proxyServers</span> or <span class="dv_cmd">defaultProxy</span>(you can do it in addition to <span class="dv_cmd">baseFolder</span>, <span class="dv_cmd">dv_cmd">processors</span> or any their combination). </p>
    <p class="dv_subinfo">
-       "listen": ":80", <br/>
+       "listen": [":80"], <br/>
        "server": {"baseFolder": "/home/Danyil/public","defaultProxy": "http://localhost:3000"}, <br/>
    </p>
    <p>In the example above the search at first will be made in the local folder /home/Danyil/public, but if not found, it will be forwarded to the server 
@@ -147,7 +147,7 @@ MicroCore can be used as a library for various purposes:
                 with the environment variables and custom variables with their custom implementation in golang</span>
    </p>  
    <p class="dv_subinfo">
-       "listen": ":80", <br/>
+       "listen": [":80"], <br/>
        "hostServers": [{"hosts":"www.example.com www.example1.com","baseFolder":"C:/Users/Danyil/MicroCore/accounts","defaultProxy":"http://localhost:8080"},
                        {"hosts":"api.example.com","defaultProxy":"http://api.mycompany.com","proxyName": "www.mycompany.com","accessControlAllowOrigin":"www.example.com www.example1.com"}], <br/>
        "server": {"baseFolder": "."}
@@ -186,7 +186,7 @@ MicroCore can be used as a library for various purposes:
    </p>
    <p>Example</p>  
    <p class="dv_subinfo">
-       "listen": ":80", <br/>
+       "listen": [":80"], <br/>
        "hostServers": [{"hosts":"www.example.com","serverRewrites":[{"from":"/login*","to":"/"}],"baseFolder":"C:/Users/Danyil/MicroCore/accounts","defaultProxy":"http://localhost:8080"}], <br/>
        "server": {"baseFolder": ".", "rewrites": [{"from":"/login*","to":"/"},{"from":"/accounts/*","to":"/"}]}
    </p>
@@ -239,7 +239,7 @@ MicroCore can be used as a library for various purposes:
    </p>
    <p>Example</p>  
    <p class="dv_subinfo">
-       "listen": ":80", <br/>
+       "listen": [":80"], <br/>
        "hostServers": [{"hosts":"www.example.com","defaultProxy":"http://localhost:8080","proxyServerSettings":{"responseHeaderTimeout":60}}], <br/>
        "server": {"defaultProxy":"http://localhost:3000","proxyServerSettings":{"disableCompression":true,"disableKeepAlives":true}}
    </p>

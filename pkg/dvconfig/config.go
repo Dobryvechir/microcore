@@ -9,11 +9,12 @@ package dvconfig
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
 
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
@@ -107,7 +108,7 @@ type DvHostServer struct {
 // DvConfig is a full structure of the config for http server
 type DvConfig struct {
 	Namespace          string                        `json:"namespace"`
-	Listen             string                        `json:"listen"`
+	Listen             []string                      `json:"listen"`
 	RootFolder         string                        `json:"rootFolder"`
 	LogLevel           string                        `json:"logLevel"`
 	LogModules         string                        `json:"logModules"`
@@ -217,14 +218,14 @@ func ReadConfig() *DvConfig {
 	cf := &DvConfig{}
 	if filename == "" {
 		cf.Namespace = dvlog.CurrentNamespace
-		cf.Listen = ":80"
+		cf.Listen = []string{":80"}
 		cf.Server = DvHostServer{BaseFolder: "."}
 	} else {
 		data, err := dvparser.SmartReadTemplate(filename, 3, byte(' '))
 		if err == nil {
 			dvlog.CleanEOL(data)
 			if saveConfig, okSave := dvparser.GlobalProperties[debugWriteName]; okSave {
-				err2 := ioutil.WriteFile(saveConfig, data, 0644)
+				err2 := os.WriteFile(saveConfig, data, 0644)
 				if err2 != nil {
 					log.Print("Cannot write resulted config to " + saveConfig + ": " + err2.Error())
 				}

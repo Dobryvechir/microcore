@@ -7,13 +7,14 @@ package dvconfig
 
 import (
 	"encoding/json"
-	"github.com/Dobryvechir/microcore/pkg/dvaction"
-	_ "github.com/Dobryvechir/microcore/pkg/dvaction/dvdynamic"
-	"github.com/Dobryvechir/microcore/pkg/dvssews"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/Dobryvechir/microcore/pkg/dvaction"
+	_ "github.com/Dobryvechir/microcore/pkg/dvaction/dvdynamic"
+	"github.com/Dobryvechir/microcore/pkg/dvssews"
 
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
@@ -129,11 +130,41 @@ func serverStartByConfigDirect(cf *DvConfig) {
 		log.Printf("Error on start: %v", err)
 		return
 	}
-	if cf.Listen != "" {
-		log.Printf("Started MicroCore%v on %s \n", dvlog.StartTime, cf.Listen)
-		http.ListenAndServe(cf.Listen, nil)
-		log.Print("Impossible to occupy " + cf.Listen)
-	} else {
-		log.Printf("listen server is not specified  %v\n", cf)
+	if len(cf.Listen) == 0 {
+		cf.Listen = []string{":80"}
 	}
+	n := len(cf.Listen)
+	done := make(chan bool, n)
+	for i := 0; i < n; i++ {
+		startListenAndServe(cf.Listen[i], done)
+	}
+	for i := 0; i < n; i++ {
+		<-done
+	}
+}
+
+func startListenAndServe(listen string, done chan bool) {
+	listen = strings.TrimSpace(listen)
+	log.Printf("Started MicroCore%v on %s \n", dvlog.StartTime, listen)
+	var err error
+	pos := strings.Index(listen, ",")
+	if pos >= 0 {
+		urlPort := strings.TrimSpace(listen[:pos])
+		if urlPort == "" {
+			urlPort = ":443"
+		}
+		certificates := strings.TrimSpace(listen[pos+1:])
+		certificate1 := certificates
+		certificate2 := ""
+		pos = strings.Index(certificates, ",")
+		if pos >= 0 {
+			certificate1 = strings.TrimSpace(certificates[:pos])
+			certificate2 = strings.TrimSpace(certificates[pos+1:])
+		}
+		err = http.ListenAndServeTLS(urlPort, certificate1, certificate2, nil)
+	} else {
+		err = http.ListenAndServe(listen, nil)
+	}
+	log.Printf("Impossible to occupy %s : %v", listen, err)
+	done <- true
 }
