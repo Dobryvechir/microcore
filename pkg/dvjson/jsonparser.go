@@ -657,6 +657,48 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 	return r
 }
 
+func eliminateScreeningCharacters(val []byte) []byte {
+	n := len(byte)
+	i := 0
+	k := 0
+	for ; i < n; i++ {
+		if val[i] == '\\' && i+1 < n && (val[i+1] == '\\' || val[i+1] == '"') {
+			k++
+			i++
+		}
+	}
+	if k == 0 {
+		return val
+	}
+	m := n - k
+	res := make([]byte, m, m)
+	k = 0
+	for ; i < n; i++ {
+		b := val[i]
+		if b == '\\' && i+1 < n && (val[i+1] == '\\' || val[i+1] == '"') {
+			i++
+			b = val[i]
+		}
+		res[k] = b
+		k++
+	}
+	return res
+}
+
+func checkEliminationScreeningCharacters(dst *dvevaluation.DvVariable) {
+	if dst == nil {
+		return
+	}
+	if dst.Kind == dvevaluation.FIELD_STRING {
+		dst.Value = eliminateScreeningCharacters(dst.Value)
+	} else {
+		n := len(dst.Fields)
+		for i := 0; i < n; i++ {
+			checkEliminationScreeningCharacters(dst.Fields[i])
+		}
+	}
+}
+
 func ConvertDvCrudItemToDvFieldInfo(src *DvCrudItem) (dst *dvevaluation.DvVariable) {
 	dst = &dvevaluation.DvVariable{
 		Name:   src.Name,
@@ -665,6 +707,7 @@ func ConvertDvCrudItemToDvFieldInfo(src *DvCrudItem) (dst *dvevaluation.DvVariab
 		Fields: src.Fields,
 		Extra:  src.Extra,
 	}
+	checkEliminationScreeningCharacters(dst)
 	return
 }
 

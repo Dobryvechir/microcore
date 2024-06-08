@@ -7,16 +7,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
 	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
 	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"github.com/Dobryvechir/microcore/pkg/dvparser"
 	"github.com/Dobryvechir/microcore/pkg/dvsecurity"
-	"io/ioutil"
-	"log"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -145,7 +146,7 @@ func GetContextFileResult(ctx *dvcontext.RequestContext, fileName string) ([]byt
 		ctx.HandleFileNotFound()
 		return nil, errors.New("Empty file name")
 	}
-	data, err := ioutil.ReadFile(fileName)
+	data, err := os.ReadFile(fileName)
 	if err != nil {
 		log.Printf("Cannot read %s: %v", fileName, err)
 		ctx.HandleInternalServerError()
