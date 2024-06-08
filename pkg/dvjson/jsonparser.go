@@ -1,7 +1,7 @@
 /*
 **********************************************************************
 MicroCore
-Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
+Copyright 2020 - 2024 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
 ***********************************************************************
 */
 package dvjson
@@ -9,11 +9,12 @@ package dvjson
 import (
 	"bytes"
 	"errors"
-	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
-	"github.com/Dobryvechir/microcore/pkg/dvlog"
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/Dobryvechir/microcore/pkg/dvevaluation"
+	"github.com/Dobryvechir/microcore/pkg/dvlog"
 )
 
 type DvCrudDetails struct {
@@ -673,9 +674,9 @@ func eliminateScreeningCharacters(val []byte) []byte {
 		return val
 	}
 	m := n - k
-	res := make([]byte, m, m)
+	res := make([]byte, m)
 	k = 0
-	for ; i < n; i++ {
+	for i = 0; i < n; i++ {
 		b := val[i]
 		if b == '\\' && i+1 < n && (val[i+1] == '\\' || val[i+1] == '"') {
 			i++
