@@ -1,7 +1,9 @@
-/***********************************************************************
+/*
+**********************************************************************
 MicroCore
 Copyright 2017 - 2021 by Danyil Dobryvechir (dobrivecher@yahoo.com ddobryvechir@gmail.com)
-************************************************************************/
+***********************************************************************
+*/
 package dvjson
 
 import (
@@ -658,7 +660,7 @@ func JsonQuickParser(body []byte, crudDetails *DvCrudDetails, highLevelObject bo
 }
 
 func eliminateScreeningCharacters(val []byte) []byte {
-	n := len(byte)
+	n := len(val)
 	i := 0
 	k := 0
 	for ; i < n; i++ {
