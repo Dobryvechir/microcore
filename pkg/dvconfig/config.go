@@ -9,7 +9,6 @@ package dvconfig
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -82,6 +81,7 @@ type DvHostServer struct {
 	DomainName                    string                             `json:"domain"`
 	CacheControl                  string                             `json:"cacheControl"`
 	DirectoryIndex                string                             `json:"directoryIndex"`
+	HeadersReplace                map[string]string                  `json:"headersReplace"`
 	HeadersStatic                 map[string]string                  `json:"headersStatic"`
 	HeadersProxyServer            map[string]string                  `json:"headersProxyServer"`
 	HeadersStaticOptions          map[string]string                  `json:"headersStaticOptions"`
@@ -152,7 +152,7 @@ func SaveConfig(place string, cf *DvConfig) {
 		fmt.Printf("Error converting the config to json: %s", err.Error())
 		return
 	}
-	err = ioutil.WriteFile(place, configStr, os.ModePerm)
+	err = os.WriteFile(place, configStr, os.ModePerm)
 	if err != nil {
 		fmt.Printf("Error %s writing the config to file %s", err.Error(), place)
 	} else {
@@ -233,7 +233,7 @@ func ReadConfig() *DvConfig {
 			err = json.Unmarshal(data, cf)
 		}
 		if err != nil {
-			err2 := ioutil.WriteFile(CurrentDir+"/debug_microcore_conf.json", data, 0644)
+			err2 := os.WriteFile(CurrentDir+"/debug_microcore_conf.json", data, 0644)
 			if err2 != nil {
 				log.Print("Cannot write ./debug_microcore_conf.json: " + err2.Error())
 			}

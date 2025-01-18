@@ -376,6 +376,11 @@ func tryHttpForward(request *dvcontext.RequestContext, url string, options int) 
 			req.Header["Referer"][0] = proxyReferer
 		}
 	}
+	if len(request.Server.HeadersReplace) > 0 {
+		for k, v := range request.Server.HeadersReplace {
+			req.Header[k] = v
+		}
+	}
 	resp, err1 := request.Server.Client.Do(req)
 	if err1 != nil {
 		if dvlog.CurrentLogLevel >= dvlog.LogError {

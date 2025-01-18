@@ -116,6 +116,7 @@ type MicroCoreInfo struct {
 	DomainName                string
 	ProxyServers              []*ProxyServerBlock
 	ErrorPolicies             map[string]*RequestErrorPolicy
+	HeadersReplace            map[string][]string
 	HeadersStatic             map[string][]string
 	HeadersProxyServer        map[string][]string
 	HeadersStaticOptions      map[string][]string

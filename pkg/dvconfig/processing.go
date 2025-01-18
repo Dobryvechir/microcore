@@ -3,13 +3,14 @@
 package dvconfig
 
 import (
-	"github.com/Dobryvechir/microcore/pkg/dvsession"
-	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
-	"github.com/Dobryvechir/microcore/pkg/dvurl"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/Dobryvechir/microcore/pkg/dvsession"
+	"github.com/Dobryvechir/microcore/pkg/dvtextutils"
+	"github.com/Dobryvechir/microcore/pkg/dvurl"
 
 	"github.com/Dobryvechir/microcore/pkg/dvcom"
 	"github.com/Dobryvechir/microcore/pkg/dvcontext"
@@ -113,6 +114,7 @@ func prepareMicroCoreInfo(server *DvHostServer) *dvcontext.MicroCoreInfo {
 		ProxyServers:              prepareProxyInfo(server.ProxyServers),
 		BaseRewrite:               prepareComRewriteMap(server.Rewrites),
 		ServerRewrite:             prepareComRewriteMap(server.ServerRewrites),
+		HeadersReplace:            prepareMapOfStringArrays(server.HeadersReplace),
 		HeadersStatic:             prepareMapOfStringArrays(server.HeadersStatic),
 		HeadersStaticOptions:      prepareMapOfStringArrays(server.HeadersStaticOptions),
 		HeadersProxyServer:        prepareMapOfStringArrays(server.HeadersProxyServer),
